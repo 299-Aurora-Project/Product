@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.5.wip3</title>
+<title>Easy Aurora Forecast v. t1.5.wip4</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon" href="icon.png">
@@ -168,7 +168,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip3</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip4</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -309,38 +309,72 @@ let userLat = 0;
 let userLon = 0;
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // 1. まずUI要素（スイッチ）を確保しておく
-    const pushSwitch = document.getElementById("push-switch");
+    console.log("App initialized. Restoring settings...");
 
-    // 2. localStorageからデータを読み出す
+    // 1. UI要素の取得
+    const pushSwitch = document.getElementById("push-switch");
+    const locDisplay = document.getElementById('loc');
+    const startBtn = document.getElementById('start-btn');
+    const welcomeModal = document.getElementById('welcome-modal');
+
+    // 2. localStorage からデータを読み出す
     const savedLat = localStorage.getItem('aurora_myLat');
     const savedLon = localStorage.getItem('aurora_myLon');
     const savedEnabled = localStorage.getItem('aurora_enabled');
 
-    // 3. 【ここに挿入！】場所の復元と再計算
+    // 3. 場所の復元と再計算
     if (savedLat && savedLon) {
+        // グローバル変数に代入（再宣言しないよう let は付けない）
         myLat = parseFloat(savedLat);
         myLon = parseFloat(savedLon);
 
-        console.log("Location restored:", myLat, myLon);
+        console.log("Restored Location:", myLat, myLon);
 
-        // UI（画面）の表示も更新しておく
-        const locDisplay = document.getElementById('loc');
+        // 画面表示を更新
         if (locDisplay) {
             locDisplay.textContent = `Lat: ${myLat.toFixed(2)}, Lon: ${myLon.toFixed(2)}`;
         }
 
-        // 地名取得とスコア計算を実行
-        if (typeof reverseGeocode === 'function') await reverseGeocode(myLat, myLon);
-        if (typeof updateAll === 'function') updateAll();
+        // 地名取得とスコア計算を即座に実行
+        if (typeof reverseGeocode === 'function') {
+            await reverseGeocode(myLat, myLon);
+        }
+        if (typeof updateAll === 'function') {
+            updateAll();
+        }
     }
 
-    // 4. スイッチの復元
+    // 4. スイッチの状態復元
     if (savedEnabled !== null && pushSwitch) {
-        pushSwitch.checked = (savedEnabled === 'true');
+        const isTrue = (savedEnabled === 'true');
+        pushSwitch.checked = isTrue;
+        console.log("Restored Switch State:", isTrue);
+
+        // もしスイッチがONなら、GASに最新情報を送って同期する
+        if (isTrue && typeof updatePushSubscription === 'function') {
+            console.log("Syncing restored ON state with GAS...");
+            updatePushSubscription();
+        }
     }
+
+    // 5. モーダルの制御 (スタートボタン)
+    if (startBtn && welcomeModal) {
+        startBtn.addEventListener('click', () => {
+            welcomeModal.style.display = 'none';
+            console.log("Welcome modal dismissed.");
+        });
+    }
+});
+
+// スイッチを操作した瞬間に保存＆送信する処理
+document.getElementById("push-switch").addEventListener('change', async function() {
+    // A. 状態を保存
+    localStorage.setItem('aurora_enabled', this.checked);
     
-    // モーダルの初期設定などが続く...
+    // B. GASへ送信（スプレッドシート更新）
+    if (typeof updatePushSubscription === 'function') {
+        await updatePushSubscription();
+    }
 });
 
 

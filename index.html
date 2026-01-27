@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.5.wip4</title>
+<title>Aurora Forecast Pro v. t1.5.wip1</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon" href="icon.png">
@@ -168,7 +168,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip4</span></h1>
+            <h1>🌌 Aurora Forecast Pro<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip1</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -303,80 +303,34 @@ const FORECAST_URL = "https://services.swpc.noaa.gov/text/3-day-forecast.txt";
 
 // 前回の設定を記憶した状態で起動
 // 読み込む（ページ起動時）
-// 変数の宣言は関数の外（トップレベル）で行う
-// 変数名を myLat から userLat に変更して衝突を避ける
-let userLat = 0;
-let userLon = 0;
-
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log("App initialized. Restoring settings...");
-
-    // 1. UI要素の取得
-    const pushSwitch = document.getElementById("push-switch");
-    const locDisplay = document.getElementById('loc');
-    const startBtn = document.getElementById('start-btn');
-    const welcomeModal = document.getElementById('welcome-modal');
-
-    // 2. localStorage からデータを読み出す
-    const savedLat = localStorage.getItem('aurora_myLat');
+    // 1. 保存された値を取得
+    const savedLat = localStorage.getItem('aurora_myLat'); // キー名をgetLocationと合わせる
     const savedLon = localStorage.getItem('aurora_myLon');
     const savedEnabled = localStorage.getItem('aurora_enabled');
 
-    // 3. 場所の復元と再計算
+    // 2. 位置情報の復元
     if (savedLat && savedLon) {
-        // グローバル変数に代入（再宣言しないよう let は付けない）
         myLat = parseFloat(savedLat);
         myLon = parseFloat(savedLon);
-
-        console.log("Restored Location:", myLat, myLon);
-
-        // 画面表示を更新
-        if (locDisplay) {
-            locDisplay.textContent = `Lat: ${myLat.toFixed(2)}, Lon: ${myLon.toFixed(2)}`;
-        }
-
-        // 地名取得とスコア計算を即座に実行
+        
+        // 地名を表示し、スコアを再計算する
         if (typeof reverseGeocode === 'function') {
             await reverseGeocode(myLat, myLon);
         }
-        if (typeof updateAll === 'function') {
-            updateAll();
-        }
+        updateAll(); // 画面の数値を更新する関数
     }
 
-    // 4. スイッチの状態復元
-    if (savedEnabled !== null && pushSwitch) {
+    // 3. スイッチ状態の復元
+    if (savedEnabled !== null) {
         const isTrue = (savedEnabled === 'true');
-        pushSwitch.checked = isTrue;
-        console.log("Restored Switch State:", isTrue);
-
-        // もしスイッチがONなら、GASに最新情報を送って同期する
-        if (isTrue && typeof updatePushSubscription === 'function') {
-            console.log("Syncing restored ON state with GAS...");
-            updatePushSubscription();
+        const checkbox = document.getElementById("push-switch");
+        if (checkbox) {
+            checkbox.checked = isTrue;
+            // スイッチの状態に合わせて必要な処理（UIの色の変更など）があればここで実行
         }
     }
-
-    // 5. モーダルの制御 (スタートボタン)
-    if (startBtn && welcomeModal) {
-        startBtn.addEventListener('click', () => {
-            welcomeModal.style.display = 'none';
-            console.log("Welcome modal dismissed.");
-        });
-    }
 });
-
-// スイッチを操作した瞬間に保存＆送信する処理
-document.getElementById("push-switch").addEventListener('change', async function() {
-    // A. 状態を保存
-    localStorage.setItem('aurora_enabled', this.checked);
-    
-    // B. GASへ送信（スプレッドシート更新）
-    if (typeof updatePushSubscription === 'function') {
-        await updatePushSubscription();
-    }
-});
-
 
 // --- 通知関連 ---
 // 生成した公開鍵

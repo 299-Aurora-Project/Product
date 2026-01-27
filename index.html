@@ -304,36 +304,23 @@ const FORECAST_URL = "https://services.swpc.noaa.gov/text/3-day-forecast.txt";
 // 前回の設定を記憶した状態で起動
 // 読み込む（ページ起動時）
 // 変数の宣言は関数の外（トップレベル）で行う
-let myLat = 0, myLon = 0;
+// 変数名を myLat から userLat に変更して衝突を避ける
+let userLat = 0;
+let userLon = 0;
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // 1. まずUI要素を確保（エラー防止のため）
-    const pushSwitch = document.getElementById("push-switch");
+    // 読み込み時も userLat を使う
+    const storedLat = localStorage.getItem('aurora_myLat');
+    const storedLon = localStorage.getItem('aurora_myLon');
 
-    // 2. localStorageからデータを復元
-    const savedLat = localStorage.getItem('aurora_myLat');
-    const savedLon = localStorage.getItem('aurora_myLon');
-    const savedEnabled = localStorage.getItem('aurora_enabled');
-
-    if (savedLat && savedLon) {
-        myLat = parseFloat(savedLat);
-        myLon = parseFloat(savedLon);
-
-        // --- ここで地名とスコアを復活させる ---
-        if (typeof reverseGeocode === 'function') {
-            await reverseGeocode(myLat, myLon); // 地名を表示
-        }
-        if (typeof updateAll === 'function') {
-            updateAll(); // スコア計算＆表示更新
-        }
-    }
-
-    // 3. スイッチの復元
-    if (savedEnabled !== null && pushSwitch) {
-        pushSwitch.checked = (savedEnabled === 'true');
+    if (storedLat && storedLon) {
+        userLat = parseFloat(storedLat); // letを付けずに代入
+        userLon = parseFloat(storedLon);
+        
+        if (typeof reverseGeocode === 'function') await reverseGeocode(userLat, userLon);
+        if (typeof updateAll === 'function') updateAll();
     }
 });
-
 
 
 // --- 通知関連 ---

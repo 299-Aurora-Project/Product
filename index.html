@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.5.wip2</title>
+<title>Easy Aurora Forecast v. t1.5.wip3</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon" href="icon.png">
@@ -168,7 +168,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip2</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip3</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -309,17 +309,38 @@ let userLat = 0;
 let userLon = 0;
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // 読み込み時も userLat を使う
-    const storedLat = localStorage.getItem('aurora_myLat');
-    const storedLon = localStorage.getItem('aurora_myLon');
+    // 1. まずUI要素（スイッチ）を確保しておく
+    const pushSwitch = document.getElementById("push-switch");
 
-    if (storedLat && storedLon) {
-        userLat = parseFloat(storedLat); // letを付けずに代入
-        userLon = parseFloat(storedLon);
-        
-        if (typeof reverseGeocode === 'function') await reverseGeocode(userLat, userLon);
+    // 2. localStorageからデータを読み出す
+    const savedLat = localStorage.getItem('aurora_myLat');
+    const savedLon = localStorage.getItem('aurora_myLon');
+    const savedEnabled = localStorage.getItem('aurora_enabled');
+
+    // 3. 【ここに挿入！】場所の復元と再計算
+    if (savedLat && savedLon) {
+        myLat = parseFloat(savedLat);
+        myLon = parseFloat(savedLon);
+
+        console.log("Location restored:", myLat, myLon);
+
+        // UI（画面）の表示も更新しておく
+        const locDisplay = document.getElementById('loc');
+        if (locDisplay) {
+            locDisplay.textContent = `Lat: ${myLat.toFixed(2)}, Lon: ${myLon.toFixed(2)}`;
+        }
+
+        // 地名取得とスコア計算を実行
+        if (typeof reverseGeocode === 'function') await reverseGeocode(myLat, myLon);
         if (typeof updateAll === 'function') updateAll();
     }
+
+    // 4. スイッチの復元
+    if (savedEnabled !== null && pushSwitch) {
+        pushSwitch.checked = (savedEnabled === 'true');
+    }
+    
+    // モーダルの初期設定などが続く...
 });
 
 

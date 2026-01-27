@@ -1,6 +1,6 @@
 {
-  "name": "Weather Notify PWA",
-  "short_name": "WeatherApp",
+  "name": "Easy Aurora Forecast",
+  "short_name": "EZ Aurora",
   "start_url": "index.html",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -13,3 +13,4 @@
     }
   ]
 }
+

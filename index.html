@@ -168,7 +168,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Aurora Forecast Pro<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip2</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip2</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -325,7 +325,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             await reverseGeocode(myLat, myLon);
         }
         updateAll();
-    } 
+    }
 
     // 3. スイッチ状態とUIの復元
     const pushSwitch = document.getElementById("notif-toggle"); // IDを修正
@@ -540,6 +540,13 @@ function calculateTotal() {
 
 // ページ読み込み時の復元ロジック
 async function getLocation() {
+
+// 追加：すでにデータが復元されていれば、GPS取得をスキップ
+    if (myLat !== 0 && myLat !== null) {
+        console.log("Location already restored. Skipping GPS fetch.");
+        return; 
+    }
+    
     setItemLoading('loc', true);
     navigator.geolocation.getCurrentPosition(async p => {
         myLat = p.coords.latitude;
@@ -919,5 +926,4 @@ function urlBase64ToUint8Array(base64String) {
 </script>
 </body>
 </html>
-
 

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.5.wip1</title>
+<title>Aurora Forecast Pro v. t1.5.wip1</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon" href="icon.png">
@@ -168,7 +168,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip2</span></h1>
+            <h1>🌌 Aurora Forecast Pro<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip1</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -301,30 +301,6 @@ const KP_URL = "https://services.swpc.noaa.gov/products/noaa-planetary-k-index.j
 const OVAL_URL = "https://services.swpc.noaa.gov/json/ovation_aurora_latest.json";
 const FORECAST_URL = "https://services.swpc.noaa.gov/text/3-day-forecast.txt";
 
-// スイッチ要素を取得
-const pushSwitch = document.getElementById("push-switch");
-
-// スイッチの状態が変わったときの処理
-pushSwitch.addEventListener('change', async () => {
-    const isEnabled = pushSwitch.checked;
-
-    // 1. 状態を保存する
-    localStorage.setItem('aurora_enabled', isEnabled);
-    console.log("通知設定を保存しました: " + isEnabled);
-
-    // 2. 通知の登録・解除（既存の関数を呼び出す）
-    if (isEnabled) {
-        // 通知を有効にする処理（例：購読を開始する関数）
-        // await subscribeUser(); 
-    } else {
-        // 通知を無効にする処理（例：GASへ解除を送る関数）
-        // await unsubscribeUser();
-    }
-    
-    // スコアの再表示など
-    updateAll(); 
-});
-
 // 前回の設定を記憶した状態で起動
 // 読み込む（ページ起動時）
 document.addEventListener('DOMContentLoaded', async () => {
@@ -355,7 +331,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (checkbox) {
             checkbox.checked = isTrue;
             
-            // 重要：スイッチをオンにした状態でアプリが開かれた場合、必要に応じて通知の購読状態を最新にする関数などをここで呼ぶ
+            // 重要：スイッチをオンにした状態でアプリが開かれた場合、
+            // 必要に応じて通知の購読状態を最新にする関数などをここで呼ぶ
             if (isTrue) {
                 console.log("通知設定は有効なままです");
                 // updatePushSubscription(); // 必要であれば実行
@@ -363,6 +340,32 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 });
+
+// スイッチ要素を取得
+const pushSwitch = document.getElementById("push-switch");
+
+// スイッチの状態が変わったときの処理
+pushSwitch.addEventListener('change', async () => {
+    const isEnabled = pushSwitch.checked;
+
+    // 1. 状態を保存する
+    localStorage.setItem('aurora_enabled', isEnabled);
+    console.log("通知設定を保存しました: " + isEnabled);
+
+    // 2. 通知の登録・解除（既存の関数を呼び出す）
+    if (isEnabled) {
+        // 通知を有効にする処理（例：購読を開始する関数）
+        // await subscribeUser(); 
+    } else {
+        // 通知を無効にする処理（例：GASへ解除を送る関数）
+        // await unsubscribeUser();
+    }
+    
+    // スコアの再表示など
+    updateAll(); 
+});
+
+
 
 // --- 通知関連 ---
 // 生成した公開鍵

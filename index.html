@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.5.wip5</title>
+<title>Easy Aurora Forecast v. t1.5.wip6</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon" href="icon.png">
@@ -168,7 +168,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip5</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip6</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -304,37 +304,38 @@ const FORECAST_URL = "https://services.swpc.noaa.gov/text/3-day-forecast.txt";
 // 前回の設定を記憶した状態で起動
 // 読み込む（ページ起動時）
 document.addEventListener('DOMContentLoaded', async () => {
+    // 1. 保存された値をコンソールに出して確認
     const savedLat = localStorage.getItem('aurora_myLat');
     const savedLon = localStorage.getItem('aurora_myLon');
-    const savedEnabled = localStorage.getItem('aurora_enabled');
+    console.log("LocalStorage Data Check:", { savedLat, savedLon });
 
-    // 保存されたデータがあるなら、それを画面に強制適用
-    if (savedLat && savedLon) {
+    // 2. 保存データがある場合、何が何でもそれを優先する
+    if (savedLat && savedLon && savedLat !== "0" && savedLon !== "0") {
         myLat = parseFloat(savedLat);
         myLon = parseFloat(savedLon);
 
+        // 画面の Lat/Lon 表示を更新
         const locDisplay = document.getElementById('loc');
         if (locDisplay) {
             locDisplay.textContent = `Lat: ${myLat.toFixed(2)}, Lon: ${myLon.toFixed(2)}`;
         }
 
+        // 住所の復元とスコア計算
         if (typeof reverseGeocode === 'function') await reverseGeocode(myLat, myLon);
-        updateAll();
-        console.log("Location restored from storage.");
+        if (typeof updateAll === 'function') updateAll();
+        
+        console.log("✅ Location successfully restored from storage.");
+    } else {
+        console.log("⚠️ No saved location found in storage.");
     }
 
-    // 3. スイッチ状態とUIの復元
-    const pushSwitch = document.getElementById("notif-toggle"); // IDを修正
+    // --- スイッチの復元（前回と同じ） ---
+    const pushSwitch = document.getElementById("notif-toggle");
+    const savedEnabled = localStorage.getItem('aurora_enabled');
     if (pushSwitch && savedEnabled !== null) {
-        const isTrue = (savedEnabled === 'true');
-        pushSwitch.checked = isTrue;
-        
-        // 【追加】スイッチがONならターゲットエリアの枠も表示する
-        const targetDisplay = document.getElementById("target-area-display");
-        if (isTrue && targetDisplay) {
-            targetDisplay.style.display = "block";
-            const targetName = document.getElementById("target-area-name");
-            if (targetName) targetName.textContent = document.getElementById("loc").textContent;
+        pushSwitch.checked = (savedEnabled === 'true');
+        if (pushSwitch.checked) {
+            document.getElementById("target-area-display").style.display = "block";
         }
     }
 
@@ -382,34 +383,34 @@ if ('serviceWorker' in navigator) {
 // --- ★通知登録（スプレッドシートへの保存）関数を追加★ ---
 async function subscribeUser() {
     try {
-        console.log("Starting subscribeUser..."); // 実行されたか確認
+        console.log("Starting subscribeUser...");
         const registration = await navigator.serviceWorker.ready;
         const sub = await registration.pushManager.subscribe({
             userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(PUBLIC_KEY) // 公開鍵の変換関数を確認
+            applicationServerKey: urlBase64ToUint8Array(PUBLIC_KEY)
         });
 
-        console.log("Subscription object created:", sub);
-
-        // 送信するデータを整理（緯度経度も一緒に送ると便利です）
+        // --- 送信形式を handleNotifToggle と完全に一致させる ---
+        const isEnabled = document.getElementById("notif-toggle")?.checked || false;
+        
         const payload = {
-            lat: typeof myLat !== 'undefined' ? myLat : 0,
-            lon: typeof myLon !== 'undefined' ? myLon : 0,
-            subscription: sub
+            endpoint: sub.endpoint,
+            keys: {
+                p256dh: btoa(String.fromCharCode.apply(null, new Uint8Array(sub.getKey('p256dh')))),
+                auth: btoa(String.fromCharCode.apply(null, new Uint8Array(sub.getKey('auth'))))
+            },
+            lat: myLat,
+            lon: myLon,
+            enabled: isEnabled // スイッチの状態も一緒に送る
         };
 
-        // GASへ送信
-        console.log("Fetching GAS URL:", GAS_URL);
-        const response = await fetch(GAS_URL, {
+        await fetch(GAS_URL, {
             method: 'POST',
-            mode: 'no-cors', // これを指定すると response.ok 等の判定はできませんが送信はされます
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            mode: 'no-cors',
             body: JSON.stringify(payload)
         });
 
-        console.log("Fetch command sent to GAS.");
+        console.log("GAS sync complete with manual location.");
         return true;
     } catch (e) {
         console.error("Subscription failed:", e);
@@ -536,28 +537,25 @@ function calculateTotal() {
 
 // ページ読み込み時の復元ロジック
 async function getLocation() {
-
-// 追加：すでにデータが復元されていれば、GPS取得をスキップ
-    if (myLat !== 0 && myLat !== null) {
-        console.log("Location already restored. Skipping GPS fetch.");
+    // 【重要】保存データがすでにある（myLatがセットされている）なら、GPS取得を中止する
+    if (myLat !== null && myLat !== 0) {
+        console.log("Location already restored. GPS fetch skipped.");
         return; 
     }
-    
+
     setItemLoading('loc', true);
     navigator.geolocation.getCurrentPosition(async p => {
         myLat = p.coords.latitude;
         myLon = p.coords.longitude;
-
-        // --- 追加: ローカルストレージに保存 ---
+        
+        // GPSで取得した時も保存しておく（次回リロード対策）
         localStorage.setItem('aurora_myLat', myLat);
         localStorage.setItem('aurora_myLon', myLon);
-        // ------------------------------------
 
         await reverseGeocode(myLat, myLon);
         updateAll();
     }, err => {
-        alert("GPS Fetch Failed");
-        document.getElementById('loc').textContent = "Not Set";
+        // ...エラー処理
     });
 }
 
@@ -627,13 +625,12 @@ async function shortForecast() { try { const res = await fetch(`https://api.open
 function setItemLoading(id, isLoading) { const el = document.getElementById(id); if (el && isLoading) el.innerHTML = '<span class="loading-text">⌛ <i>Loading...</i></span>'; }
 function formatProbability(s) { const r = Math.round(s); return (r <= 0 ? "< 1" : (r >= 100 ? "> 99" : r)) + " %"; }
 
-
+// 場所を確定させている関数
 async function searchCity() {
     const cityInput = document.getElementById("cityInput");
     const city = cityInput.value.trim();
     if (!city) return;
 
-    // 1. 動いている検索タイマーを即座に止める
     clearTimeout(searchTimer);
 
     try {
@@ -641,54 +638,48 @@ async function searchCity() {
         const data = await res.json();
         if (data.results?.length > 0) {
             const r = data.results[0];
+            
+            // 1. 変数に代入
             myLat = r.latitude;
             myLon = r.longitude;
             document.getElementById("loc").textContent = `${r.name}, ${r.country}`;
             
-            // 手入力で場所が決まった場所（例：地図クリックや検索後の処理）
-
-            // ここでブラウザに「これが最新だ！」と叩き込む
+            // 2. ブラウザに保存（リロード対策）
             localStorage.setItem('aurora_myLat', myLat);
             localStorage.setItem('aurora_myLon', myLon);
             console.log("Storage updated with manual location:", myLat, myLon);
             
-            // 追加：場所が変わったことをGAS（スプレッドシート）にも即座に知らせる
+            // 3. スプレッドシートへ即座に送信
             if (typeof subscribeUser === 'function') {
                 subscribeUser();
             }
-            
-            // 2. 入力欄をクリア
+
+            // 4. UIの更新
+            updateAll();
+
+            // --- 以降、入力欄のクリアなどの後処理 ---
             cityInput.value = "";
             document.getElementById("btn-search").disabled = true;
-            
-            // フォーカスを外してキーボードを閉じる
             cityInput.blur();
             
-            // ビューポートをリセットしてズームを強制解除
+            // ビューポートのリセット（ズーム対策）
             const viewport = document.querySelector('meta[name="viewport"]');
             if (viewport) {
                 const originalContent = viewport.content;
                 viewport.content = 'width=device-width, initial-scale=1, maximum-scale=1';
-                setTimeout(() => {
-                    viewport.content = originalContent; // 元の設定に戻す
-                }, 300);
+                setTimeout(() => { viewport.content = originalContent; }, 300);
             }
-            
-            // 画面のズーム/位置をリセット
-            //window.scrollTo({ top: 0, behavior: 'smooth' }); // 面最上部へスムーズに戻る
 
-            // 3. リストを物理的に破壊して確実に消す
             const list = document.getElementById("autocomplete-list");
             if (list) list.innerHTML = ""; 
-            
-            updateAll();
+
         } else {
             const err = document.getElementById("search-error");
             err.style.opacity = 1;
             setTimeout(() => { err.style.opacity = 0; }, 3000);
         }
     } catch (e) {
-        console.error("Search Error");
+        console.error("Search Error:", e);
     }
 }
 

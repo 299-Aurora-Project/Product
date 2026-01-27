@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Aurora Forecast Pro v. t1.5.wip1-fixing3</title>
+<title>Aurora Forecast Pro v. t1.5.wip1-fixing4</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon" href="icon.png">
@@ -168,7 +168,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Aurora Forecast Pro<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip1-fixing3</span></h1>
+            <h1>🌌 Aurora Forecast Pro<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip1-fixing4</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -331,7 +331,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
     // --- ここからDOMContentLoadedの中に追加 ---
-    const pushSwitch = document.getElementById("push-switch");
+    const pushSwitch = document.getElementById("notif-toggle");
 
     if (pushSwitch) {
         console.log("Switch element found! Ready for toggle."); // これが最初に出るか確認
@@ -785,6 +785,9 @@ async function handleNotifToggle(checkbox) {
     const targetName = document.getElementById("target-area-name");
     const isEnabled = checkbox.checked;
 
+// --- 0. 状態を保存（これを追加！） ---
+    localStorage.setItem('aurora_enabled', isEnabled);
+    
     // --- 1. UIの即時更新（描画を崩さないために最優先） ---
     if (isEnabled) {
         if (myLat === null) {
@@ -802,12 +805,22 @@ async function handleNotifToggle(checkbox) {
         targetDisplay.style.display = "none";
     }
 
-    // --- 2. 裏側でGASにデータを送信（ユーザーを待たせない） ---
-    // 通信に失敗してもスイッチが戻らないよう、try-catchで囲みます
+    // --- 2. 裏側でGASにデータを送信 ---
     try {
         const registration = await navigator.serviceWorker.ready;
-        const sub = await registration.pushManager.getSubscription();
+        // 既存の購読を確認
+        let sub = await registration.pushManager.getSubscription();
 
+        // 【重要】スイッチがONなのに購読がない場合は、新規作成する
+        if (!sub && isEnabled) {
+            console.log("No existing subscription found. Creating new one...");
+            sub = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(PUBLIC_KEY)
+            });
+        }
+
+    // 購読が存在する場合（または新規作成に成功した場合）のみ送信
         if (sub) {
             const payload = {
                 endpoint: sub.endpoint,
@@ -820,15 +833,19 @@ async function handleNotifToggle(checkbox) {
                 enabled: isEnabled
             };
 
-            // await fetch を使うが、この後にはUI処理がないので描画には響かない
+            console.log("Sending payload to GAS:", payload);
+
             await fetch(GAS_URL, {
                 method: 'POST',
+                mode: 'no-cors', // CORSエラー対策
                 body: JSON.stringify(payload)
             });
+            console.log("GAS sync complete.");
+        } else if (isEnabled) {
+            console.warn("Could not obtain subscription even after attempt.");
         }
     } catch (e) {
-        console.error("GASへの同期に失敗しました:", e);
-        // ここで alert を出すと描画が止まるので、console.log に留めるのがスムーズです
+    console.error("GASへの同期に失敗しました:", e);
     }
 
     // --- 3. 最後にアラート（以前の15ms遅延を継承） ---

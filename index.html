@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Aurora Forecast Pro v. t1.5.wip1-fixing2</title>
+<title>Aurora Forecast Pro v. t1.5.wip1-fixing3</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon" href="icon.png">
@@ -168,7 +168,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Aurora Forecast Pro<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip1-fixing2</span></h1>
+            <h1>🌌 Aurora Forecast Pro<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip1-fixing3</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -330,6 +330,28 @@ document.addEventListener('DOMContentLoaded', async () => {
             // スイッチの状態に合わせて必要な処理（UIの色の変更など）があればここで実行
         }
     }
+    // --- ここからDOMContentLoadedの中に追加 ---
+    const pushSwitch = document.getElementById("push-switch");
+
+    if (pushSwitch) {
+        console.log("Switch element found! Ready for toggle."); // これが最初に出るか確認
+
+        pushSwitch.addEventListener('change', async function() {
+            console.log("Switch toggled! Current state:", this.checked);
+
+            // 状態を保存
+            localStorage.setItem('aurora_enabled', this.checked);
+
+            if (this.checked) {
+                // スイッチON時にGAS送信関数を呼ぶ
+                const result = await subscribeUser();
+                console.log("Subscription result:", result);
+            }
+        });
+    } else {
+        console.error("Error: Element with ID 'push-switch' NOT found in HTML.");
+    }
+    // --- ここまで ---
 });
 
 // --- 通知関連 ---

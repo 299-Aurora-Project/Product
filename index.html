@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Aurora Forecast Pro v. t1.5.wip1-fixing</title>
+<title>Aurora Forecast Pro v. t1.5.wip1-fixing2</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon" href="icon.png">
@@ -168,7 +168,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Aurora Forecast Pro<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip1-fixing</span></h1>
+            <h1>🌌 Aurora Forecast Pro<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip1-fixing2</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -824,6 +824,35 @@ function triggerPushNotification(title, message, storageKey) { const today = new
 /* 実行ループ */
 setInterval(() => { if (myLat !== null) updateAll(); }, 900000);
 setInterval(() => { if (myLat !== null) runNotificationChecks(); }, 60000);
+
+
+// スイッチ（チェックボックス）の要素を取得
+const pushSwitch = document.getElementById("push-switch");
+
+if (pushSwitch) {
+    pushSwitch.addEventListener('change', async function() {
+        // 1. スイッチの状態をブラウザに保存
+        localStorage.setItem('aurora_enabled', this.checked);
+
+        if (this.checked) {
+            console.log("スイッチがONになりました。GASへの登録を開始します...");
+            // 2. GASへデータを送る関数を実行
+            const success = await subscribeUser();
+            
+            if (success) {
+                console.log("GASへの登録に成功しました！");
+            } else {
+                console.log("GASへの登録に失敗しました。");
+                // 失敗した場合はスイッチをオフに戻す
+                this.checked = false;
+                localStorage.setItem('aurora_enabled', false);
+            }
+        } else {
+            console.log("スイッチがOFFになりました。");
+            // オフにした時の処理（必要であれば購読解除など）
+        }
+    });
+}
 
 </script>
 </body>

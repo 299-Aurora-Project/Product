@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Aurora Forecast Pro v. t1.5.wip2</title>
+<title>Easy Aurora Forecast v. t1.5.wip2</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon" href="icon.png">
@@ -325,10 +325,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             await reverseGeocode(myLat, myLon);
         }
         updateAll();
-    } else {
-        // 保存データがない場合のみGPSを取得する（自動取得する場合）
-        // getLocation(); 
-    }
+    } 
 
     // 3. スイッチ状態とUIの復元
     const pushSwitch = document.getElementById("notif-toggle"); // IDを修正
@@ -922,4 +919,5 @@ function urlBase64ToUint8Array(base64String) {
 </script>
 </body>
 </html>
+
 

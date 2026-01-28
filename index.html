@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.5.wip9</title>
+<title>Easy Aurora Forecast v. t1.5.wip10</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon" href="icon.png">
@@ -168,7 +168,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip9</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip10</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -306,31 +306,51 @@ const PUBLIC_KEY = 'BAp0wnGuvaoZk_Q7Bn4H4DWAR2Zdi9juZECl10m290Ff9sAJqiaXepWYvGgb
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbzHlMINYWmdRDEre095SWeynr87LYb8Fs15pJrYqLwzzmYUf0O8gKsqCThS0X4NwZp-RQ/exec'; 
 
 let myLat = null, myLon = null, currentTotalScore = 0, lastAuroraProb = 0;
+let notifLat = null, notifLon = null, notifName = ""; // 通知用ロケーションを保持する変数
 let cachedAuroraData = null, map = null, auroraLayer = null, userMarker = null, cloudDataHourly = null;
 let searchTimer = null, lastScrollPos = 0;
 
 // --- 2. 初期化処理 (DOMContentLoaded) ---
+// --- 2. 初期化処理 (DOMContentLoaded) ---
 document.addEventListener('DOMContentLoaded', async () => {
+    // Service Worker 登録
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('sw.js').catch(console.error);
     }
 
+    // --- A. 「最後に表示していた場所」の復元 ---
     const savedLat = localStorage.getItem('aurora_myLat');
     const savedLon = localStorage.getItem('aurora_myLon');
-    const savedEnabled = localStorage.getItem('aurora_enabled') === 'true';
+    
+    // --- B. 「通知用に固定した場所」の復元 ---
+    notifLat = localStorage.getItem('aurora_notifLat') ? parseFloat(localStorage.getItem('aurora_notifLat')) : null;
+    notifLon = localStorage.getItem('aurora_notifLon') ? parseFloat(localStorage.getItem('aurora_notifLon')) : null;
+    notifName = localStorage.getItem('aurora_notifName') || "";
 
+    // --- C. 通知スイッチの状態と表示の復元 ---
+    const savedEnabled = localStorage.getItem('aurora_enabled') === 'true';
     const pushSwitch = document.getElementById("notif-toggle");
+    
     if (pushSwitch) {
         pushSwitch.checked = savedEnabled;
         pushSwitch.addEventListener('change', handleNotifToggleEvent);
     }
 
+    // 通知がONで、固定された場所があるならTarget Areaを表示
+    if (savedEnabled && notifName) {
+        const targetDisplay = document.getElementById("target-area-display");
+        const targetNameLabel = document.getElementById("target-area-name");
+        if (targetDisplay) targetDisplay.style.display = "block";
+        if (targetNameLabel) targetNameLabel.textContent = notifName;
+    }
+
+    // --- D. メイン画面の読み込み ---
     if (savedLat && savedLon) {
         myLat = parseFloat(savedLat);
         myLon = parseFloat(savedLon);
+        // メイン画面の地名を取得して更新
         await reverseGeocode(myLat, myLon);
         updateAll();
-        if (savedEnabled) document.getElementById("target-area-display").style.display = "block";
     }
 });
 
@@ -428,7 +448,12 @@ async function getLocation() {
 
 async function subscribeUser() {
     try {
-        if (myLat === null) return false;
+        // 通知用ロケーションがなければ、現在の場所を予備として使う
+        const targetLat = notifLat || myLat;
+        const targetLon = notifLon || myLon;
+        
+        if (targetLat === null) return false;
+
         const registration = await navigator.serviceWorker.ready;
         let sub = await registration.pushManager.getSubscription();
         if (!sub) {
@@ -443,7 +468,9 @@ async function subscribeUser() {
                 p256dh: btoa(String.fromCharCode.apply(null, new Uint8Array(sub.getKey('p256dh')))),
                 auth: btoa(String.fromCharCode.apply(null, new Uint8Array(sub.getKey('auth'))))
             },
-            lat: myLat, lon: myLon, enabled: document.getElementById("notif-toggle").checked
+            lat: targetLat, // 固定された緯度を送る
+            lon: targetLon, // 固定された経度を送る
+            enabled: document.getElementById("notif-toggle").checked
         };
         await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
         return true;
@@ -451,11 +478,34 @@ async function subscribeUser() {
 }
 
 async function handleNotifToggleEvent() {
-    localStorage.setItem('aurora_enabled', this.checked);
-    if (this.checked && myLat !== null) {
-        await subscribeUser();
-        document.getElementById("target-area-display").style.display = "block";
-        document.getElementById("target-area-name").textContent = document.getElementById("loc").textContent;
+    const isEnabled = this.checked;
+    localStorage.setItem('aurora_enabled', isEnabled);
+
+    if (isEnabled) {
+        if (myLat === null) {
+            alert("Please set a location first.");
+            this.checked = false;
+            return;
+        }
+
+        // ★スイッチを入れた「今の場所」を通知用として固定・保存
+        notifLat = myLat;
+        notifLon = myLon;
+        notifName = document.getElementById("loc").textContent;
+
+        localStorage.setItem('aurora_notifLat', notifLat);
+        localStorage.setItem('aurora_notifLon', notifLon);
+        localStorage.setItem('aurora_notifName', notifName);
+
+        const success = await subscribeUser(); // この中で通知用変数を送るよう修正（後述）
+        
+        if (success) {
+            document.getElementById("target-area-display").style.display = "block";
+            document.getElementById("target-area-name").textContent = notifName;
+            alert(`Notifications locked to: ${notifName}`);
+        } else {
+            this.checked = false;
+        }
     } else {
         document.getElementById("target-area-display").style.display = "none";
     }

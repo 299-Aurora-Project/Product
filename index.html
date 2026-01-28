@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.6.3</title>
+<title>Easy Aurora Forecast v. t1.6.4</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon" href="icon.png">
@@ -168,7 +168,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.6.3</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.6.4</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -587,13 +587,19 @@ async function checkOval() {
     if (map) drawAurora(data);
     
     let best = 0;
-    // ★ 常に「現在表示している場所(myLat, myLon)」で判定
+    // 検索した場所 (myLat, myLon) に基づいて確率を抽出
     data.coordinates.forEach(p => {
-        let diff = Math.abs(myLat - p[1]) + Math.abs(myLon - (p[0] > 180 ? p[0] - 360 : p[0]));
-        if (diff < 2) best = Math.max(best, p[2]);
+        // APIの経度は0-360なので、-180〜180に変換
+        let lon = p[0] > 180 ? p[0] - 360 : p[0];
+        let lat = p[1];
+        
+        // 緯度・経度ともに2度以内の地点の確率(p[2])をチェック
+        if (Math.abs(myLat - lat) < 2 && Math.abs(myLon - lon) < 2) {
+            best = Math.max(best, p[2]);
+        }
     });
     
-    lastAuroraProb = best;
+    lastAuroraProb = best; // ここが 0 になれば東京やマニラではスコアが下がるはず
     const el = document.getElementById("oval");
     el.textContent = best >= 10 ? "Near Oval" : "Outside";
     el.className = `badge ${best >= 10 ? 'high' : 'low'}`;
@@ -619,8 +625,21 @@ async function shortForecast() {
 }
 
 function calculateTotal() {
-    let score = (lastAuroraProb * 1.2) + (parseFloat(document.getElementById("kp").dataset.value) * 10);
-    if (parseInt(document.getElementById("cloud").dataset.value) > 85) score *= 0.1;
+    let kp = parseFloat(document.getElementById("kp").dataset.value) || 0;
+    let cloud = parseInt(document.getElementById("cloud").dataset.value) || 0;
+    
+    // 基本スコア
+    let score = (lastAuroraProb * 1.2) + (kp * 10);
+    
+    // 【重要】低緯度（東京やマニラなど）向けの補正
+    // オーロラ確率が極端に低い(オーロラ帯から遠い)場合は、Kpが高くてもスコアを大幅に下げる
+    if (lastAuroraProb < 5) {
+        score *= 0.1; 
+    }
+
+    // 雲量による減衰
+    if (cloud > 85) score *= 0.1;
+    
     currentTotalScore = score;
     const resEl = document.getElementById("result");
     resEl.textContent = score >= 70 ? "High" : (score >= 35 ? "Possible" : "Low");
@@ -731,6 +750,14 @@ function toggleData() {
     const isH = h.style.display !== "block";
     h.style.display = isH ? "block" : "none";
 }
+
+// --- 7. 定期実行タイマー (15分ごとに自動更新) ---
+// 15分 = 15分 * 60秒 * 1000ミリ秒 = 900,000ms
+setInterval(() => {
+    console.log("Auto-updating data...");
+    updateAll();
+}, 900000);
+
 </script>
 </body>
 </html>

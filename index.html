@@ -342,10 +342,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (typeof reverseGeocode === 'function') await reverseGeocode(myLat, myLon);
         if (typeof updateAll === 'function') updateAll();
 
-        console.log("✅ Location successfully restored from storage.");
-    	} else {
-        console.log("⚠️ No saved location found in storage.");
-    	}
+    	console.log("✅ Location successfully restored from storage.");
+	} else {
+    	console.log("⚠️ No saved location found in storage.");
+	}
 
     // --- スイッチの復元（前回と同じ） ---
     const pushSwitch = document.getElementById("notif-toggle");
@@ -952,5 +952,6 @@ function urlBase64ToUint8Array(base64String) {
 </script>
 </body>
 </html>
+
 
 

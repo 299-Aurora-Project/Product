@@ -628,22 +628,39 @@ function calculateTotal() {
     let kp = parseFloat(document.getElementById("kp").dataset.value) || 0;
     let cloud = parseInt(document.getElementById("cloud").dataset.value) || 0;
     
-    // 基本スコア
+    // 基本スコア：Kpの影響力を維持しつつ計算
     let score = (lastAuroraProb * 1.2) + (kp * 10);
     
-    // 【重要】低緯度（東京やマニラなど）向けの補正
-    // オーロラ確率が極端に低い(オーロラ帯から遠い)場合は、Kpが高くてもスコアを大幅に下げる
+    // 【低緯度補正をさらに厳格化】
+    // オーロラ確率が非常に低い（＝オーロラ帯から物理的に遠い）場所は
+    // Kpが多少高くても、オーロラ予報としてはほぼ0に固定する
     if (lastAuroraProb < 5) {
-        score *= 0.1; 
+        score *= 0.01; // 以前の0.1から0.01へ（さらに1/10に）
     }
 
-    // 雲量による減衰
+    // 雲量による減衰（85%以上なら大幅ダウン）
     if (cloud > 85) score *= 0.1;
     
-    currentTotalScore = score;
+    // --- 表示の調整 (< 1%, > 99%) ---
+    let displayScore = "";
+    if (score < 1) {
+        displayScore = "< 1%";
+    } else if (score > 99) {
+        displayScore = "> 99%";
+    } else {
+        displayScore = Math.round(score) + "%";
+    }
+
+    // 画面への表示
     const resEl = document.getElementById("result");
     resEl.textContent = score >= 70 ? "High" : (score >= 35 ? "Possible" : "Low");
     resEl.className = `badge badge-large ${score >= 70 ? 'high' : (score >= 35 ? 'mid' : 'low')}`;
+
+    // モーダルや詳細表示用の数値も更新
+    const pctEl = document.getElementById("score-pct");
+    if (pctEl) pctEl.textContent = displayScore;
+    
+    currentTotalScore = score; // 内部数値は計算用に保持
 }
 
 // --- 6. 地図・UI・ヘルパー ---
@@ -710,11 +727,20 @@ function setItemLoading(id, isLoading) {
 }
 
 function closeWelcome() { document.getElementById('welcome-overlay').style.display = 'none'; }
+
 function openModal() { 
-    document.getElementById("score-pct").textContent = Math.round(currentTotalScore) + "%";
+    let displayScore = "";
+    if (currentTotalScore < 1) {
+        displayScore = "< 1%";
+    } else if (currentTotalScore > 99) {
+        displayScore = "> 99%";
+    } else {
+        displayScore = Math.round(currentTotalScore) + "%";
+    }
+    
+    document.getElementById("score-pct").textContent = displayScore;
     document.getElementById("detailModal").style.display = "flex"; 
 }
-function closeModal() { document.getElementById("detailModal").style.display = "none"; }
 
 function urlBase64ToUint8Array(base64String) {
     const padding = '='.repeat((4 - base64String.length % 4) % 4);

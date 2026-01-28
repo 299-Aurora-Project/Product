@@ -673,6 +673,7 @@ async function reverseGeocode(lat, lon) {
         const fallback = lat.toFixed(2) + ", " + lon.toFixed(2);
         document.getElementById("loc").textContent = fallback;
         return fallback; // ★ エラー時も座標を名前として返す
+    }
 }
 
 function updateTimestamp(id) {

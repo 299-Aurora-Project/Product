@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.5.wip14</title>
+<title>Easy Aurora Forecast v. t1.5.wip15</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon" href="icon.png">
@@ -168,7 +168,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip14</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip15</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -320,6 +320,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // --- A. 「最後に表示していた場所」の復元 ---
     const savedLat = localStorage.getItem('aurora_myLat');
     const savedLon = localStorage.getItem('aurora_myLon');
+    const savedName = localStorage.getItem('aurora_myName');
     
     // --- B. 「通知用に固定した場所」の復元 ---
     notifLat = localStorage.getItem('aurora_notifLat') ? parseFloat(localStorage.getItem('aurora_notifLat')) : null;
@@ -335,7 +336,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         pushSwitch.addEventListener('change', handleNotifToggleEvent);
     }
 
-    // 通知がONで、固定された場所があるならTarget Areaを表示
     if (savedEnabled && notifName) {
         const targetDisplay = document.getElementById("target-area-display");
         const targetNameLabel = document.getElementById("target-area-name");
@@ -343,19 +343,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (targetNameLabel) targetNameLabel.textContent = notifName;
     }
 
-    // --- D. メイン画面の読み込み ---
+    // --- D. メイン画面の読み込み（ここでGPSは自動起動しません） ---
     if (savedLat && savedLon) {
         myLat = parseFloat(savedLat);
         myLon = parseFloat(savedLon);
-        const savedName = localStorage.getItem('aurora_myName'); // ★保存された名前を取得
         
         if (savedName) {
-            // 保存された名前があるなら、逆引きせずにそのまま表示
             document.getElementById("loc").textContent = savedName;
-            
             updateAll();
         } else {
-        // 保存された場所がない場合、勝手にGPSを動かさず、待機状態にする
+            // 名前がない場合のみ、座標から地名を1回だけ取得
+            await reverseGeocode(myLat, myLon);
+            updateAll();
+        }
+    } else {
         document.getElementById("loc").textContent = "Please set location";
     }
 });
@@ -687,7 +688,6 @@ function toggleData() {
 </script>
 </body>
 </html>
-
 
 
 

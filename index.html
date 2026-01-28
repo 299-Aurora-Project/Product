@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.5.wip12</title>
+<title>Easy Aurora Forecast v. t1.5.wip13</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon" href="icon.png">
@@ -168,7 +168,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip12</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip13</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -311,7 +311,6 @@ let cachedAuroraData = null, map = null, auroraLayer = null, userMarker = null, 
 let searchTimer = null, lastScrollPos = 0;
 
 // --- 2. 初期化処理 (DOMContentLoaded) ---
-// --- 2. 初期化処理 (DOMContentLoaded) ---
 document.addEventListener('DOMContentLoaded', async () => {
     // Service Worker 登録
     if ('serviceWorker' in navigator) {
@@ -353,11 +352,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (savedName) {
             // 保存された名前があるなら、逆引きせずにそのまま表示
             document.getElementById("loc").textContent = savedName;
+            
+            updateAll();
         } else {
-            // 名前がない場合（初回など）だけ逆引きする
-            await reverseGeocode(myLat, myLon);
-        }
-        updateAll();
+        // 保存された場所がない場合、勝手にGPSを動かさず、待機状態にする
+        document.getElementById("loc").textContent = "Please set location";
     }
 });
 
@@ -668,7 +667,11 @@ async function reverseGeocode(lat, lon) {
         const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=en`);
         const data = await res.json();
         document.getElementById("loc").textContent = (data.address.city || data.address.town || "Unknown") + ", " + data.address.country;
-    } catch (e) { document.getElementById("loc").textContent = lat.toFixed(2) + ", " + lon.toFixed(2); }
+        return name; // ★ 取得した名前を返り値として追加
+    } catch (e) { 
+        const fallback = lat.toFixed(2) + ", " + lon.toFixed(2);
+        document.getElementById("loc").textContent = fallback;
+        return fallback; // ★ エラー時も座標を名前として返す
 }
 
 function updateTimestamp(id) {

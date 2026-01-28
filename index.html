@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.5.wip10</title>
+<title>Easy Aurora Forecast v. t1.5.wip11</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon" href="icon.png">
@@ -168,7 +168,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip10</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip11</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -426,20 +426,20 @@ async function setLocation(lat, lon, name) {
     localStorage.setItem('aurora_myLat', lat);
     localStorage.setItem('aurora_myLon', lon);
     
-    // UI反映
-    if (document.getElementById("notif-toggle").checked) {
-        document.getElementById("target-area-display").style.display = "block";
-        document.getElementById("target-area-name").textContent = name;
-        await subscribeUser();
-    }
     updateAll();
 }
 
 async function getLocation() {
     setItemLoading('loc', true);
     navigator.geolocation.getCurrentPosition(async p => {
-        await setLocation(p.coords.latitude, p.coords.longitude, "Locating...");
-        await reverseGeocode(myLat, myLon);
+        myLat = p.coords.latitude;
+        myLon = p.coords.longitude;
+        localStorage.setItem('aurora_myLat', myLat);
+        localStorage.setItem('aurora_myLon', myLon);
+        
+        // 住所を取得してからメイン表示を更新
+        await reverseGeocode(myLat, myLon); 
+        updateAll();
     }, err => {
         console.error(err);
         setItemLoading('loc', false);
@@ -448,9 +448,10 @@ async function getLocation() {
 
 async function subscribeUser() {
     try {
-        // 通知用ロケーションがなければ、現在の場所を予備として使う
-        const targetLat = notifLat || myLat;
-        const targetLon = notifLon || myLon;
+        // スイッチがONなら、必ず「固定された場所」を優先して送る
+        const isEnabled = document.getElementById("notif-toggle").checked;
+        const targetLat = (isEnabled && notifLat !== null) ? notifLat : myLat;
+        const targetLon = (isEnabled && notifLon !== null) ? notifLon : myLon;
         
         if (targetLat === null) return false;
 
@@ -465,8 +466,9 @@ async function subscribeUser() {
         const payload = {
             endpoint: sub.endpoint,
             keys: {
-                p256dh: btoa(String.fromCharCode.apply(null, new Uint8Array(sub.getKey('p256dh')))),
-                auth: btoa(String.fromCharCode.apply(null, new Uint8Array(sub.getKey('auth'))))
+        // 先頭に "'" を付けて数式誤認を防止
+            p256dh: "'" + btoa(String.fromCharCode.apply(null, new Uint8Array(sub.getKey('p256dh')))),
+            auth: "'" + btoa(String.fromCharCode.apply(null, new Uint8Array(sub.getKey('auth'))))
             },
             lat: targetLat, // 固定された緯度を送る
             lon: targetLon, // 固定された経度を送る

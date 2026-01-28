@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.5.wip11</title>
+<title>Easy Aurora Forecast v. t1.5.wip12</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon" href="icon.png">
@@ -168,7 +168,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip11</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip12</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -348,8 +348,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (savedLat && savedLon) {
         myLat = parseFloat(savedLat);
         myLon = parseFloat(savedLon);
-        // メイン画面の地名を取得して更新
-        await reverseGeocode(myLat, myLon);
+        const savedName = localStorage.getItem('aurora_myName'); // ★保存された名前を取得
+        
+        if (savedName) {
+            // 保存された名前があるなら、逆引きせずにそのまま表示
+            document.getElementById("loc").textContent = savedName;
+        } else {
+            // 名前がない場合（初回など）だけ逆引きする
+            await reverseGeocode(myLat, myLon);
+        }
         updateAll();
     }
 });
@@ -431,6 +438,7 @@ async function setLocation(lat, lon, name) {
 
 async function getLocation() {
     setItemLoading('loc', true);
+    
     navigator.geolocation.getCurrentPosition(async p => {
         myLat = p.coords.latitude;
         myLon = p.coords.longitude;
@@ -439,10 +447,13 @@ async function getLocation() {
         
         // 住所を取得してからメイン表示を更新
         await reverseGeocode(myLat, myLon); 
+        // 取得した住所（reverseGeocode内で表示されたもの）を保存
+        localStorage.setItem('aurora_myName', document.getElementById("loc").textContent);
+        
         updateAll();
     }, err => {
         console.error(err);
-        setItemLoading('loc', false);
+        document.getElementById('loc').textContent = "Location Error";
     });
 }
 
@@ -630,7 +641,10 @@ function hideMapScreen() {
 
 function setItemLoading(id, isLoading) {
     const el = document.getElementById(id);
-    if (el && isLoading) el.innerHTML = '<i>...</i>';
+    if (el && isLoading) {
+        // 砂時計アイコン ⏳ と 斜体の Loading... をセット
+        el.innerHTML = '⏳ <i>Loading...</i>';
+    }
 }
 
 function closeWelcome() { document.getElementById('welcome-overlay').style.display = 'none'; }

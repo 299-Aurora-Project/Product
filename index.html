@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.6.9</title>
+<title>Easy Aurora Forecast v. t1.6.10</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon" href="icon.png">
@@ -171,7 +171,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.6.9</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.6.10</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -301,12 +301,12 @@ input:checked + .slider:before { transform: translateX(20px); }
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // --- 1. 定数とグローバル変数 ---
-const CORS = "https://corsproxy.io/?";
 const KP_URL = "https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json";
 const OVAL_URL = "https://services.swpc.noaa.gov/json/ovation_aurora_latest.json";
 const FORECAST_URL = "https://services.swpc.noaa.gov/text/3-day-forecast.txt";
 const PUBLIC_KEY = 'BAp0wnGuvaoZk_Q7Bn4H4DWAR2Zdi9juZECl10m290Ff9sAJqiaXepWYvGgbI7WOb9K3O0MOTG8TVi_hg_ovfEg';
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbzjEjP93XEuJRtGRq9s6l7BQkaupqkgvA1s_vUH3sUfnmyqjuVcC1aDEwk5TBe0hd1Wkw/exec'; 
+const GAS_PROXY_URL = "https://script.google.com/macros/s/AKfycbzjEjP93XEuJRtGRq9s6l7BQkaupqkgvA1s_vUH3sUfnmyqjuVcC1aDEwk5TBe0hd1Wkw/exec?url=";
+const CORS = GAS_PROXY_URL;
 
 let myLat = null, myLon = null, currentTotalScore = 0, lastAuroraProb = 0;
 let notifLat = null, notifLon = null, notifName = ""; // 通知用ロケーションを保持する変数
@@ -382,6 +382,7 @@ async function searchCity() {
     try {
         const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en`);
         const data = await res.json();
+        if (!data) return; // データがなければ処理を中断
         
         if (data.results?.length > 0) {
             const r = data.results[0];
@@ -408,6 +409,7 @@ function handleCityInput(el) {
         try {
             const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(val)}&count=5&language=en`);
             const data = await res.json();
+            if (!data) return; // データがなければ処理を中断
             showAutocomplete(data.results);
         } catch(e){ console.error(e); }
     }, 300);
@@ -577,6 +579,7 @@ async function updateAll() {
 async function getKp() {
     const res = await fetch(CORS + encodeURIComponent(KP_URL));
     const data = await res.json();
+    if (!data) return; // データがなければ処理を中断
     const val = parseFloat(data[data.length - 1][1]);
     const el = document.getElementById("kp");
     el.textContent = val.toFixed(1); el.dataset.value = val;
@@ -594,6 +597,7 @@ async function fetchKp3DayForecast() {
 async function checkOval() {
     const res = await fetch(CORS + encodeURIComponent(OVAL_URL));
     const data = await res.json();
+    if (!data) return; // データがなければ処理を中断
     cachedAuroraData = data;
     if (map) drawAurora(data);
     
@@ -621,6 +625,7 @@ async function getCloud() {
     // ★ 常にメイン画面の座標で天気を取得
     const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${myLat}&longitude=${myLon}&current=cloudcover&hourly=cloudcover`);
     const data = await res.json();
+    if (!data) return; // データがなければ処理を中断
     cloudDataHourly = data.hourly.cloudcover;
     const val = data.current.cloudcover;
     const el = document.getElementById("cloud");
@@ -768,6 +773,7 @@ async function reverseGeocode(lat, lon) {
     try {
         const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=en`);
         const data = await res.json();
+        if (!data) return; // データがなければ処理を中断
         // ★ 変数 'name' をここで定義
         const name = (data.address.city || data.address.town || "Unknown") + ", " + data.address.country;
         document.getElementById("loc").textContent = name;

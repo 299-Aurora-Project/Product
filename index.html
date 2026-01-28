@@ -337,7 +337,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             // もし変換関数がない場合のみ座標を出す
             if (locDisplay) locDisplay.textContent = `Lat: ${myLat.toFixed(2)}, Lon: ${myLon.toFixed(2)}`;
             if (targetName) targetName.textContent = `Lat: ${myLat.toFixed(2)}, Lon: ${myLon.toFixed(2)}`;
-        }
+
 
         if (typeof updateAll === 'function') updateAll();
         console.log("✅ Location fully restored with city name.");
@@ -972,6 +972,7 @@ function urlBase64ToUint8Array(base64String) {
 </script>
 </body>
 </html>
+
 
 
 

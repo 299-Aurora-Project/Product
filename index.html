@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.5.wip8</title>
+<title>Easy Aurora Forecast v. t1.5.wip7</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon" href="icon.png">
@@ -168,7 +168,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip8</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip7</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -207,7 +207,7 @@ input:checked + .slider:before { transform: translateX(20px); }
     	<div style="display: flex; align-items: center; gap: 10px;">
         	<span class="switch-label">Notification</span>
         	<label class="switch">
-            	<input type="checkbox" id="notif-toggle" onchange="handleNotifToggle(this); event.stopPropagation();">
+            	<input type="checkbox" id="notif-toggle">
             	<span class="slider"></span>
         	</label>
     	</div>
@@ -321,7 +321,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (locDisplay) {
             locDisplay.textContent = `Lat: ${myLat.toFixed(2)}, Lon: ${myLon.toFixed(2)}`;
         }
-
+        
+        // --- 【重要：ここを追加】Target Areaの枠を強制的に表示する ---
+        const targetDisplay = document.getElementById("target-area-display");
+        if (targetDisplay) {
+            targetDisplay.style.display = "block"; // 枠を見せる
+            const targetName = document.getElementById("target-area-name");
+            if (targetName) targetName.textContent = locDisplay.textContent; // 地名を同期
+        }
+        // --------------------------------------------------------
+        
         // 住所の復元とスコア計算
         if (typeof reverseGeocode === 'function') await reverseGeocode(myLat, myLon);
         if (typeof updateAll === 'function') updateAll();
@@ -662,7 +671,7 @@ async function searchCity() {
                 console.log("✅ GAS Sync Complete");
             } catch (syncErr) {
                 console.error("❌ GAS Sync Failed but continuing:", syncErr);
-            }
+        }
 
             // 4. UIの更新
             updateAll();

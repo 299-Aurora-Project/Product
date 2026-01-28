@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.6.1</title>
+<title>Easy Aurora Forecast v. t1.6.2</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon" href="icon.png">
@@ -168,7 +168,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.6.1</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.6.2</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -563,11 +563,14 @@ async function checkOval() {
     const data = await res.json();
     cachedAuroraData = data;
     if (map) drawAurora(data);
+    
     let best = 0;
+    // ★ 常に「現在表示している場所(myLat, myLon)」で判定
     data.coordinates.forEach(p => {
         let diff = Math.abs(myLat - p[1]) + Math.abs(myLon - (p[0] > 180 ? p[0] - 360 : p[0]));
         if (diff < 2) best = Math.max(best, p[2]);
     });
+    
     lastAuroraProb = best;
     const el = document.getElementById("oval");
     el.textContent = best >= 10 ? "Near Oval" : "Outside";
@@ -575,12 +578,15 @@ async function checkOval() {
 }
 
 async function getCloud() {
+    if (myLat === null) return;
+    // ★ 常にメイン画面の座標で天気を取得
     const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${myLat}&longitude=${myLon}&current=cloudcover&hourly=cloudcover`);
     const data = await res.json();
     cloudDataHourly = data.hourly.cloudcover;
     const val = data.current.cloudcover;
     const el = document.getElementById("cloud");
-    el.textContent = val + "%"; el.dataset.value = val;
+    el.textContent = val + "%"; 
+    el.dataset.value = val;
     el.className = `badge ${val <= 20 ? 'high' : (val <= 60 ? 'mid' : 'low')}`;
 }
 

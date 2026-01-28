@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.5.wip7</title>
+<title>Easy Aurora Forecast v. t1.5.wip8</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon" href="icon.png">
@@ -168,7 +168,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip7</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip8</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -639,6 +639,7 @@ function formatProbability(s) { const r = Math.round(s); return (r <= 0 ? "< 1" 
 
 // 場所を確定させている関数
 async function searchCity() {
+    console.log("--- searchCity function started ---"); // ← これを追加
     const cityInput = document.getElementById("cityInput");
     const city = cityInput.value.trim();
     if (!city) return;
@@ -666,12 +667,12 @@ async function searchCity() {
             
             // 3. スプレッドシートへ即座に送信
            try {
-                console.log("Attempting GAS Sync...");
+                console.log("Attempting GAS Sync to GAS...");
                 await subscribeUser(); 
                 console.log("✅ GAS Sync Complete");
             } catch (syncErr) {
                 console.error("❌ GAS Sync Failed but continuing:", syncErr);
-        }
+            }
 
             // 4. UIの更新
             updateAll();

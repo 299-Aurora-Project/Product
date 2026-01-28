@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.5.wip8</title>
+<title>Easy Aurora Forecast v. t1.5.wgpt1</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon" href="icon.png">
@@ -168,7 +168,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip8</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.gpt1</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -304,76 +304,83 @@ const FORECAST_URL = "https://services.swpc.noaa.gov/text/3-day-forecast.txt";
 // 前回の設定を記憶した状態で起動
 // 読み込む（ページ起動時）
 document.addEventListener('DOMContentLoaded', async () => {
+
     // 1. 保存された値をコンソールに出して確認
     const savedLat = localStorage.getItem('aurora_myLat');
     const savedLon = localStorage.getItem('aurora_myLon');
     console.log("LocalStorage Data Check:", { savedLat, savedLon });
-    
-    console.log("LocalStorage Data Check:", { savedLat, savedLon }); // ここで値が出ているか確認
 
     // 2. 保存データがある場合、何が何でもそれを優先する
     if (savedLat && savedLon && savedLat !== "0" && savedLon !== "0") {
+
         myLat = parseFloat(savedLat);
         myLon = parseFloat(savedLon);
 
         // UI表示用の要素を取得
         const targetDisplay = document.getElementById("target-area-display");
         const targetName = document.getElementById("target-area-name");
-        
         const locDisplay = document.getElementById('loc');
+
         if (targetDisplay) targetDisplay.style.display = "block"; // 「枠」を表示
 
         // 地名の復元（これを最優先で実行して、終わったら画面に反映）
         if (typeof reverseGeocode === 'function') {
-            await reverseGeocode(myLat, myLon); // 取得後の文字をセット(これが終わると locDisplay.textContent が都市名に書き換わります)
-            
+            await reverseGeocode(myLat, myLon);// 取得後の文字をセット(これが終わると locDisplay.textContent が都市名に書き換わる)
+
             if (targetName && locDisplay) {
                 targetName.textContent = locDisplay.textContent;
             }
         } else {
             // もし変換関数がない場合のみ座標を出す
-            if (locDisplay) locDisplay.textContent = `Lat: ${myLat.toFixed(2)}, Lon: ${myLon.toFixed(2)}`;
-            if (targetName) targetName.textContent = `Lat: ${myLat.toFixed(2)}, Lon: ${myLon.toFixed(2)}`;
+            const text = `Lat: ${myLat.toFixed(2)}, Lon: ${myLon.toFixed(2)}`;
+            if (locDisplay) locDisplay.textContent = text;
+            if (targetName) targetName.textContent = text;
+        }
 
-        if (typeof updateAll === 'function') updateAll();
-        console.log("✅ Location fully restored with city name.");
-    }
-        // ----------------------------
-
-        if (typeof reverseGeocode === 'function') await reverseGeocode(myLat, myLon);
-        if (typeof updateAll === 'function') updateAll();
-
-        // --------------------------------------------------------
-        
+        // ⭐ ここは1回だけ！
         // 住所の復元とスコア計算
-        if (typeof reverseGeocode === 'function') await reverseGeocode(myLat, myLon);
         if (typeof updateAll === 'function') updateAll();
 
         console.log("✅ Location successfully restored from storage.");
+
     } else {
         console.log("⚠️ No saved location found in storage.");
     }
 
-    // --- スイッチの復元（前回と同じ） ---
+
+    // ================= 通知トグル復元 =================
+
     const pushSwitch = document.getElementById("notif-toggle");
     const savedEnabled = localStorage.getItem('aurora_enabled');
+
+    // 4. イベントリスナーの設定
     if (pushSwitch && savedEnabled !== null) {
         pushSwitch.checked = (savedEnabled === 'true');
         if (pushSwitch.checked) {
-            document.getElementById("target-area-display").style.display = "block";
+            const targetDisplay = document.getElementById("target-area-display");
+            if (targetDisplay) targetDisplay.style.display = "block";
         }
     }
 
-    // 4. イベントリスナーの設定
     if (pushSwitch) {
         console.log("Switch element found! Ready for toggle.");
-        pushSwitch.addEventListener('change', async function() {
+
+        pushSwitch.addEventListener('change', async function () {
+
             console.log("Switch toggled! Current state:", this.checked);
             localStorage.setItem('aurora_enabled', this.checked);
 
             if (this.checked) {
-                const result = await subscribeUser();
-                console.log("Subscription result:", result);
+                const registration = await navigator.serviceWorker.ready;
+
+                let subscription = await registration.pushManager.getSubscription();
+
+                if (!subscription) {
+                    subscription = await subscribeUser(registration);
+                }
+
+                console.log("Subscription result:", subscription);
+
             } else {
                 // OFFにした時はターゲット表示を隠す
                 const targetDisplay = document.getElementById("target-area-display");
@@ -381,7 +388,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
     }
+
 });
+
 
 
 
@@ -411,8 +420,7 @@ if ('serviceWorker' in navigator) {
 async function subscribeUser() {
     try {
         console.log("Starting subscribeUser...");
-        const registration = await navigator.serviceWorker.ready;
-        const sub = await registration.pushManager.subscribe({
+        return await registration.pushManager.subscribe({
             userVisibleOnly: true,
             applicationServerKey: urlBase64ToUint8Array(PUBLIC_KEY)
         });
@@ -472,7 +480,11 @@ async function testNotification() {
     }
 
     if (permission === "granted") {
-        const isSaved = await subscribeUser();
+        const isSaved = await navigator.serviceWorker.ready;
+        let subscription = await registration.pushManager.getSubscription();
+        if (!subscription) {
+            subscription = await subscribeUser(registration);
+        }
         if (isSaved) {
             // 2. 保存に成功したらGASに「自分へのテスト通知」を依頼する
             await fetch(GAS_URL + "?action=test", { mode: 'no-cors' });
@@ -581,6 +593,9 @@ async function getLocation() {
         localStorage.setItem('aurora_myLon', myLon);
 
         await reverseGeocode(myLat, myLon);
+        
+        await syncLocationToGAS();   // 位置が確定した瞬間に GA送信
+
         updateAll();
     }, err => {
         // ...エラー処理
@@ -689,12 +704,17 @@ async function searchCity() {
             // 2. ブラウザに保存（リロード対策, キー名を統一）
             localStorage.setItem('aurora_myLat', myLat.toString());
             localStorage.setItem('aurora_myLon', myLon.toString());
+            await syncLocationToGAS();   // 位置が確定した瞬間に GA送信
             console.log("✅ Storage Saved with manual location:", myLat, myLon);
             
             // 3. スプレッドシートへ即座に送信
            try {
                 console.log("Attempting GAS Sync to GAS...");
-                await subscribeUser(); 
+                const registration = await navigator.serviceWorker.ready;
+                let subscription = await registration.pushManager.getSubscription();
+                if (!subscription) {
+                    subscription = await subscribeUser(registration);
+                }
                 console.log("✅ GAS Sync Complete");
             } catch (syncErr) {
                 console.error("❌ GAS Sync Failed but continuing:", syncErr);
@@ -728,6 +748,29 @@ async function searchCity() {
         console.error("Search Error:", e);
     }
 }
+
+async function syncLocationToGAS() {
+    if (myLat == null || myLon == null) return;
+
+    const payload = {
+        lat: myLat,
+        lon: myLon,
+        enabled: false   // 通知とは別管理
+    };
+
+    try {
+        await fetch(GAS_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            body: JSON.stringify(payload)
+        });
+        console.log("📡 Location synced to GAS");
+    } catch (e) {
+        console.error("GAS sync failed", e);
+    }
+}
+
+
 
 
 function handleCityInput(el) {
@@ -967,6 +1010,19 @@ function urlBase64ToUint8Array(base64String) {
     }
     return outputArray;
 }
+
+let appInitialized = false;
+
+function initAppOnce() {
+    if (appInitialized) return;
+    appInitialized = true;
+
+    initMap();
+    initPush();
+    initUI();
+}
+
+document.addEventListener("DOMContentLoaded", initAppOnce);
 
 </script>
 </body>

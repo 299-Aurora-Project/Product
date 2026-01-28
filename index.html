@@ -322,13 +322,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             locDisplay.textContent = `Lat: ${myLat.toFixed(2)}, Lon: ${myLon.toFixed(2)}`;
         }
         
-        // --- 【重要：ここを追加】Target Areaの枠を強制的に表示する ---
+        // --- ここが UI 表示の鍵です ---
         const targetDisplay = document.getElementById("target-area-display");
         if (targetDisplay) {
-            targetDisplay.style.display = "block"; // 枠を見せる
+            targetDisplay.style.display = "block"; // これで枠を表示する
             const targetName = document.getElementById("target-area-name");
-            if (targetName) targetName.textContent = locDisplay.textContent; // 地名を同期
+            if (targetName) {
+                targetName.textContent = locDisplay ? locDisplay.textContent : "Restored Location";
+            }
         }
+        // ----------------------------
+
+        if (typeof reverseGeocode === 'function') await reverseGeocode(myLat, myLon);
+        if (typeof updateAll === 'function') updateAll();
+    }
         // --------------------------------------------------------
         
         // 住所の復元とスコア計算

@@ -667,7 +667,9 @@ async function reverseGeocode(lat, lon) {
     try {
         const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=en`);
         const data = await res.json();
-        document.getElementById("loc").textContent = (data.address.city || data.address.town || "Unknown") + ", " + data.address.country;
+        // ★ 変数 'name' をここで定義
+        const name = (data.address.city || data.address.town || "Unknown") + ", " + data.address.country;
+        document.getElementById("loc").textContent = name;
         return name; // ★ 取得した名前を返り値として追加
     } catch (e) { 
         const fallback = lat.toFixed(2) + ", " + lon.toFixed(2);

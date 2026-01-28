@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.5.wip15</title>
+<title>Easy Aurora Forecast v. t1.6.1</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon" href="icon.png">
@@ -168,7 +168,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip15</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.6.1</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -624,8 +624,23 @@ function drawAurora(data) {
 
 function updateMapMarker() {
     if (!map || myLat === null) return;
-    if (userMarker) userMarker.remove();
-    userMarker = L.circleMarker([myLat, myLon], { color: '#00ffff', radius: 8 }).addTo(map);
+    
+    const pos = [myLat, myLon];
+    
+    // すでにマーカーがある場合は位置移動だけ（再作成しない）
+    if (userMarker) {
+        userMarker.setLatLng(pos);
+        return;
+    }
+
+    // 初回作成時のスタイル設定
+    userMarker = L.circleMarker(pos, { 
+        fillColor: '#00ffff', // 鮮やかなシアン
+        radius: 8, 
+        stroke: false,        // 枠線をオフ
+        fillOpacity: 1,       // 完全に不透明にして目立たせる
+        pane: 'markerPane'    // 標準のマーカー用ペイン（最前面付近）を指定
+    }).addTo(map);
 }
 
 function showMapScreen() {

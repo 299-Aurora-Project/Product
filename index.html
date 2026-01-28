@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.5.wip8</title>
+<title>Easy Aurora Forecast v. t1.5.wip9</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon" href="icon.png">
@@ -168,7 +168,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip8</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip9</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -334,7 +334,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
-// --- 3. メイン関数：searchCity (HTMLの Set ボタンから呼ばれる) ---
+// --- 3. 検索・入力関連 (searchCity, handleCityInput, closeAllLists) ---
 async function searchCity() {
     console.log("--- searchCity function started ---");
     const cityInput = document.getElementById("cityInput");
@@ -347,30 +347,86 @@ async function searchCity() {
         
         if (data.results?.length > 0) {
             const r = data.results[0];
-            myLat = r.latitude;
-            myLon = r.longitude;
-
-            document.getElementById("loc").textContent = `${r.name}, ${r.country}`;
-            localStorage.setItem('aurora_myLat', myLat);
-            localStorage.setItem('aurora_myLon', myLon);
-            
-            // 通知設定がONならGASに送信
-            if (document.getElementById("notif-toggle").checked) {
-                await subscribeUser();
-            }
-            
-            updateAll();
+            await setLocation(r.latitude, r.longitude, `${r.name}, ${r.country}`);
             cityInput.value = "";
-            console.log("✅ searchCity process completed");
+            closeAllLists();
         }
     } catch (e) {
         console.error("Search Error:", e);
     }
 }
 
-// --- 4. GAS送信関数 ---
+function handleCityInput(el) {
+    const val = el.value.trim();
+    document.getElementById("btn-search").disabled = val.length === 0;
+
+    clearTimeout(searchTimer);
+    if (val.length < 2) {
+        closeAllLists();
+        return;
+    }
+
+    searchTimer = setTimeout(async () => {
+        try {
+            const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(val)}&count=5&language=en`);
+            const data = await res.json();
+            showAutocomplete(data.results);
+        } catch(e){ console.error(e); }
+    }, 300);
+}
+
+function showAutocomplete(results) {
+    const list = document.getElementById("autocomplete-list");
+    list.innerHTML = "";
+    if (!results) return;
+
+    results.forEach(res => {
+        const item = document.createElement("div");
+        item.className = "autocomplete-item";
+        item.innerHTML = `<strong>${res.name}</strong>, ${res.country}`;
+        item.onmousedown = async (e) => {
+            e.preventDefault();
+            await setLocation(res.latitude, res.longitude, `${res.name}, ${res.country}`);
+            document.getElementById("cityInput").value = "";
+            closeAllLists();
+        };
+        list.appendChild(item);
+    });
+}
+
+function closeAllLists() {
+    const list = document.getElementById("autocomplete-list");
+    if (list) list.innerHTML = "";
+}
+
+// --- 4. 位置設定・GAS同期 ---
+async function setLocation(lat, lon, name) {
+    myLat = lat; myLon = lon;
+    document.getElementById("loc").textContent = name;
+    localStorage.setItem('aurora_myLat', lat);
+    localStorage.setItem('aurora_myLon', lon);
+    
+    // UI反映
+    if (document.getElementById("notif-toggle").checked) {
+        document.getElementById("target-area-display").style.display = "block";
+        document.getElementById("target-area-name").textContent = name;
+        await subscribeUser();
+    }
+    updateAll();
+}
+
+async function getLocation() {
+    setItemLoading('loc', true);
+    navigator.geolocation.getCurrentPosition(async p => {
+        await setLocation(p.coords.latitude, p.coords.longitude, "Locating...");
+        await reverseGeocode(myLat, myLon);
+    }, err => {
+        console.error(err);
+        setItemLoading('loc', false);
+    });
+}
+
 async function subscribeUser() {
-    console.log("Attempting GAS Sync...");
     try {
         if (myLat === null) return false;
         const registration = await navigator.serviceWorker.ready;
@@ -390,43 +446,36 @@ async function subscribeUser() {
             lat: myLat, lon: myLon, enabled: document.getElementById("notif-toggle").checked
         };
         await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
-        console.log("✅ GAS Sync Success");
         return true;
-    } catch (e) {
-        console.error("❌ GAS Sync Failed:", e);
-        return false;
-    }
+    } catch (e) { return false; }
 }
 
-// --- 5. 通知スイッチのイベントハンドラ ---
 async function handleNotifToggleEvent() {
     localStorage.setItem('aurora_enabled', this.checked);
-    if (this.checked) {
-        if (myLat === null) {
-            alert("Please set a location first.");
-            this.checked = false;
-            return;
-        }
-        const success = await subscribeUser();
-        if (success) {
-            document.getElementById("target-area-display").style.display = "block";
-            document.getElementById("target-area-name").textContent = document.getElementById("loc").textContent;
-        } else {
-            this.checked = false;
-        }
+    if (this.checked && myLat !== null) {
+        await subscribeUser();
+        document.getElementById("target-area-display").style.display = "block";
+        document.getElementById("target-area-name").textContent = document.getElementById("loc").textContent;
     } else {
         document.getElementById("target-area-display").style.display = "none";
     }
 }
 
-// --- 6. データ取得・計算ロジック ---
+// --- 5. データ取得・予報 ---
 async function updateAll() {
     if (myLat === null) return;
+    const btn = document.getElementById('btn-update-all');
+    if(btn) btn.classList.add('loading-btn');
+    ['kp','oval','cloud','result'].forEach(id => setItemLoading(id, true));
+
     try {
-        await Promise.all([getKp(), fetchKp3DayForecast(), checkOval(), getCloud(), shortForecast()]);
+        await Promise.all([getKp(), fetchKp3DayForecast(), checkOval(), getCloud()]);
+        await shortForecast();
         calculateTotal();
         updateTimestamp('time-update-all');
-    } catch (e) { console.error(e); }
+    } finally {
+        if(btn) btn.classList.remove('loading-btn');
+    }
 }
 
 async function getKp() {
@@ -435,16 +484,15 @@ async function getKp() {
     const val = parseFloat(data[data.length - 1][1]);
     const el = document.getElementById("kp");
     el.textContent = val.toFixed(1); el.dataset.value = val;
+    el.className = `badge ${val >= 5 ? 'high' : (val >= 3 ? 'mid' : 'low')}`;
     return val;
 }
 
 async function fetchKp3DayForecast() {
-    try {
-        const res = await fetch(CORS + encodeURIComponent(FORECAST_URL));
-        const text = await res.text();
-        const match = text.match(/NOAA Kp index breakdown[\s\S]*?(?=\n[A-Z]|$)/i);
-        document.getElementById("kpForecast").innerText = match ? match[0].trim() : "Updating...";
-    } catch(e) {}
+    const res = await fetch(CORS + encodeURIComponent(FORECAST_URL));
+    const text = await res.text();
+    const match = text.match(/NOAA Kp index breakdown[\s\S]*?(?=\n[A-Z]|$)/i);
+    document.getElementById("kpForecast").innerText = match ? match[0].trim() : "Updating...";
 }
 
 async function checkOval() {
@@ -458,7 +506,9 @@ async function checkOval() {
         if (diff < 2) best = Math.max(best, p[2]);
     });
     lastAuroraProb = best;
-    document.getElementById("oval").textContent = best >= 10 ? "Near Oval" : "Outside";
+    const el = document.getElementById("oval");
+    el.textContent = best >= 10 ? "Near Oval" : "Outside";
+    el.className = `badge ${best >= 10 ? 'high' : 'low'}`;
 }
 
 async function getCloud() {
@@ -466,27 +516,27 @@ async function getCloud() {
     const data = await res.json();
     cloudDataHourly = data.hourly.cloudcover;
     const val = data.current.cloudcover;
-    document.getElementById("cloud").textContent = val + "%";
-    document.getElementById("cloud").dataset.value = val;
+    const el = document.getElementById("cloud");
+    el.textContent = val + "%"; el.dataset.value = val;
+    el.className = `badge ${val <= 20 ? 'high' : (val <= 60 ? 'mid' : 'low')}`;
 }
 
 async function shortForecast() {
     if (!cloudDataHourly) return;
     const hr = new Date().getHours();
-    let html = `<div>🕒 In 3h: ${cloudDataHourly[hr+3] || 0}%</div>`;
-    html += `<div>📅 Tomorrow: ${cloudDataHourly[hr+24] || 0}%</div>`;
-    document.getElementById("forecast").innerHTML = html;
+    document.getElementById("forecast").innerHTML = `<div>🕒 In 3h: ${cloudDataHourly[hr+3] || 0}%</div><div>📅 Tomorrow: ${cloudDataHourly[hr+24] || 0}%</div>`;
 }
 
 function calculateTotal() {
     let score = (lastAuroraProb * 1.2) + (parseFloat(document.getElementById("kp").dataset.value) * 10);
     if (parseInt(document.getElementById("cloud").dataset.value) > 85) score *= 0.1;
+    currentTotalScore = score;
     const resEl = document.getElementById("result");
     resEl.textContent = score >= 70 ? "High" : (score >= 35 ? "Possible" : "Low");
     resEl.className = `badge badge-large ${score >= 70 ? 'high' : (score >= 35 ? 'mid' : 'low')}`;
 }
 
-// --- 7. 地図描画ロジック ---
+// --- 6. 地図・UI・ヘルパー ---
 function initMap() {
     if (map) return;
     map = L.map('map').setView([myLat || 70, myLon || 0], 3);
@@ -503,8 +553,7 @@ function drawAurora(data) {
         if (p[2] > 10) {
             let baseLon = p[0] > 180 ? p[0] - 360 : p[0];
             L.rectangle([[p[1], baseLon], [p[1] + 2, baseLon + 2]], {
-                color: p[2] > 50 ? '#ff4500' : '#00ff00',
-                weight: 0, fillOpacity: p[2] / 100
+                color: p[2] > 50 ? '#ff4500' : '#00ff00', weight: 0, fillOpacity: p[2] / 100
             }).addTo(auroraLayer);
         }
     });
@@ -527,9 +576,16 @@ function hideMapScreen() {
     document.getElementById('home-screen').style.display = 'block';
 }
 
-// --- 8. その他ヘルパー ---
+function setItemLoading(id, isLoading) {
+    const el = document.getElementById(id);
+    if (el && isLoading) el.innerHTML = '<i>...</i>';
+}
+
 function closeWelcome() { document.getElementById('welcome-overlay').style.display = 'none'; }
-function openModal() { document.getElementById("detailModal").style.display = "flex"; }
+function openModal() { 
+    document.getElementById("score-pct").textContent = Math.round(currentTotalScore) + "%";
+    document.getElementById("detailModal").style.display = "flex"; 
+}
 function closeModal() { document.getElementById("detailModal").style.display = "none"; }
 
 function urlBase64ToUint8Array(base64String) {
@@ -552,6 +608,12 @@ async function reverseGeocode(lat, lon) {
 function updateTimestamp(id) {
     const el = document.getElementById(id);
     if (el) el.textContent = `Last Update: ${new Date().toLocaleTimeString()}`;
+}
+
+function toggleData() {
+    const h = document.getElementById("hidden-data");
+    const isH = h.style.display !== "block";
+    h.style.display = isH ? "block" : "none";
 }
 </script>
 </body>

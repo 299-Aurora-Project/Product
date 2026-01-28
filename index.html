@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.5.wip6</title>
+<title>Easy Aurora Forecast v. t1.5.wip7</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon" href="icon.png">
@@ -168,7 +168,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip6</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip7</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -308,6 +308,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const savedLat = localStorage.getItem('aurora_myLat');
     const savedLon = localStorage.getItem('aurora_myLon');
     console.log("LocalStorage Data Check:", { savedLat, savedLon });
+    
+    console.log("Raw Storage Data:", sLat, sLon); // ここで値が出ているか確認
 
     // 2. 保存データがある場合、何が何でもそれを優先する
     if (savedLat && savedLon && savedLat !== "0" && savedLon !== "0") {
@@ -323,7 +325,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // 住所の復元とスコア計算
         if (typeof reverseGeocode === 'function') await reverseGeocode(myLat, myLon);
         if (typeof updateAll === 'function') updateAll();
-        
+
         console.log("✅ Location successfully restored from storage.");
     } else {
         console.log("⚠️ No saved location found in storage.");
@@ -396,7 +398,10 @@ async function subscribeUser() {
         const payload = {
             endpoint: sub.endpoint,
             keys: {
-                p256dh: btoa(String.fromCharCode.apply(null, new Uint8Array(sub.getKey('p256dh')))),
+                // 先頭に "'" を付けて数式誤認を防止
+        		p256dh: "'" + btoa(String.fromCharCode.apply(null, new Uint8Array(sub.getKey('p256dh')))),
+        		auth: "'" + btoa(String.fromCharCode.apply(null, new Uint8Array(sub.getKey('auth'))))
+    },p256dh: btoa(String.fromCharCode.apply(null, new Uint8Array(sub.getKey('p256dh')))),
                 auth: btoa(String.fromCharCode.apply(null, new Uint8Array(sub.getKey('auth'))))
             },
             lat: myLat,
@@ -644,15 +649,13 @@ async function searchCity() {
             myLon = r.longitude;
             document.getElementById("loc").textContent = `${r.name}, ${r.country}`;
             
-            // 2. ブラウザに保存（リロード対策）
-            localStorage.setItem('aurora_myLat', myLat);
-            localStorage.setItem('aurora_myLon', myLon);
+            // 2. ブラウザに保存（リロード対策, キー名を統一）
+            localStorage.setItem('aurora_myLat', myLat.toString());
+            localStorage.setItem('aurora_myLon', myLon.toString());
             console.log("Storage updated with manual location:", myLat, myLon);
             
             // 3. スプレッドシートへ即座に送信
-            if (typeof subscribeUser === 'function') {
-                subscribeUser();
-            }
+            subscribeUser();
 
             // 4. UIの更新
             updateAll();

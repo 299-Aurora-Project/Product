@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.6.5</title>
+<title>Easy Aurora Forecast v. t1.6.6</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon" href="icon.png">
@@ -158,17 +158,18 @@ input:checked + .slider:before { transform: translateX(20px); }
 </head>
 <body onkeydown="closeWelcome()" onclick="closeWelcome(); closeAllLists();">
 
-<div id="welcome-overlay">
-    <div class="arrow-container">
-        <div class="thin-arrow">↑</div><div class="thin-arrow">↑</div><div class="thin-arrow">↑</div>
+<div id="welcome-overlay" class="overlay" style="display: none;">
+    <div class="modal">
+        <h2>Welcome to Aurora Tracker!</h2>
+        <p>Please set a location first.</p>
+        <button class="btn" onclick="closeWelcome()">Got it!</button>
     </div>
-    <div class="welcome-box">Please enter a location first</div>
 </div>
 
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.6.5</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.6.6</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -343,20 +344,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (targetNameLabel) targetNameLabel.textContent = notifName;
     }
 
-    // --- D. メイン画面の読み込み（ここでGPSは自動起動しません） ---
+// --- D. メイン画面の読み込みとモーダル制御 ---
     if (savedLat && savedLon) {
+        // 場所が保存されている場合
         myLat = parseFloat(savedLat);
         myLon = parseFloat(savedLon);
         
+        // モーダルは表示しない（display: none のまま）
+        
         if (savedName) {
             document.getElementById("loc").textContent = savedName;
-            updateAll();
         } else {
-            // 名前がない場合のみ、座標から地名を1回だけ取得
             await reverseGeocode(myLat, myLon);
-            updateAll();
         }
+        updateAll();
     } else {
+        // 【重要】場所が保存されていない初回ユーザーのみ、ここで表示する
+        document.getElementById('welcome-overlay').style.display = 'flex';
         document.getElementById("loc").textContent = "Please set location";
     }
 });
@@ -529,7 +533,7 @@ async function handleNotifToggleEvent() {
         if (success) {
             document.getElementById("target-area-display").style.display = "block";
             document.getElementById("target-area-name").textContent = notifName;
-            alert(`Notifications locked to: ${notifName}`);
+            alert(`Notifications have been set.\nTarget area: ${notifName}`);
         } else {
             this.checked = false;
         }

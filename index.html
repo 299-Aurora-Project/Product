@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.5.wip7</title>
+<title>Easy Aurora Forecast v. t1.5.wip8</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon" href="icon.png">
@@ -168,7 +168,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip7</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip8</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -192,7 +192,7 @@ input:checked + .slider:before { transform: translateX(20px); }
             <input id="cityInput" placeholder="e.g. Yellowknife, Canada" 
        oninput="handleCityInput(this)" 
        onclick="event.stopPropagation()">
-            <button id="btn-search" onclick="searchCity()" disabled>Set</button>
+            <button id="btn-search" onclick="searchCity()">Set</button>
             <div id="autocomplete-list" class="autocomplete-items"></div>
         </div>
         <div id="search-error" class="error-msg">City not found. Please check your input.</div>
@@ -657,7 +657,7 @@ function formatProbability(s) { const r = Math.round(s); return (r <= 0 ? "< 1" 
 async function searchCity() {
 
 // 1. 関数の開始をアラートで強制通知（ログが出ない対策）
-    console.log("FUNCTION START: searchCity");
+    console.log("--- searchCity function started ---");
     
     const cityInput = document.getElementById("cityInput");
     const city = cityInput.value.trim();

@@ -296,101 +296,19 @@ input:checked + .slider:before { transform: translateX(20px); }
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+
+async function searchCity() {
+    alert("関数の読み込みに成功しました！");
+    console.log("--- searchCity function started ---");
+}
+
+
 const CORS = "https://corsproxy.io/?";
-const KP_URL = "https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json";
+const KP_URL = "https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json"
 const OVAL_URL = "https://services.swpc.noaa.gov/json/ovation_aurora_latest.json";
 const FORECAST_URL = "https://services.swpc.noaa.gov/text/3-day-forecast.txt";
-
-// 前回の設定を記憶した状態で起動
-// 読み込む（ページ起動時）
-document.addEventListener('DOMContentLoaded', async () => {
-    // 1. 保存された値をコンソールに出して確認
-    const savedLat = localStorage.getItem('aurora_myLat');
-    const savedLon = localStorage.getItem('aurora_myLon');
-    console.log("LocalStorage Data Check:", { savedLat, savedLon });
-    
-    console.log("LocalStorage Data Check:", { savedLat, savedLon }); // ここで値が出ているか確認
-
-    // 2. 保存データがある場合、何が何でもそれを優先する
-    if (savedLat && savedLon && savedLat !== "0" && savedLon !== "0") {
-        myLat = parseFloat(savedLat);
-        myLon = parseFloat(savedLon);
-
-        // UI表示用の要素を取得
-        const targetDisplay = document.getElementById("target-area-display");
-        const targetName = document.getElementById("target-area-name");
-        
-        const locDisplay = document.getElementById('loc');
-        if (targetDisplay) targetDisplay.style.display = "block"; // 「枠」を表示
-
-        // 地名の復元（これを最優先で実行して、終わったら画面に反映）
-        if (typeof reverseGeocode === 'function') {
-            await reverseGeocode(myLat, myLon); // 取得後の文字をセット(これが終わると locDisplay.textContent が都市名に書き換わります)
-            
-            if (targetName && locDisplay) {
-                targetName.textContent = locDisplay.textContent;
-            }
-        } else {
-            // もし変換関数がない場合のみ座標を出す
-            if (locDisplay) locDisplay.textContent = `Lat: ${myLat.toFixed(2)}, Lon: ${myLon.toFixed(2)}`;
-            if (targetName) targetName.textContent = `Lat: ${myLat.toFixed(2)}, Lon: ${myLon.toFixed(2)}`;
-
-        if (typeof updateAll === 'function') updateAll();
-        console.log("✅ Location fully restored with city name.");
-    }
-        // ----------------------------
-
-        if (typeof reverseGeocode === 'function') await reverseGeocode(myLat, myLon);
-        if (typeof updateAll === 'function') updateAll();
-
-        // --------------------------------------------------------
-        
-        // 住所の復元とスコア計算
-        if (typeof reverseGeocode === 'function') await reverseGeocode(myLat, myLon);
-        if (typeof updateAll === 'function') updateAll();
-
-        console.log("✅ Location successfully restored from storage.");
-    } else {
-        console.log("⚠️ No saved location found in storage.");
-    }
-
-    // --- スイッチの復元（前回と同じ） ---
-    const pushSwitch = document.getElementById("notif-toggle");
-    const savedEnabled = localStorage.getItem('aurora_enabled');
-    if (pushSwitch && savedEnabled !== null) {
-        pushSwitch.checked = (savedEnabled === 'true');
-        if (pushSwitch.checked) {
-            document.getElementById("target-area-display").style.display = "block";
-        }
-    }
-
-    // 4. イベントリスナーの設定
-    if (pushSwitch) {
-        console.log("Switch element found! Ready for toggle.");
-        pushSwitch.addEventListener('change', async function() {
-            console.log("Switch toggled! Current state:", this.checked);
-            localStorage.setItem('aurora_enabled', this.checked);
-
-            if (this.checked) {
-                const result = await subscribeUser();
-                console.log("Subscription result:", result);
-            } else {
-                // OFFにした時はターゲット表示を隠す
-                const targetDisplay = document.getElementById("target-area-display");
-                if (targetDisplay) targetDisplay.style.display = "none";
-            }
-        });
-    }
-});
-
-
-
-// --- 通知関連 ---
-// 生成した公開鍵
 const PUBLIC_KEY = 'BAp0wnGuvaoZk_Q7Bn4H4DWAR2Zdi9juZECl10m290Ff9sAJqiaXepWYvGgbI7WOb9K3O0MOTG8TVi_hg_ovfEg';
-// GASの /exec で終わるURL
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbzHlMINYWmdRDEre095SWeynr87LYb8Fs15pJrYqLwzzmYUf0O8gKsqCThS0X4NwZp-RQ/exec'; 
-// ----------------------
 
 let myLat = null; let myLon = null; 
 let notifLat = null; let notifLon = null;
@@ -400,6 +318,243 @@ let currentTotalScore = 0;
 let lastScrollPos = 0;
 let searchTimer = null;
 
+// --- 2. 初期化処理 (DOMContentLoaded) ---
+document.addEventListener('DOMContentLoaded', async () => {
+    // Service Worker 登録
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js').catch(console.error);
+    }
+
+    // 保存された位置情報の復元
+    const savedLat = localStorage.getItem('aurora_myLat');
+    const savedLon = localStorage.getItem('aurora_myLon');
+    const savedEnabled = localStorage.getItem('aurora_enabled') === 'true';
+
+    const pushSwitch = document.getElementById("notif-toggle");
+    if (pushSwitch) pushSwitch.checked = savedEnabled;
+
+    if (savedLat && savedLon) {
+        myLat = parseFloat(savedLat);
+        myLon = parseFloat(savedLon);
+        await reverseGeocode(myLat, myLon);
+        updateAll();
+        if (savedEnabled) document.getElementById("target-area-display").style.display = "block";
+    }
+
+    // スイッチのイベントリスナー (1つに統合)
+    if (pushSwitch) {
+        pushSwitch.addEventListener('change', async function() {
+            localStorage.setItem('aurora_enabled', this.checked);
+            if (this.checked) {
+                const success = await subscribeUser();
+                if (success) {
+                    document.getElementById("target-area-display").style.display = "block";
+                    document.getElementById("target-area-name").textContent = document.getElementById("loc").textContent;
+                } else {
+                    this.checked = false;
+                    localStorage.setItem('aurora_enabled', false);
+                }
+            } else {
+                document.getElementById("target-area-display").style.display = "none";
+            }
+        });
+    }
+});
+
+// --- 3. GAS送信関数 (重要: クォーテーション修正) ---
+async function subscribeUser() {
+    try {
+        if (myLat === null || myLon === null) return false;
+        
+        const registration = await navigator.serviceWorker.ready;
+        let sub = await registration.pushManager.getSubscription();
+        if (!sub) {
+            sub = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(PUBLIC_KEY)
+            });
+        }
+
+        const isEnabled = document.getElementById("notif-toggle").checked;
+        const payload = {
+            endpoint: sub.endpoint,
+            keys: {
+                // 不要な "'" + を削除し、純粋なBase64文字列を送る
+                p256dh: btoa(String.fromCharCode.apply(null, new Uint8Array(sub.getKey('p256dh')))),
+                auth: btoa(String.fromCharCode.apply(null, new Uint8Array(sub.getKey('auth'))))
+            },
+            lat: myLat,
+            lon: myLon,
+            enabled: isEnabled
+        };
+
+        console.log("Syncing to GAS...", payload);
+        await fetch(GAS_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            body: JSON.stringify(payload)
+        });
+        return true;
+    } catch (e) {
+        console.error("Subscription failed:", e);
+        return false;
+    }
+}
+
+// --- 2. 初期化処理 (DOMContentLoaded) ---
+document.addEventListener('DOMContentLoaded', async () => {
+    // Service Worker 登録
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js').catch(console.error);
+    }
+
+    // 保存された位置情報の復元
+    const savedLat = localStorage.getItem('aurora_myLat');
+    const savedLon = localStorage.getItem('aurora_myLon');
+    const savedEnabled = localStorage.getItem('aurora_enabled') === 'true';
+
+    const pushSwitch = document.getElementById("notif-toggle");
+    if (pushSwitch) pushSwitch.checked = savedEnabled;
+
+    if (savedLat && savedLon) {
+        myLat = parseFloat(savedLat);
+        myLon = parseFloat(savedLon);
+        await reverseGeocode(myLat, myLon);
+        updateAll();
+        if (savedEnabled) document.getElementById("target-area-display").style.display = "block";
+    }
+
+    // スイッチのイベントリスナー (1つに統合)
+    if (pushSwitch) {
+        pushSwitch.addEventListener('change', async function() {
+            localStorage.setItem('aurora_enabled', this.checked);
+            if (this.checked) {
+                const success = await subscribeUser();
+                if (success) {
+                    document.getElementById("target-area-display").style.display = "block";
+                    document.getElementById("target-area-name").textContent = document.getElementById("loc").textContent;
+                } else {
+                    this.checked = false;
+                    localStorage.setItem('aurora_enabled', false);
+                }
+            } else {
+                document.getElementById("target-area-display").style.display = "none";
+            }
+        });
+    }
+});
+
+// --- 3. GAS送信関数 (重要: クォーテーション修正) ---
+async function subscribeUser() {
+    try {
+        if (myLat === null || myLon === null) return false;
+        
+        const registration = await navigator.serviceWorker.ready;
+        let sub = await registration.pushManager.getSubscription();
+        if (!sub) {
+            sub = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(PUBLIC_KEY)
+            });
+        }
+
+        const isEnabled = document.getElementById("notif-toggle").checked;
+        const payload = {
+            endpoint: sub.endpoint,
+            keys: {
+                // 不要な "'" + を削除し、純粋なBase64文字列を送る
+                p256dh: btoa(String.fromCharCode.apply(null, new Uint8Array(sub.getKey('p256dh')))),
+                auth: btoa(String.fromCharCode.apply(null, new Uint8Array(sub.getKey('auth'))))
+            },
+            lat: myLat,
+            lon: myLon,
+            enabled: isEnabled
+        };
+
+        console.log("Syncing to GAS...", payload);
+        await fetch(GAS_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            body: JSON.stringify(payload)
+        });
+        return true;
+    } catch (e) {
+        console.error("Subscription failed:", e);
+        return false;
+    }
+}
+
+// --- 4. 位置情報取得後の処理 ---
+async function getLocation() {
+    setItemLoading('loc', true);
+    navigator.geolocation.getCurrentPosition(async p => {
+        myLat = p.coords.latitude;
+        myLon = p.coords.longitude;
+        localStorage.setItem('aurora_myLat', myLat);
+        localStorage.setItem('aurora_myLon', myLon);
+        
+        await reverseGeocode(myLat, myLon);
+        
+        // 通知ONならGASへ即時送信
+        if (document.getElementById("notif-toggle").checked) {
+            await subscribeUser();
+        }
+        
+        updateAll();
+    }, err => {
+        console.error(err);
+        setItemLoading('loc', false);
+    });
+}
+
+async function searchCity() {
+    const cityInput = document.getElementById("cityInput");
+    const city = cityInput.value.trim();
+    if (!city) return;
+
+    try {
+        const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en`);
+        const data = await res.json();
+        if (data.results?.length > 0) {
+            const r = data.results[0];
+            myLat = r.latitude;
+            myLon = r.longitude;
+            localStorage.setItem('aurora_myLat', myLat);
+            localStorage.setItem('aurora_myLon', myLon);
+            
+            document.getElementById("loc").textContent = `${r.name}, ${r.country}`;
+            
+            // 通知ONならGASへ即時送信
+            if (document.getElementById("notif-toggle").checked) {
+                await subscribeUser();
+            }
+            
+            updateAll();
+            cityInput.value = "";
+        }
+    } catch (e) {
+        console.error("Search Error:", e);
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // --- ★Service Worker登録部分の強化★ ---
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js')
@@ -407,44 +562,6 @@ if ('serviceWorker' in navigator) {
     .catch(err => console.error('Service Worker Registration Failed', err));
 }
 
-// --- ★通知登録（スプレッドシートへの保存）関数を追加★ ---
-async function subscribeUser() {
-    try {
-        console.log("Starting subscribeUser...");
-        const registration = await navigator.serviceWorker.ready;
-        const sub = await registration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(PUBLIC_KEY)
-        });
-
-        // --- 送信形式を handleNotifToggle と完全に一致させる ---
-        const isEnabled = document.getElementById("notif-toggle")?.checked || false;
-        
-        const payload = {
-            endpoint: sub.endpoint,
-            keys: {
-        // 先頭に "'" を付けて数式誤認を防止
-            p256dh: "'" + btoa(String.fromCharCode.apply(null, new Uint8Array(sub.getKey('p256dh')))),
-            auth: "'" + btoa(String.fromCharCode.apply(null, new Uint8Array(sub.getKey('auth'))))
-            },
-            lat: myLat,
-            lon: myLon,
-            enabled: isEnabled // スイッチの状態も一緒に送る
-        };
-
-        await fetch(GAS_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            body: JSON.stringify(payload)
-        });
-
-        console.log("GAS sync complete with manual location.");
-        return true;
-    } catch (e) {
-        console.error("Subscription failed:", e);
-        return false;
-    }
-}
 
 /* --- タイムスタンプ・通知関連 --- */
 function updateTimestamp(id) {
@@ -561,37 +678,6 @@ function calculateTotal() {
     }
 }
 
-/* --- 地図・位置情報・その他 --- */
-
-// ページ読み込み時の復元ロジック
-async function getLocation() {
-    // 【重要】保存データがすでにある（myLatがセットされている）なら、GPS取得を中止する
-    if (myLat !== null && myLat !== 0) {
-        console.log("Location already restored. GPS fetch skipped.");
-        return; 
-    }
-
-    setItemLoading('loc', true);
-    navigator.geolocation.getCurrentPosition(async p => {
-        myLat = p.coords.latitude;
-        myLon = p.coords.longitude;
-        
-        // GPSで取得した時も保存しておく（次回リロード対策）
-        localStorage.setItem('aurora_myLat', myLat);
-        localStorage.setItem('aurora_myLon', myLon);
-
-        await reverseGeocode(myLat, myLon);
-        
-        // 追加: 通知がONの場合、または常に同期したい場合に実行
-        if (document.getElementById("notif-toggle").checked) {
-            await subscribeUser();
-        }
-        
-        updateAll();
-    }, err => {
-        // ...エラー処理
-    });
-}
 
 function initMap() {
     const southLimit = -70, northLimit = 90;

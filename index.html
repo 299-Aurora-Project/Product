@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.6.8</title>
+<title>Easy Aurora Forecast v. t1.6.9</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon" href="icon.png">
@@ -23,6 +23,9 @@ h1 { margin: 0; font-size: 1.5rem; }
 .label-sub-current { font-size: 0.8rem; color: #8b949e; margin-bottom: 10px; }
 .value { font-size:1.6em; margin-top:4px; min-height: 1.2em; }
 .sub-section { margin-top: 15px; padding-top: 15px; border-top: 1px solid #30363d; position: relative; }
+.hidden {
+    display: none !important;
+}
 
 .badge {
     display: inline-block;
@@ -168,7 +171,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.6.8</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.6.9</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -303,7 +306,7 @@ const KP_URL = "https://services.swpc.noaa.gov/products/noaa-planetary-k-index.j
 const OVAL_URL = "https://services.swpc.noaa.gov/json/ovation_aurora_latest.json";
 const FORECAST_URL = "https://services.swpc.noaa.gov/text/3-day-forecast.txt";
 const PUBLIC_KEY = 'BAp0wnGuvaoZk_Q7Bn4H4DWAR2Zdi9juZECl10m290Ff9sAJqiaXepWYvGgbI7WOb9K3O0MOTG8TVi_hg_ovfEg';
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbzHlMINYWmdRDEre095SWeynr87LYb8Fs15pJrYqLwzzmYUf0O8gKsqCThS0X4NwZp-RQ/exec'; 
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzjEjP93XEuJRtGRq9s6l7BQkaupqkgvA1s_vUH3sUfnmyqjuVcC1aDEwk5TBe0hd1Wkw/exec'; 
 
 let myLat = null, myLon = null, currentTotalScore = 0, lastAuroraProb = 0;
 let notifLat = null, notifLon = null, notifName = ""; // 通知用ロケーションを保持する変数
@@ -354,9 +357,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else {
             await reverseGeocode(myLat, myLon);
         }
-
-        // 2. ブラウザにデータがあるなら、ウェルカムモーダルは出さない
-        closeWelcome();
 
         // 3. 【重要】バックグラウンドでGASに同期
         // これにより、ブラウザにしかデータがない状態（矛盾）を自動で解消します

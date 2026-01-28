@@ -158,12 +158,11 @@ input:checked + .slider:before { transform: translateX(20px); }
 </head>
 <body onkeydown="closeWelcome()" onclick="closeWelcome(); closeAllLists();">
 
-<div id="welcome-overlay" class="overlay" style="display: none;">
-    <div class="modal">
-        <h2>Welcome to Aurora Tracker!</h2>
-        <p>Please set a location first.</p>
-        <button class="btn" onclick="closeWelcome()">Got it!</button>
+<div id="welcome-overlay">
+    <div class="arrow-container">
+        <div class="thin-arrow">↑</div><div class="thin-arrow">↑</div><div class="thin-arrow">↑</div>
     </div>
+    <div class="welcome-box">Please enter a location first</div>
 </div>
 
 <div id="home-screen" class="container">

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.6.2</title>
+<title>Easy Aurora Forecast v. t1.6.3</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon" href="icon.png">
@@ -168,7 +168,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.6.2</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.6.3</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -428,12 +428,26 @@ function closeAllLists() {
 
 // --- 4. 位置設定・GAS同期 ---
 async function setLocation(lat, lon, name) {
-    myLat = lat; myLon = lon;
+    // 1. グローバル変数を最新に更新
+    myLat = lat; 
+    myLon = lon;
+    
+    // 2. UI表示を更新
     document.getElementById("loc").textContent = name;
+    
+    // 3. ブラウザに保存（次回起動用）
     localStorage.setItem('aurora_myLat', lat);
     localStorage.setItem('aurora_myLon', lon);
+    localStorage.setItem('aurora_myName', name);
     
-    updateAll();
+    // 4. 地図のピンを新しい場所に移動
+    if (map) {
+        updateMapMarker();
+        map.setView([lat, lon], map.getZoom()); // 検索した場所に地図を飛ばす
+    }
+    
+    // 5. 最新の座標に基づいて計算（Overall Possibilityなど）
+    await updateAll();
 }
 
 async function getLocation() {
@@ -526,13 +540,21 @@ async function handleNotifToggleEvent() {
 
 // --- 5. データ取得・予報 ---
 async function updateAll() {
-    if (myLat === null) return;
+    if (myLat === null || myLon === null) return;
+
     const btn = document.getElementById('btn-update-all');
     if(btn) btn.classList.add('loading-btn');
     ['kp','oval','cloud','result'].forEach(id => setItemLoading(id, true));
 
     try {
-        await Promise.all([getKp(), fetchKp3DayForecast(), checkOval(), getCloud()]);
+        // 全てのデータ取得関数がグローバル変数 myLat, myLon を参照することを確認
+        await Promise.all([
+            getKp(), 
+            fetchKp3DayForecast(), 
+            checkOval(), // この中で myLat を使用
+            getCloud()   // この中で myLat を使用
+        ]);
+        
         await shortForecast();
         calculateTotal();
         updateTimestamp('time-update-all');

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.6.6</title>
+<title>Easy Aurora Forecast v. t1.6.7</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon" href="icon.png">
@@ -168,7 +168,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.6.6</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.6.7</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -343,23 +343,31 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (targetNameLabel) targetNameLabel.textContent = notifName;
     }
 
-// --- D. メイン画面の読み込みとモーダル制御 ---
+// --- D. メイン画面の読み込みと矛盾の解消 ---
     if (savedLat && savedLon) {
-        // 場所が保存されている場合
         myLat = parseFloat(savedLat);
         myLon = parseFloat(savedLon);
         
-        // モーダルは表示しない（display: none のまま）
-        
+        // 1. まず住所を表示（保存名があればそれ、なければ逆引き）
         if (savedName) {
             document.getElementById("loc").textContent = savedName;
         } else {
             await reverseGeocode(myLat, myLon);
         }
+
+        // 2. ブラウザにデータがあるなら、ウェルカムモーダルは出さない
+        closeWelcome();
+
+        // 3. 【重要】バックグラウンドでGASに同期
+        // これにより、ブラウザにしかデータがない状態（矛盾）を自動で解消します
+        await subscribeUser(); 
+
+        // 4. データ更新
         updateAll();
+
     } else {
-        // 【重要】場所が保存されていない初回ユーザーのみ、ここで表示する
-        document.getElementById('welcome-overlay').style.display = 'flex';
+        // 本当に何もデータがない場合のみ、モーダルを表示して入力を促す
+        document.getElementById('welcome-overlay').classList.remove('hidden');
         document.getElementById("loc").textContent = "Please set location";
     }
 });

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.5.wip13</title>
+<title>Easy Aurora Forecast v. t1.5.wip14</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon" href="icon.png">
@@ -168,7 +168,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip13</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip14</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -357,6 +357,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else {
         // 保存された場所がない場合、勝手にGPSを動かさず、待機状態にする
         document.getElementById("loc").textContent = "Please set location";
+        }
+    }
 });
 
 // --- 3. 検索・入力関連 (searchCity, handleCityInput, closeAllLists) ---

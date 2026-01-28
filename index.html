@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.5.wip8</title>
+<title>Easy Aurora Forecast v. t1.5.wip7</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon" href="icon.png">
@@ -169,7 +168,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip8</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.5.wip7</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -193,7 +192,7 @@ input:checked + .slider:before { transform: translateX(20px); }
             <input id="cityInput" placeholder="e.g. Yellowknife, Canada" 
        oninput="handleCityInput(this)" 
        onclick="event.stopPropagation()">
-            <button id="btn-search" onclick="searchCity(); event.stopPropagation();" disabled>Set</button>
+            <button id="btn-search" onclick="searchCity()" disabled>Set</button>
             <div id="autocomplete-list" class="autocomplete-items"></div>
         </div>
         <div id="search-error" class="error-msg">City not found. Please check your input.</div>
@@ -320,15 +319,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         // UI表示用の要素を取得
         const targetDisplay = document.getElementById("target-area-display");
         const targetName = document.getElementById("target-area-name");
-        const locDisplay = document.getElementById('loc');
         
-        // まず「枠」を表示
-        if (targetDisplay) targetDisplay.style.display = "block";
+        const locDisplay = document.getElementById('loc');
+        if (targetDisplay) targetDisplay.style.display = "block"; // 「枠」を表示
 
         // 地名の復元（これを最優先で実行して、終わったら画面に反映）
         if (typeof reverseGeocode === 'function') {
-            await reverseGeocode(myLat, myLon); 
-            // ↑ これが終わると locDisplay.textContent が都市名に書き換わります
+            await reverseGeocode(myLat, myLon); // 取得後の文字をセット(これが終わると locDisplay.textContent が都市名に書き換わります)
             
             if (targetName && locDisplay) {
                 targetName.textContent = locDisplay.textContent;
@@ -337,7 +334,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             // もし変換関数がない場合のみ座標を出す
             if (locDisplay) locDisplay.textContent = `Lat: ${myLat.toFixed(2)}, Lon: ${myLon.toFixed(2)}`;
             if (targetName) targetName.textContent = `Lat: ${myLat.toFixed(2)}, Lon: ${myLon.toFixed(2)}`;
-
 
         if (typeof updateAll === 'function') updateAll();
         console.log("✅ Location fully restored with city name.");
@@ -659,7 +655,10 @@ function formatProbability(s) { const r = Math.round(s); return (r <= 0 ? "< 1" 
 
 // 場所を確定させている関数
 async function searchCity() {
-    console.log("--- searchCity function started ---"); // ← これを追加
+
+// 1. 関数の開始をアラートで強制通知（ログが出ない対策）
+    console.log("FUNCTION START: searchCity");
+    
     const cityInput = document.getElementById("cityInput");
     const city = cityInput.value.trim();
     if (!city) return;
@@ -673,9 +672,11 @@ async function searchCity() {
         if (data.results?.length > 0) {
             const r = data.results[0];
             
-            // 1. 変数に代入
-            myLat = r.latitude;
-            myLon = r.longitude;
+            // 2. 変数更新とUI表示
+            myLat = parseFloat(r.latitude);
+            myLon = parseFloat(r.longitude);
+            const locationName = `${r.name}, ${r.country}`;
+            
             document.getElementById("loc").textContent = `${r.name}, ${r.country}`;
             
             // --- 「リストア時以外に Target Area が出ない」問題対応 ---
@@ -688,8 +689,6 @@ async function searchCity() {
             // 2. ブラウザに保存（リロード対策, キー名を統一）
             localStorage.setItem('aurora_myLat', myLat.toString());
             localStorage.setItem('aurora_myLon', myLon.toString());
-            // 【デバッグ用：検索した瞬間にこれが出るか確認】
-            alert("Saved to storage: " + localStorage.getItem('aurora_myLat'));
             console.log("✅ Storage Saved with manual location:", myLat, myLon);
             
             // 3. スプレッドシートへ即座に送信
@@ -972,7 +971,6 @@ function urlBase64ToUint8Array(base64String) {
 </script>
 </body>
 </html>
-
 
 
 

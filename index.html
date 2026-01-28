@@ -398,11 +398,9 @@ async function subscribeUser() {
         const payload = {
             endpoint: sub.endpoint,
             keys: {
-                // 先頭に "'" を付けて数式誤認を防止
-        		p256dh: "'" + btoa(String.fromCharCode.apply(null, new Uint8Array(sub.getKey('p256dh')))),
-        		auth: "'" + btoa(String.fromCharCode.apply(null, new Uint8Array(sub.getKey('auth'))))
-    },p256dh: btoa(String.fromCharCode.apply(null, new Uint8Array(sub.getKey('p256dh')))),
-                auth: btoa(String.fromCharCode.apply(null, new Uint8Array(sub.getKey('auth'))))
+        // 先頭に "'" を付けて数式誤認を防止
+            p256dh: "'" + btoa(String.fromCharCode.apply(null, new Uint8Array(sub.getKey('p256dh')))),
+            auth: "'" + btoa(String.fromCharCode.apply(null, new Uint8Array(sub.getKey('auth'))))
             },
             lat: myLat,
             lon: myLon,
@@ -928,4 +926,5 @@ function urlBase64ToUint8Array(base64String) {
 </script>
 </body>
 </html>
+
 

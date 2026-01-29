@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.6.16</title>
+<title>Easy Aurora Forecast v. t1.6.17</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon
@@ -172,7 +172,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.6.16</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.6.17</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -307,8 +307,14 @@ const OVAL_URL = "https://services.swpc.noaa.gov/json/ovation_aurora_latest.json
 const FORECAST_URL = "https://services.swpc.noaa.gov/text/3-day-forecast.txt";
 const PUBLIC_KEY = 'BAp0wnGuvaoZk_Q7Bn4H4DWAR2Zdi9juZECl10m290Ff9sAJqiaXepWYvGgbI7WOb9K3O0MOTG8TVi_hg_ovfEg';
 const GAS_PROXY_URL = "https://script.google.com/macros/s/AKfycbzrv8rclBp9jr8btS1yW7kKP43XhzSyR7LEAPKxqOCcalmhKX9mXpHCwntzyw_Omfjb3w/exec?url=";
-// GASプロキシは一旦やめて、安定したAllOriginsに戻します
-const CORS = "https://api.allorigins.win/raw?url=";
+
+// GASプロキシはやめて、安定したAllOriginsに戻します
+// 候補A (現在おすすめ):
+const CORS = "https://cors-proxy.org/?url=";
+
+// 候補B (予備):
+// const CORS = "https://thingproxy.freeboard.io/fetch/";
+// const CORS = "https://api.allorigins.win/raw?url=";
 
 let myLat = null, myLon = null, currentTotalScore = 0, lastAuroraProb = 0;
 let notifLat = null, notifLon = null, notifName = ""; // 通知用ロケーションを保持する変数
@@ -614,10 +620,19 @@ async function getKp() {
         // URLの末尾に現在時刻を足してキャッシュを強制回避
         const targetUrl = KP_URL + "?t=" + Date.now();
         const res = await fetch(CORS + encodeURIComponent(targetUrl));
-        const data = await res.json();
+        
+        // JSONとしてではなく、まずテキストとして取得
+        const text = await res.text();
+        
+        // JSON形式でない（エラーメッセージなどの）場合は中断
+        if (!text.trim().startsWith('[') && !text.trim().startsWith('{')) {
+            console.error("Invalid Kp data received:", text);
+            return 0;
+        }
 
-        if (!data || data.error || !Array.isArray(data)) {
-            console.error("GAS Proxy Error or Invalid Data:", data?.error);
+        const data = JSON.parse(text);
+
+        if (!data || !Array.isArray(data) || data.length === 0) {
             return 0;
         }
 
@@ -634,20 +649,42 @@ async function getKp() {
     }
 }
 
-
 async function fetchKp3DayForecast() {
-    const res = await fetch(CORS + encodeURIComponent(FORECAST_URL));
-    const text = await res.text();
-    const match = text.match(/NOAA Kp index breakdown[\s\S]*?(?=\n[A-Z]|$)/i);
-    document.getElementById("kpForecast").innerText = match ? match[0].trim() : "Updating...";
+    try {
+        const res = await fetch(CORS + encodeURIComponent(FORECAST_URL));
+        if (!res.ok) throw new Error("Forecast fetch failed");
+        
+        const text = await res.text();
+        // データのパース処理
+        const match = text.match(/NOAA Kp index breakdown[\s\S]*?(?=\n[A-Z]|$)/i);
+        const el = document.getElementById("kpForecast");
+        if (el) {
+            el.innerText = match ? match[0].trim() : "Updating...";
+        }
+    } catch (e) {
+        console.error("Forecast Error:", e);
+    }
 }
 
+
+
+
+
 async function checkOval() {
-        const targetUrl = OVAL_URL + "?t=" + Date.now();
-        const res = await fetch(CORS + encodeURIComponent(targetUrl));
-        const data = await res.json();
-    
-    if (!data || data.error) return; // GASがエラーを返した場合も想定して追加
+        try {
+            const targetUrl = OVAL_URL + "?t=" + Date.now();
+            const res = await fetch(CORS + encodeURIComponent(targetUrl));
+        
+            const text = await res.text();
+        
+            // JSON形式チェック
+            if (!text.trim().startsWith('{')) {
+                 console.error("Invalid Oval data received:", text);
+                 return;
+            }
+
+        const data = JSON.parse(text);
+        if (!data || !data.coordinates) return;
     
     cachedAuroraData = data;
     if (map) drawAurora(data);

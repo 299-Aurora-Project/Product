@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.6.10</title>
+<title>Easy Aurora Forecast v. t1.6.11</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon" href="icon.png">
@@ -171,7 +171,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.6.10</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.6.11</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -305,7 +305,7 @@ const KP_URL = "https://services.swpc.noaa.gov/products/noaa-planetary-k-index.j
 const OVAL_URL = "https://services.swpc.noaa.gov/json/ovation_aurora_latest.json";
 const FORECAST_URL = "https://services.swpc.noaa.gov/text/3-day-forecast.txt";
 const PUBLIC_KEY = 'BAp0wnGuvaoZk_Q7Bn4H4DWAR2Zdi9juZECl10m290Ff9sAJqiaXepWYvGgbI7WOb9K3O0MOTG8TVi_hg_ovfEg';
-const GAS_PROXY_URL = "https://script.google.com/macros/s/AKfycbzjEjP93XEuJRtGRq9s6l7BQkaupqkgvA1s_vUH3sUfnmyqjuVcC1aDEwk5TBe0hd1Wkw/exec?url=";
+const GAS_PROXY_URL = "https://script.google.com/macros/s/AKfycbwOo9d8a9DbWOmgGgETRJeLr7Kfe5NcixZ0AbuwqY5nw1GUKIe5K5eaIF2vqv0KcIbUPg/exec?url=";
 const CORS = GAS_PROXY_URL;
 
 let myLat = null, myLon = null, currentTotalScore = 0, lastAuroraProb = 0;
@@ -579,12 +579,23 @@ async function updateAll() {
 async function getKp() {
     const res = await fetch(CORS + encodeURIComponent(KP_URL));
     const data = await res.json();
-    if (!data) return; // データがなければ処理を中断
+    
+    // GAS側でエラーが発生していた場合、またはデータが不正な場合
+    if (!data || data.error || !Array.isArray(data)) {
+        console.error("GAS Proxy Error or Invalid Data:", data?.error);
+        return 0;
+    }
+    
     const val = parseFloat(data[data.length - 1][1]);
     const el = document.getElementById("kp");
     el.textContent = val.toFixed(1); el.dataset.value = val;
     el.className = `badge ${val >= 5 ? 'high' : (val >= 3 ? 'mid' : 'low')}`;
     return val;
+    } catch (e) {
+        console.error("Kp Fetch Error:", e);
+        return 0;
+    }
+}
 }
 
 async function fetchKp3DayForecast() {

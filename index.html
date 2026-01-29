@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.6.17</title>
+<title>Easy Aurora Forecast v. t1.6.18</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon
@@ -172,7 +172,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.6.17</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.6.18</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -668,13 +668,10 @@ async function fetchKp3DayForecast() {
 
 
 
-
-
 async function checkOval() {
         try {
             const targetUrl = OVAL_URL + "?t=" + Date.now();
             const res = await fetch(CORS + encodeURIComponent(targetUrl));
-        
             const text = await res.text();
         
             // JSON形式チェック
@@ -683,26 +680,32 @@ async function checkOval() {
                  return;
             }
 
-        const data = JSON.parse(text);
-        if (!data || !data.coordinates) return;
+            const data = JSON.parse(text);
+            if (!data || !data.coordinates) return;
     
-    cachedAuroraData = data;
-    if (map) drawAurora(data);
+            cachedAuroraData = data;
+            if (map) drawAurora(data);
     
-    let best = 0;
-    data.coordinates.forEach(p => {
-        let lon = p[0] > 180 ? p[0] - 360 : p[0];
-        let lat = p[1];
+            let best = 0;
+            data.coordinates.forEach(p => {
+                 let lon = p[0] > 180 ? p[0] - 360 : p[0];
+                 let lat = p[1];
         
-        if (Math.abs(myLat - lat) < 2 && Math.abs(myLon - lon) < 2) {
-            best = Math.max(best, p[2]);
-        }
-    });
+                 if (Math.abs(myLat - lat) < 2 && Math.abs(myLon - lon) < 2) {
+                      best = Math.max(best, p[2]);
+                 }
+            });
     
-    lastAuroraProb = best;
-    const el = document.getElementById("oval");
-    el.textContent = best >= 10 ? "Near Oval" : "Outside";
-    el.className = `badge ${best >= 10 ? 'high' : 'low'}`;
+            lastAuroraProb = best;
+            const el = document.getElementById("oval");
+            if (el) {
+                 el.textContent = best >= 10 ? "Near Oval" : "Outside";
+                 el.className = `badge ${best >= 10 ? 'high' : 'low'}`;
+        }
+    } catch (e) {
+        // try を使ったら必ずこの catch ブロックが必要です
+        console.error("Oval fetch error:", e);
+    }
 }
 
 async function getCloud() {

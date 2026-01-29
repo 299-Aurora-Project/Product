@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.6.18</title>
+<title>Easy Aurora Forecast v. t1.6.19</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon
@@ -172,7 +172,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.6.18</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.6.19</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -309,12 +309,11 @@ const PUBLIC_KEY = 'BAp0wnGuvaoZk_Q7Bn4H4DWAR2Zdi9juZECl10m290Ff9sAJqiaXepWYvGgb
 const GAS_PROXY_URL = "https://script.google.com/macros/s/AKfycbzrv8rclBp9jr8btS1yW7kKP43XhzSyR7LEAPKxqOCcalmhKX9mXpHCwntzyw_Omfjb3w/exec?url=";
 
 // GASプロキシはやめて、安定したAllOriginsに戻します
-// 候補A (現在おすすめ):
-const CORS = "https://cors-proxy.org/?url=";
+const CORS = "https://api.allorigins.win/raw?url=";
 
 // 候補B (予備):
 // const CORS = "https://thingproxy.freeboard.io/fetch/";
-// const CORS = "https://api.allorigins.win/raw?url=";
+// const CORS = "https://cors-proxy.org/?url=";
 
 let myLat = null, myLon = null, currentTotalScore = 0, lastAuroraProb = 0;
 let notifLat = null, notifLon = null, notifName = ""; // 通知用ロケーションを保持する変数
@@ -517,6 +516,15 @@ async function getLocation() {
 }
 
 async function subscribeUser() {
+
+// 権限をチェック
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") {
+        alert("通知をオンにするには、ブラウザの設定で通知を許可してください。");
+        document.getElementById("notif-toggle").checked = false; // スイッチを戻す
+        return false;
+    }
+    
     try {
         // スイッチがONなら、必ず「固定された場所」を優先して送る
         const isEnabled = document.getElementById("notif-toggle").checked;
@@ -617,31 +625,21 @@ async function updateAll() {
 
 async function getKp() {
     try {
-        // URLの末尾に現在時刻を足してキャッシュを強制回避
         const targetUrl = KP_URL + "?t=" + Date.now();
         const res = await fetch(CORS + encodeURIComponent(targetUrl));
+        const json = await res.json(); // AllOriginsのラッパーJSONを受け取る
         
-        // JSONとしてではなく、まずテキストとして取得
-        const text = await res.text();
-        
-        // JSON形式でない（エラーメッセージなどの）場合は中断
-        if (!text.trim().startsWith('[') && !text.trim().startsWith('{')) {
-            console.error("Invalid Kp data received:", text);
-            return 0;
-        }
+        // json.contents の中にNOAAのデータが文字列で入っています
+        const data = JSON.parse(json.contents);
 
-        const data = JSON.parse(text);
-
-        if (!data || !Array.isArray(data) || data.length === 0) {
-            return 0;
-        }
+        if (!data || !Array.isArray(data)) return 0;
 
         const val = parseFloat(data[data.length - 1][1]);
         const el = document.getElementById("kp");
-        el.textContent = val.toFixed(1);
-        el.dataset.value = val;
-        el.className = `badge ${val >= 5 ? 'high' : (val >= 3 ? 'mid' : 'low')}`;
-
+        if (el) {
+            el.textContent = val.toFixed(1);
+            el.className = `badge ${val >= 5 ? 'high' : (val >= 3 ? 'mid' : 'low')}`;
+        }
         return val;
     } catch (e) {
         console.error("Kp Fetch Error:", e);
@@ -652,10 +650,9 @@ async function getKp() {
 async function fetchKp3DayForecast() {
     try {
         const res = await fetch(CORS + encodeURIComponent(FORECAST_URL));
-        if (!res.ok) throw new Error("Forecast fetch failed");
+        const json = await res.json(); // AllOriginsのパッケージを受け取る
+        const text = json.contents;    // その中のテキストデータを取り出す
         
-        const text = await res.text();
-        // データのパース処理
         const match = text.match(/NOAA Kp index breakdown[\s\S]*?(?=\n[A-Z]|$)/i);
         const el = document.getElementById("kpForecast");
         if (el) {
@@ -669,41 +666,35 @@ async function fetchKp3DayForecast() {
 
 
 async function checkOval() {
-        try {
-            const targetUrl = OVAL_URL + "?t=" + Date.now();
-            const res = await fetch(CORS + encodeURIComponent(targetUrl));
-            const text = await res.text();
+    try {
+        const targetUrl = OVAL_URL + "?t=" + Date.now();
+        const res = await fetch(CORS + encodeURIComponent(targetUrl));
+        const json = await res.json();
         
-            // JSON形式チェック
-            if (!text.trim().startsWith('{')) {
-                 console.error("Invalid Oval data received:", text);
-                 return;
-            }
+        // contents(文字列)をJSONオブジェクトに変換
+        const data = JSON.parse(json.contents);
 
-            const data = JSON.parse(text);
-            if (!data || !data.coordinates) return;
-    
-            cachedAuroraData = data;
-            if (map) drawAurora(data);
-    
-            let best = 0;
-            data.coordinates.forEach(p => {
-                 let lon = p[0] > 180 ? p[0] - 360 : p[0];
-                 let lat = p[1];
-        
-                 if (Math.abs(myLat - lat) < 2 && Math.abs(myLon - lon) < 2) {
-                      best = Math.max(best, p[2]);
-                 }
-            });
-    
-            lastAuroraProb = best;
-            const el = document.getElementById("oval");
-            if (el) {
-                 el.textContent = best >= 10 ? "Near Oval" : "Outside";
-                 el.className = `badge ${best >= 10 ? 'high' : 'low'}`;
+        if (!data || !data.coordinates) return;
+
+        cachedAuroraData = data;
+        if (map) drawAurora(data);
+
+        let best = 0;
+        data.coordinates.forEach(p => {
+            let lon = p[0] > 180 ? p[0] - 360 : p[0];
+            let lat = p[1];
+            if (Math.abs(myLat - lat) < 2 && Math.abs(myLon - lon) < 2) {
+                best = Math.max(best, p[2]);
+            }
+        });
+
+        lastAuroraProb = best;
+        const el = document.getElementById("oval");
+        if (el) {
+            el.textContent = best >= 10 ? "Near Oval" : "Outside";
+            el.className = `badge ${best >= 10 ? 'high' : 'low'}`;
         }
     } catch (e) {
-        // try を使ったら必ずこの catch ブロックが必要です
         console.error("Oval fetch error:", e);
     }
 }

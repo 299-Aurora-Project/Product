@@ -601,26 +601,29 @@ async function updateAll() {
 }
 
 async function getKp() {
-    const res = await fetch(CORS + encodeURIComponent(KP_URL));
-    const data = await res.json();
-    
-    // GAS側でエラーが発生していた場合、またはデータが不正な場合
-    if (!data || data.error || !Array.isArray(data)) {
-        console.error("GAS Proxy Error or Invalid Data:", data?.error);
-        return 0;
-    }
-    
-    const val = parseFloat(data[data.length - 1][1]);
-    const el = document.getElementById("kp");
-    el.textContent = val.toFixed(1); el.dataset.value = val;
-    el.className = `badge ${val >= 5 ? 'high' : (val >= 3 ? 'mid' : 'low')}`;
-    return val;
+    try {
+        const res = await fetch(CORS + encodeURIComponent(KP_URL));
+        const data = await res.json();
+
+        if (!data || data.error || !Array.isArray(data)) {
+            console.error("GAS Proxy Error or Invalid Data:", data?.error);
+            return 0;
+        }
+
+        const val = parseFloat(data[data.length - 1][1]);
+        const el = document.getElementById("kp");
+        el.textContent = val.toFixed(1);
+        el.dataset.value = val;
+        el.className = `badge ${val >= 5 ? 'high' : (val >= 3 ? 'mid' : 'low')}`;
+
+        return val;
+
     } catch (e) {
         console.error("Kp Fetch Error:", e);
         return 0;
     }
 }
-}
+
 
 async function fetchKp3DayForecast() {
     const res = await fetch(CORS + encodeURIComponent(FORECAST_URL));

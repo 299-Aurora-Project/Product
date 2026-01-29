@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.6.12</title>
+<title>Easy Aurora Forecast v. t1.6.13</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon" href="icon.png">
@@ -18,7 +18,7 @@ body { font-family: system-ui, sans-serif; background:#0b132b; color:#eaeaea; pa
 .title-row { display: flex; justify-content: space-between; align-items: baseline; width: 100%; }
 .beta-suffix { font-size: 0.6em; color: #8b949e; font-weight: normal; margin-left: 5px; text-transform: lowercase; }
 h1 { margin: 0; font-size: 1.5rem; }
-.card { background:#1c2541; padding:20px; border-radius:12px; margin-bottom:20px; position: relative; border: 1px solid #30363d; }
+.card { background:#1c2541async function getKp(); padding:20px; border-radius:12px; margin-bottom:20px; position: relative; border: 1px solid #30363d; }
 .label-main { font-size: 1.1rem; font-weight: bold; color: #5bc0be; margin-bottom: 0px; }
 .label-sub-current { font-size: 0.8rem; color: #8b949e; margin-bottom: 10px; }
 .value { font-size:1.6em; margin-top:4px; min-height: 1.2em; }
@@ -171,7 +171,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.6.12</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.6.13</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -616,7 +616,7 @@ async function getKp() {
         el.textContent = val.toFixed(1);
         el.dataset.value = val;
         el.className = `badge ${val >= 5 ? 'high' : (val >= 3 ? 'mid' : 'low')}`;
-        }
+
         return val;
     } catch (e) {
         console.error("Kp Fetch Error:", e);

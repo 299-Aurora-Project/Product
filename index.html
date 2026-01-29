@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.6.19</title>
+<title>Easy Aurora Forecast v. t1.6.20</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon
@@ -172,7 +172,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.6.19</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.6.20</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -309,7 +309,7 @@ const PUBLIC_KEY = 'BAp0wnGuvaoZk_Q7Bn4H4DWAR2Zdi9juZECl10m290Ff9sAJqiaXepWYvGgb
 const GAS_PROXY_URL = "https://script.google.com/macros/s/AKfycbzrv8rclBp9jr8btS1yW7kKP43XhzSyR7LEAPKxqOCcalmhKX9mXpHCwntzyw_Omfjb3w/exec?url=";
 
 // GASプロキシはやめて、安定したAllOriginsに戻します
-const CORS = "https://api.allorigins.win/raw?url=";
+const CORS = "https://api.allorigins.win/get?url=";
 
 // 候補B (予備):
 // const CORS = "https://thingproxy.freeboard.io/fetch/";
@@ -628,6 +628,12 @@ async function getKp() {
         const targetUrl = KP_URL + "?t=" + Date.now();
         const res = await fetch(CORS + encodeURIComponent(targetUrl));
         const json = await res.json(); // AllOriginsのラッパーJSONを受け取る
+        
+        // データが取得できていない場合は、JSON.parseせずに終了する
+        if (!json || !json.contents) {
+            console.error("AllOrigins returned empty contents");
+            return 0;
+        }
         
         // json.contents の中にNOAAのデータが文字列で入っています
         const data = JSON.parse(json.contents);

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.6.20</title>
+<title>Easy Aurora Forecast v. t1.7.0</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon
@@ -19,7 +19,7 @@ body { font-family: system-ui, sans-serif; background:#0b132b; color:#eaeaea; pa
 .title-row { display: flex; justify-content: space-between; align-items: baseline; width: 100%; }
 .beta-suffix { font-size: 0.6em; color: #8b949e; font-weight: normal; margin-left: 5px; text-transform: lowercase; }
 h1 { margin: 0; font-size: 1.5rem; }
-.card { background:#1c2541async function getKp(); padding:20px; border-radius:12px; margin-bottom:20px; position: relative; border: 1px solid #30363d; }
+.card { background:#1c2541; padding:20px; border-radius:12px; margin-bottom:20px; position: relative; border: 1px solid #30363d; }
 .label-main { font-size: 1.1rem; font-weight: bold; color: #5bc0be; margin-bottom: 0px; }
 .label-sub-current { font-size: 0.8rem; color: #8b949e; margin-bottom: 10px; }
 .value { font-size:1.6em; margin-top:4px; min-height: 1.2em; }
@@ -172,7 +172,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.6.20</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.7.0</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -306,7 +306,6 @@ const KP_URL = "https://services.swpc.noaa.gov/products/noaa-planetary-k-index.j
 const OVAL_URL = "https://services.swpc.noaa.gov/json/ovation_aurora_latest.json";
 const FORECAST_URL = "https://services.swpc.noaa.gov/text/3-day-forecast.txt";
 const PUBLIC_KEY = 'BAp0wnGuvaoZk_Q7Bn4H4DWAR2Zdi9juZECl10m290Ff9sAJqiaXepWYvGgbI7WOb9K3O0MOTG8TVi_hg_ovfEg';
-const GAS_PROXY_URL = "https://script.google.com/macros/s/AKfycbzrv8rclBp9jr8btS1yW7kKP43XhzSyR7LEAPKxqOCcalmhKX9mXpHCwntzyw_Omfjb3w/exec?url=";
 
 // GASプロキシはやめて、安定したAllOriginsに戻します
 const CORS = "https://api.allorigins.win/get?url=";
@@ -314,6 +313,8 @@ const CORS = "https://api.allorigins.win/get?url=";
 // 候補B (予備):
 // const CORS = "https://thingproxy.freeboard.io/fetch/";
 // const CORS = "https://cors-proxy.org/?url=";
+
+const GAS_URL = "https://script.google.com/macros/s/AKfycbw3jQtvZvJcvcdeMyQMVfgCwLmKWjKqr6ierohEAKlEc4FtbTHGY6xFS4J78vROLsv-JQ/exec";
 
 let myLat = null, myLon = null, currentTotalScore = 0, lastAuroraProb = 0;
 let notifLat = null, notifLon = null, notifName = ""; // 通知用ロケーションを保持する変数
@@ -550,8 +551,8 @@ async function subscribeUser() {
             },
             lat: targetLat, // 固定された緯度を送る
             lon: targetLon, // 固定された経度を送る
-            enabled: document.getElementById("notif-toggle").checked
-        };
+            enabled: isEnabled, // これも必要！ (今の通知状態)
+            reset: !isEnabled   // これを追加！ (OFFの時にtrueになる)        };
         await fetch(GAS_URL, { 
             method: 'POST', 
             // mode: 'no-cors' を削除（または 'cors' に変更）
@@ -607,16 +608,32 @@ async function updateAll() {
     ['kp','oval','cloud','result'].forEach(id => setItemLoading(id, true));
 
     try {
-        // 全てのデータ取得関数がグローバル変数 myLat, myLon を参照することを確認
+        // 1. ロケーション先の時刻判定（簡易的にブラウザの時刻を使用する場合）
+        const now = new Date();
+        const hour = now.getHours();
+        
+        // 3:00 〜 21:00 は昼間と判定
+        const isDaytime = (hour >= 3 && hour < 21);
+        const subLabelEl = document.getElementById("total-sub-label");
+        
+        if (subLabelEl) {
+            subLabelEl.textContent = isDaytime ? "Status: Tonight (21:00)" : "Status: Current";
+        }
+
+        // 2. データ取得
         await Promise.all([
             getKp(), 
             fetchKp3DayForecast(), 
-            checkOval(), // この中で myLat を使用
-            getCloud()   // この中で myLat を使用
+            checkOval(), 
+            getCloud()
         ]);
         
         await shortForecast();
-        calculateTotal();
+
+        // 3. 確率計算 (isDaytime フラグを渡して、昼なら予報データを使わせる)
+        // ※calculateTotal 側でこのフラグを受け取れるように調整が必要です
+        calculateTotal(isDaytime); 
+
         updateTimestamp('time-update-all');
     } finally {
         if(btn) btn.classList.remove('loading-btn');
@@ -706,17 +723,43 @@ async function checkOval() {
 }
 
 async function getCloud() {
+        const hourIndex = 21; // 簡易的に今日の21時（UTCとの時差調整が必要な場合は要修正）
+        const tonightCloud = data.hourly.cloudcover[hourIndex];
+
+        if (isDaytime) {
+            val = tonightCloud; // 昼間なら21時の予報値を採用
+        }
+        
     if (myLat === null) return;
-    // ★ 常にメイン画面の座標で天気を取得
-    const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${myLat}&longitude=${myLon}&current=cloudcover&hourly=cloudcover`);
-    const data = await res.json();
-    if (!data) return; // データがなければ処理を中断
-    cloudDataHourly = data.hourly.cloudcover;
-    const val = data.current.cloudcover;
-    const el = document.getElementById("cloud");
-    el.textContent = val + "%"; 
-    el.dataset.value = val;
-    el.className = `badge ${val <= 20 ? 'high' : (val <= 60 ? 'mid' : 'low')}`;
+    try {
+        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${myLat}&longitude=${myLon}&current=cloudcover&hourly=cloudcover`);
+        const data = await res.json();
+        if (!data) return; 
+
+        cloudDataHourly = data.hourly.cloudcover;
+        const val = data.current.cloudcover;
+        const el = document.getElementById("cloud");
+
+        // --- 表記のカスタマイズ部分 ---
+        let displayValue;
+        if (val <= 5) {
+            displayValue = "Clear";    // 0%に近い場合は「快晴」
+        } else if (val >= 95) {
+            displayValue = "Overcast"; // 100%に近い場合は「曇天」
+        } else {
+            displayValue = val + "%";  // それ以外は % 表記
+        }
+        // ----------------------------
+
+        if (el) {
+            el.textContent = displayValue; 
+            el.dataset.value = val;
+            // 雲が少ない(20以下)ほどオーロラが見やすいので 'high' (緑)
+            el.className = `badge ${val <= 20 ? 'high' : (val <= 60 ? 'mid' : 'low')}`;
+        }
+    } catch (e) {
+        console.error("Cloud Fetch Error:", e);
+    }
 }
 
 async function shortForecast() {

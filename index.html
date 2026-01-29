@@ -3,10 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.6.15</title>
+<title>Easy Aurora Forecast v. t1.6.16</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
-<link rel="apple-touch-icon" href="icon.png">
+<link rel="apple-touch-icon
+" href="icon.png">
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
@@ -171,7 +172,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.6.15</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.6.16</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -537,7 +538,14 @@ async function subscribeUser() {
             lon: targetLon, // 固定された経度を送る
             enabled: document.getElementById("notif-toggle").checked
         };
-        await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+        await fetch(GAS_URL, { 
+            method: 'POST', 
+            // mode: 'no-cors' を削除（または 'cors' に変更）
+            body: JSON.stringify(payload),
+            headers: {
+                'Content-Type': 'text/plain;charset=utf-8' 
+            }
+        });
         return true;
     } catch (e) { return false; }
 }

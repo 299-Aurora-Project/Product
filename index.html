@@ -375,25 +375,49 @@ document.addEventListener('DOMContentLoaded', async () => {
 // --- 3. 検索・入力関連 (searchCity, handleCityInput, closeAllLists) ---
 async function searchCity() {
     console.log("--- searchCity function started ---");
+
     const cityInput = document.getElementById("cityInput");
+    if (!cityInput) {
+        console.error("cityInput element not found");
+        return;
+    }
+
     const city = cityInput.value.trim();
     if (!city) return;
 
     try {
-        const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en`);
+        const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en`;
+        console.log("Fetching:", url);
+
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
         const data = await res.json();
-        if (!data) return; // データがなければ処理を中断
-        
+        console.log("API response:", data);
+
         if (data.results?.length > 0) {
             const r = data.results[0];
+
+            if (typeof setLocation !== "function") {
+                console.error("setLocation is not defined");
+                return;
+            }
+
             await setLocation(r.latitude, r.longitude, `${r.name}, ${r.country}`);
             cityInput.value = "";
-            closeAllLists();
+
+            if (typeof closeAllLists === "function") {
+                closeAllLists();
+            }
+        } else {
+            console.warn("City not found");
         }
+
     } catch (e) {
         console.error("Search Error:", e);
     }
 }
+
 
 function handleCityInput(el) {
     const val = el.value.trim();

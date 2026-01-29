@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.6.11</title>
+<title>Easy Aurora Forecast v. t1.6.12</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon" href="icon.png">
@@ -171,7 +171,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.6.11</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.6.12</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -305,7 +305,7 @@ const KP_URL = "https://services.swpc.noaa.gov/products/noaa-planetary-k-index.j
 const OVAL_URL = "https://services.swpc.noaa.gov/json/ovation_aurora_latest.json";
 const FORECAST_URL = "https://services.swpc.noaa.gov/text/3-day-forecast.txt";
 const PUBLIC_KEY = 'BAp0wnGuvaoZk_Q7Bn4H4DWAR2Zdi9juZECl10m290Ff9sAJqiaXepWYvGgbI7WOb9K3O0MOTG8TVi_hg_ovfEg';
-const GAS_PROXY_URL = "https://script.google.com/macros/s/AKfycbwOo9d8a9DbWOmgGgETRJeLr7Kfe5NcixZ0AbuwqY5nw1GUKIe5K5eaIF2vqv0KcIbUPg/exec?url=";
+const GAS_PROXY_URL = "https://script.google.com/macros/s/AKfycbweRkS1d06t7s-rqMFtlLhsGcT2lDzobDNtzISAUIAGFoduqMYusnBCBVor9IEu2gjz/exec?url=";
 const CORS = GAS_PROXY_URL;
 
 let myLat = null, myLon = null, currentTotalScore = 0, lastAuroraProb = 0;
@@ -602,7 +602,8 @@ async function updateAll() {
 
 async function getKp() {
     try {
-        const res = await fetch(CORS + encodeURIComponent(KP_URL));
+        // オプション { redirect: "follow" } を追加
+        const res = await fetch(CORS + encodeURIComponent(KP_URL), { redirect: "follow" });
         const data = await res.json();
 
         if (!data || data.error || !Array.isArray(data)) {
@@ -615,9 +616,8 @@ async function getKp() {
         el.textContent = val.toFixed(1);
         el.dataset.value = val;
         el.className = `badge ${val >= 5 ? 'high' : (val >= 3 ? 'mid' : 'low')}`;
-
+        }
         return val;
-
     } catch (e) {
         console.error("Kp Fetch Error:", e);
         return 0;
@@ -633,26 +633,26 @@ async function fetchKp3DayForecast() {
 }
 
 async function checkOval() {
-    const res = await fetch(CORS + encodeURIComponent(OVAL_URL));
+    // 修正：fetchの第2引数にリダイレクト設定を追加
+    const res = await fetch(CORS + encodeURIComponent(OVAL_URL), { redirect: "follow" });
     const data = await res.json();
-    if (!data) return; // データがなければ処理を中断
+    
+    if (!data || data.error) return; // GASがエラーを返した場合も想定して追加
+    
     cachedAuroraData = data;
     if (map) drawAurora(data);
     
     let best = 0;
-    // 検索した場所 (myLat, myLon) に基づいて確率を抽出
     data.coordinates.forEach(p => {
-        // APIの経度は0-360なので、-180〜180に変換
         let lon = p[0] > 180 ? p[0] - 360 : p[0];
         let lat = p[1];
         
-        // 緯度・経度ともに2度以内の地点の確率(p[2])をチェック
         if (Math.abs(myLat - lat) < 2 && Math.abs(myLon - lon) < 2) {
             best = Math.max(best, p[2]);
         }
     });
     
-    lastAuroraProb = best; // ここが 0 になれば東京やマニラではスコアが下がるはず
+    lastAuroraProb = best;
     const el = document.getElementById("oval");
     el.textContent = best >= 10 ? "Near Oval" : "Outside";
     el.className = `badge ${best >= 10 ? 'high' : 'low'}`;

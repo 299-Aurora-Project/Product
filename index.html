@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.7.5</title>
+<title>Easy Aurora Forecast v. t1.7.6</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon
@@ -172,7 +172,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.7.5</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.7.6</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -736,14 +736,13 @@ async function getCloud(isDaytime = false) {
         if (!data || !data.hourly || !data.current) return; 
 
         // 2. データを取得した「後」で変数を取り出す
-        const cloudDataHourly = data.hourly.cloudcover;
+        cloudDataHourly = data.hourly.cloudcover;
         const currentCloud = data.current.cloudcover;
         const hourIndex = 21; // 現地時間の21時 (timezone=autoのおかげ)
         const tonightCloud = cloudDataHourly[hourIndex] || currentCloud;
 
-        // 3. 昼間か夜間かによって表示する値を決める
-        // ※ isDaytime が定義されている前提です
-        let val = (typeof isDaytime !== 'undefined' && isDaytime) ? tonightCloud : currentCloud;
+        // 昼間なら今夜の予報(21時)、夜間なら今の雲量を採用
+        let val = isDaytime ? tonightCloud : currentCloud;
 
         const el = document.getElementById("cloud");
         if (el) {

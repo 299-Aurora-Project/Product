@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.7.8</title>
+<title>Easy Aurora Forecast v. t1.7.9</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon
@@ -172,7 +172,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.7.8</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.7.9</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -635,7 +635,7 @@ async function updateAll() {
         const subLabelEl = document.getElementById("total-sub-label");
         
         if (subLabelEl) {
-            subLabelEl.textContent = isDaytime ? "Status: Tonight (21:00)" : "Status: Current";
+            subLabelEl.textContent = isDaytime ? "Tonight (21:00): " : "Current: ";
         }
 
         // 2. データ取得 (getCloud に isDaytime を渡す)
@@ -785,8 +785,27 @@ async function getCloud(isDaytime = false) {
 
 async function shortForecast() {
     if (!cloudDataHourly) return;
+    
     const hr = new Date().getHours();
-    document.getElementById("forecast").innerHTML = `<div>🕒 In 3h: ${cloudDataHourly[hr+3] || 0}%</div><div>📅 Tomorrow: ${cloudDataHourly[hr+24] || 0}%</div>`;
+    
+    // 3時間後と明日の雲量を取得
+    const c3h = cloudDataHourly[hr + 3] || 0;
+    const c24h = cloudDataHourly[hr + 24] || 0;
+
+    // 0%と100%を避けるフォーマット関数
+    const formatCloud = (val) => {
+        if (val <= 0) return "< 1%";
+        if (val >= 100) return "> 99%";
+        return val + "%";
+    };
+
+    const el = document.getElementById("forecast");
+    if (el) {
+        el.innerHTML = `
+            <div>🕒 In 3h: ${formatCloud(c3h)}</div>
+            <div>📅 Tomorrow: ${formatCloud(c24h)}</div>
+        `;
+    }
 }
 
 function calculateTotal() {

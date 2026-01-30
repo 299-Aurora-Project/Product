@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.7.9</title>
+<title>Easy Aurora Forecast v. t1.8.0</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon
@@ -172,7 +172,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.7.9</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.8.0</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -365,9 +365,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             await reverseGeocode(myLat, myLon);
         }
 
-        // 3. 【重要】バックグラウンドでGASに同期
-        // これにより、ブラウザにしかデータがない状態（矛盾）を自動で解消します
-        await subscribeUser(); 
+        // ❌ 削除またはコメントアウト：起動のたびにGASへ送る必要はありません
+        // await subscribeUser(); 
+
+        // ✅ 代わりに：通知が有効な設定なのにブラウザ側で許可が消えていないかチェック
+        if (savedEnabled && Notification.permission !== "granted") {
+            console.warn("Notification permission lost on this device.");
+            // 必要ならここでスイッチをOFFに戻すなどの処理
+        }
 
         // 4. データ更新
         updateAll();
@@ -532,15 +537,26 @@ async function getLocation() {
     });
 }
 
+// 通知の購読（subscribe)
 async function subscribeUser() {
+    // 1. まず現在の権限を「確認」する (これならポップアップは出ない)
+    let permission = Notification.permission;
 
-// 権限をチェック
-    const permission = await Notification.requestPermission();
+    // 2. まだ一度も許可/拒否していない(default)場合だけ、許可をリクエストする
+    if (permission === "default") {
+        permission = await Notification.requestPermission();
+    }
+
+    // 3. 最終的な判定
     if (permission !== "granted") {
-        alert("通知をオンにするには、ブラウザの設定で通知を許可してください。");
-        document.getElementById("notif-toggle").checked = false; // スイッチを戻す
+        // ここでアラートが出るのは「本当に拒否されている時」だけになります
+        alert("To enable notifications, please allow notificatoins in your browser settings.");
+        const toggle = document.getElementById("notif-toggle");
+        if (toggle) toggle.checked = false; 
         return false;
     }
+    
+    // --- 以下、既存の try { ... } などの処理へ続く ---
     
     try {
         // スイッチがONなら、必ず「固定された場所」を優先して送る

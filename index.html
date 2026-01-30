@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.8.0</title>
+<title>Easy Aurora Forecast v. t1.8.1</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon
@@ -172,7 +172,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.8.0</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.8.1</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -304,7 +304,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 // --- 1. 定数とグローバル変数 ---
 const PUBLIC_KEY = 'BAp0wnGuvaoZk_Q7Bn4H4DWAR2Zdi9juZECl10m290Ff9sAJqiaXepWYvGgbI7WOb9K3O0MOTG8TVi_hg_ovfEg';
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwfR5SvxP-D0b1WrsGU6XZFmUDoWe6LJDrVq2ILSnShiCzVRhfCvOW41hCojaKIg94M_g/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbx7Hpt2J16JwszXio0GFZWueuHSZ9caGyBYcF4KxkENQCPJhqh5Qt3ODBiV4SVKg87Q2A/exec";
 const CORS = GAS_URL + "?url="; // GASプロキシはやめて、安定したAllOriginsに戻します
 
 // 候補B (予備):
@@ -619,12 +619,12 @@ async function handleNotifToggleEvent() {
         localStorage.setItem('aurora_notifLon', notifLon);
         localStorage.setItem('aurora_notifName', notifName);
 
-        const success = await subscribeUser(); // この中で通知用変数を送るよう修正（後述）
+        const success = await subscribeUser(); // この中で通知用変数を送るよう修正
         
         if (success) {
             document.getElementById("target-area-display").style.display = "block";
             document.getElementById("target-area-name").textContent = notifName;
-            alert(`Notifications have been set.\nTarget area: ${notifName}`);
+            alert(`Notifications have been set.\nYou'll receive notifications when aurora visibility is possible.\n\nTarget area: ${notifName}`);
         } else {
             this.checked = false;
         }

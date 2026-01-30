@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.8.5</title>
+<title>Easy Aurora Forecast v. t1.8.6</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon
@@ -172,7 +172,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.8.5</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.8.6</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -505,7 +505,9 @@ async function setLocation(lat, lon, name) {
     }
     
     // 5. 最新の座標に基づいて計算（Overall Possibilityなど）
-    await updateAll();
+    // 修正】await を外し、エラーが起きても次に進めるようにする
+    // これにより、updateAll が重くても途中で止まっても、関数自体は完了し、UIのフリーズを防げます。
+    updateAll().catch(err => console.error("UpdateAll failed in background:", err));
 }
 
 async function getLocation() {

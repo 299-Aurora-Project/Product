@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.7.1</title>
+<title>Easy Aurora Forecast v. t1.7.2</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon
@@ -172,7 +172,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.7.1</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.7.2</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -553,7 +553,7 @@ async function subscribeUser() {
             lon: targetLon, // 固定された経度を送る
             enabled: isEnabled, // これも必要！ (今の通知状態)
             reset: !isEnabled   // これを追加！ (OFFの時にtrueになる)
-		};
+        };
             
         await fetch(GAS_URL, { 
             method: 'POST', 
@@ -610,7 +610,7 @@ async function updateAll() {
     ['kp','oval','cloud','result'].forEach(id => setItemLoading(id, true));
 
     try {
-        // 1. ロケーション先の時刻判定（簡易的にブラウザの時刻を使用する場合）
+        // 1. 時刻判定
         const now = new Date();
         const hour = now.getHours();
         
@@ -622,21 +622,24 @@ async function updateAll() {
             subLabelEl.textContent = isDaytime ? "Status: Tonight (21:00)" : "Status: Current";
         }
 
-        // 2. データ取得
+        // 2. データ取得 (getCloud に isDaytime を渡す)
+        // 429エラーが出る場合は、ここを Promise.all ではなく一つずつ await するのも手です
         await Promise.all([
             getKp(), 
             fetchKp3DayForecast(), 
             checkOval(), 
-            getCloud()
+            getCloud(isDaytime) // ★ 引数を追加
         ]);
         
         await shortForecast();
 
-        // 3. 確率計算 (isDaytime フラグを渡して、昼なら予報データを使わせる)
-        // ※calculateTotal 側でこのフラグを受け取れるように調整が必要です
+        // 3. 確率計算
+        // ここで calculateTotal にフラグを渡し、計算ロジックを昼夜で切り替えさせます
         calculateTotal(isDaytime); 
 
         updateTimestamp('time-update-all');
+    } catch (e) {
+        console.error("Update All Error:", e);
     } finally {
         if(btn) btn.classList.remove('loading-btn');
     }
@@ -724,36 +727,38 @@ async function checkOval() {
     }
 }
 
-async function getCloud() {
-        const hourIndex = 21; // 簡易的に今日の21時（UTCとの時差調整が必要な場合は要修正）
-        const tonightCloud = data.hourly.cloudcover[hourIndex];
+async function getCloud(isDaytime = false) {
+    if (myLat === null || myLon === null) return;
 
-        if (isDaytime) {
-            val = tonightCloud; // 昼間なら21時の予報値を採用
-        }
-        
-    if (myLat === null) return;
     try {
-        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${myLat}&longitude=${myLon}&current=cloudcover&hourly=cloudcover`);
+        // 1. まずデータを取ってくる (CORSプロキシ不要)
+        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${myLat}&longitude=${myLon}&current=cloudcover&hourly=cloudcover&timezone=auto`);
         const data = await res.json();
-        if (!data) return; 
+        
+        if (!data || !data.hourly || !data.current) return; 
 
-        cloudDataHourly = data.hourly.cloudcover;
-        const val = data.current.cloudcover;
+        // 2. データを取得した「後」で変数を取り出す
+        const cloudDataHourly = data.hourly.cloudcover;
+        const currentCloud = data.current.cloudcover;
+        const hourIndex = 21; // 現地時間の21時 (timezone=autoのおかげ)
+        const tonightCloud = cloudDataHourly[hourIndex] || currentCloud;
+
+        // 3. 昼間か夜間かによって表示する値を決める
+        // ※ isDaytime が定義されている前提です
+        let val = (typeof isDaytime !== 'undefined' && isDaytime) ? tonightCloud : currentCloud;
+
         const el = document.getElementById("cloud");
-
-        // --- 表記のカスタマイズ部分 ---
-        let displayValue;
-        if (val <= 5) {
-            displayValue = "Clear";    // 0%に近い場合は「快晴」
-        } else if (val >= 95) {
-            displayValue = "Overcast"; // 100%に近い場合は「曇天」
-        } else {
-            displayValue = val + "%";  // それ以外は % 表記
-        }
-        // ----------------------------
-
         if (el) {
+            // 表記のカスタマイズ
+            let displayValue;
+            if (val <= 5) {
+                displayValue = "Clear";
+            } else if (val >= 95) {
+                displayValue = "Overcast";
+            } else {
+                displayValue = val + "%";
+            }
+
             el.textContent = displayValue; 
             el.dataset.value = val;
             // 雲が少ない(20以下)ほどオーロラが見やすいので 'high' (緑)
@@ -936,7 +941,6 @@ setInterval(() => {
 </script>
 </body>
 </html>
-
 
 
 

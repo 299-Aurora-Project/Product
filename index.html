@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.8.1</title>
+<title>Easy Aurora Forecast v. t1.8.2</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon
@@ -172,7 +172,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.8.1</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.8.2</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -420,6 +420,29 @@ async function searchCity() {
                     viewport.content = originalContent; // 元の（ピンチズーム可能な）設定に戻す
                 }, 300);
             }
+
+
+
+
+            // --- ★ここから追加：スマホのズーム解除とキーボード閉じる処理 ---
+            const cityInput = document.getElementById("cityInput");
+            if (cityInput) {
+                cityInput.blur(); // キーボードを閉じる
+                cityInput.value = ""; // 入力欄をクリア
+            }
+
+            const viewport = document.querySelector('meta[name="viewport"]');
+                if (viewport) {
+                    const originalContent = viewport.content;
+                    viewport.content = 'width=device-width, initial-scale=1, maximum-scale=1';
+                    setTimeout(() => {
+                        viewport.content = originalContent;
+                    }, 300);
+            }
+    // --- ★ここまで追加 ---
+
+
+
 
             // 3. 位置をセットして入力をクリア
             if (typeof setLocation === "function") {

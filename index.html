@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.8.6</title>
+<title>Easy Aurora Forecast v. t1.8.7</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon
@@ -172,7 +172,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.8.6</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.8.7</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -487,8 +487,12 @@ function closeAllLists() {
 // --- 4. 位置設定・GAS同期 ---
 async function setLocation(lat, lon, name) {
     // 1. グローバル変数を最新に更新
-    myLat = lat; 
-    myLon = lon;
+    // 数値として確実に扱うために parseFloat を通す
+    const newLat = parseFloat(lat);
+    const newLon = parseFloat(lon);
+    
+    myLat = newLat; 
+    myLon = newLon;
     
     // 2. UI表示を更新
     document.getElementById("loc").textContent = name;
@@ -500,7 +504,8 @@ async function setLocation(lat, lon, name) {
     
     // 4. 地図のピンを新しい場所に移動
     if (map) {
-        updateMapMarker();
+        // ★修正：引数として新しい座標を直接渡す
+        updateMapMarker(newLat, newLon);
         map.setView([lat, lon], map.getZoom()); // 検索した場所に地図を飛ばす
     }
     
@@ -915,14 +920,16 @@ function drawAurora(data) {
     });
 }
 
-function updateMapMarker() {
+// 引数を受け取れるように変更（引数がない場合はグローバル変数を使用）
+function updateMapMarker(targetLat = myLat, targetLon = myLon) {
     if (!map || myLat === null) return;
     
-    const pos = [myLat, myLon];
+    const pos = [targetLat, targetLon];
     
-    // すでにマーカーがある場合は位置移動だけ（再作成しない）
+    // すでに存在するマーカーに「新しい位置」を即座に反映
     if (userMarker) {
         userMarker.setLatLng(pos);
+        userMarker.bringToFront(); // 重なり順を保証するために念のため
         return;
     }
 

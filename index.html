@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.8.7</title>
+<title>Easy Aurora Forecast v. t1.8.8</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon
@@ -172,7 +172,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.8.7</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.8.8</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -515,24 +515,38 @@ async function setLocation(lat, lon, name) {
     updateAll().catch(err => console.error("UpdateAll failed in background:", err));
 }
 
+
+//GPSで位置情報取得
 async function getLocation() {
     setItemLoading('loc', true);
     
     navigator.geolocation.getCurrentPosition(async p => {
-        myLat = p.coords.latitude;
-        myLon = p.coords.longitude;
-        localStorage.setItem('aurora_myLat', myLat);
-        localStorage.setItem('aurora_myLon', myLon);
+        // 1. 座標を数値として取得
+        const lat = p.coords.latitude;
+        const lon = p.coords.longitude;
+
+        // 2. 「爆速版 setLocation」を即座に実行！
+        // これにより、住所検索を待たずに地図とピンが新しい場所に飛びます。
+        // とりあえず地名は "Loading address..." などにしておきます。
+        await setLocation(lat, lon, "Locating...");
+
+        // 3. その後、バックグラウンドで住所を調べて表示を上書き
+        try {
+            await reverseGeocode(lat, lon); 
+            // 取得した住所をストレージに保存
+            const finalName = document.getElementById("loc").textContent;
+            localStorage.setItem('aurora_myName', finalName);
+        } catch (e) {
+            console.error("Address lookup failed:", e);
+        }
+
+        // ※ updateAll は setLocation の中で（非同期で）呼ばれるようになったので、
+        // ここで改めて呼ぶ必要はありません（二重実行を防げます）。
         
-        // 住所を取得してからメイン表示を更新
-        await reverseGeocode(myLat, myLon); 
-        // 取得した住所（reverseGeocode内で表示されたもの）を保存
-        localStorage.setItem('aurora_myName', document.getElementById("loc").textContent);
-        
-        updateAll();
     }, err => {
         console.error(err);
         document.getElementById('loc').textContent = "Location Error";
+        setItemLoading('loc', false);
     });
 }
 

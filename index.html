@@ -552,7 +552,8 @@ async function subscribeUser() {
             lat: targetLat, // 固定された緯度を送る
             lon: targetLon, // 固定された経度を送る
             enabled: isEnabled, // これも必要！ (今の通知状態)
-            reset: !isEnabled   // これを追加！ (OFFの時にtrueになる)              };
+            reset: !isEnabled   // これを追加！ (OFFの時にtrueになる)
+		};
             
         await fetch(GAS_URL, { 
             method: 'POST', 
@@ -935,6 +936,7 @@ setInterval(() => {
 </script>
 </body>
 </html>
+
 
 
 

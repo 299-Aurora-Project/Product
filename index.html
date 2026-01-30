@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.8.2</title>
+<title>Easy Aurora Forecast v. t1.8.3</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon
@@ -172,7 +172,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.8.2</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.8.3</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -386,19 +386,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // --- 3. 検索・入力関連 (searchCity, handleCityInput, closeAllLists) ---
 async function searchCity() {
-    console.log("--- searchCity function started ---");
-
     const cityInput = document.getElementById("cityInput");
     if (!cityInput) return;
-
     const city = cityInput.value.trim();
     if (!city) return;
 
-    // 1. 動いている検索タイマー（デバウンス）を即座に止める
-    // これにより、確定後にオートコンプリートが勝手に開くのを防ぎます
-    if (typeof searchTimer !== 'undefined') {
-        clearTimeout(searchTimer);
-    }
+    if (typeof searchTimer !== 'undefined') clearTimeout(searchTimer);
 
     try {
         const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en`;
@@ -408,66 +401,23 @@ async function searchCity() {
         if (data.results?.length > 0) {
             const r = data.results[0];
 
-            // 2. スマホのキーボードを閉じ、ズームを強制解除する
-            cityInput.blur(); // フォーカスを外す（キーボードを閉じる）
-            
+            // --- ズーム解除セット ---
+            cityInput.blur(); 
             const viewport = document.querySelector('meta[name="viewport"]');
             if (viewport) {
-                const originalContent = viewport.content;
-                // 一瞬だけズームを禁止する設定を上書き
+                const original = viewport.content;
                 viewport.content = 'width=device-width, initial-scale=1, maximum-scale=1';
-                setTimeout(() => {
-                    viewport.content = originalContent; // 元の（ピンチズーム可能な）設定に戻す
-                }, 300);
+                setTimeout(() => { viewport.content = original; }, 300);
             }
+            // ----------------------
 
-
-
-
-            // --- ★ここから追加：スマホのズーム解除とキーボード閉じる処理 ---
-            const cityInput = document.getElementById("cityInput");
-            if (cityInput) {
-                cityInput.blur(); // キーボードを閉じる
-                cityInput.value = ""; // 入力欄をクリア
-            }
-
-            const viewport = document.querySelector('meta[name="viewport"]');
-                if (viewport) {
-                    const originalContent = viewport.content;
-                    viewport.content = 'width=device-width, initial-scale=1, maximum-scale=1';
-                    setTimeout(() => {
-                        viewport.content = originalContent;
-                    }, 300);
-            }
-    // --- ★ここまで追加 ---
-
-
-
-
-            // 3. 位置をセットして入力をクリア
             if (typeof setLocation === "function") {
                 await setLocation(r.latitude, r.longitude, `${r.name}, ${r.country}`);
             }
-            
             cityInput.value = "";
-
-            // 4. リストを閉じる
-            if (typeof closeAllLists === "function") {
-                closeAllLists();
-            }
-        } else {
-            // エラー表示（もしIDがあれば）
-            const err = document.getElementById("search-error");
-            if (err) {
-                err.style.opacity = 1;
-                setTimeout(() => { err.style.opacity = 0; }, 3000);
-            }
-            console.warn("City not found");
+            if (typeof closeAllLists === "function") closeAllLists();
         }
-
-    } catch (e) {
-        console.error("Search Error:", e);
-    }
+    } catch (e) { console.error("Search Error:", e); }
 }
 
 
@@ -500,10 +450,29 @@ function showAutocomplete(results) {
         const item = document.createElement("div");
         item.className = "autocomplete-item";
         item.innerHTML = `<strong>${res.name}</strong>, ${res.country}`;
+        
         item.onmousedown = async (e) => {
             e.preventDefault();
+
+            // --- 1. スマホ用：キーボードを閉じ、ズームを解除する ---
+            const cityInput = document.getElementById("cityInput");
+            if (cityInput) {
+                cityInput.blur(); // フォーカスを外してキーボードを引っ込める
+                cityInput.value = ""; // 入力欄をクリア
+            }
+
+            const viewport = document.querySelector('meta[name="viewport"]');
+            if (viewport) {
+                const originalContent = viewport.content;
+                // 一瞬だけ最大ズームを1倍に固定してリセット
+                viewport.content = 'width=device-width, initial-scale=1, maximum-scale=1';
+                setTimeout(() => {
+                    viewport.content = originalContent; // 元の設定に戻す
+                }, 300);
+            }
+
+            // --- 2. 通常の位置セット処理 ---
             await setLocation(res.latitude, res.longitude, `${res.name}, ${res.country}`);
-            document.getElementById("cityInput").value = "";
             closeAllLists();
         };
         list.appendChild(item);

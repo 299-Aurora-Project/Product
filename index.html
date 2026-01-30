@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.7.7</title>
+<title>Easy Aurora Forecast v. t1.7.8</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon
@@ -172,7 +172,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.7.7</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.7.8</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -384,39 +384,56 @@ async function searchCity() {
     console.log("--- searchCity function started ---");
 
     const cityInput = document.getElementById("cityInput");
-    if (!cityInput) {
-        console.error("cityInput element not found");
-        return;
-    }
+    if (!cityInput) return;
 
     const city = cityInput.value.trim();
     if (!city) return;
 
+    // 1. 動いている検索タイマー（デバウンス）を即座に止める
+    // これにより、確定後にオートコンプリートが勝手に開くのを防ぎます
+    if (typeof searchTimer !== 'undefined') {
+        clearTimeout(searchTimer);
+    }
+
     try {
         const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en`;
-        console.log("Fetching:", url);
-
         const res = await fetch(url);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
         const data = await res.json();
-        console.log("API response:", data);
 
         if (data.results?.length > 0) {
             const r = data.results[0];
 
-            if (typeof setLocation !== "function") {
-                console.error("setLocation is not defined");
-                return;
+            // 2. スマホのキーボードを閉じ、ズームを強制解除する
+            cityInput.blur(); // フォーカスを外す（キーボードを閉じる）
+            
+            const viewport = document.querySelector('meta[name="viewport"]');
+            if (viewport) {
+                const originalContent = viewport.content;
+                // 一瞬だけズームを禁止する設定を上書き
+                viewport.content = 'width=device-width, initial-scale=1, maximum-scale=1';
+                setTimeout(() => {
+                    viewport.content = originalContent; // 元の（ピンチズーム可能な）設定に戻す
+                }, 300);
             }
 
-            await setLocation(r.latitude, r.longitude, `${r.name}, ${r.country}`);
+            // 3. 位置をセットして入力をクリア
+            if (typeof setLocation === "function") {
+                await setLocation(r.latitude, r.longitude, `${r.name}, ${r.country}`);
+            }
+            
             cityInput.value = "";
 
+            // 4. リストを閉じる
             if (typeof closeAllLists === "function") {
                 closeAllLists();
             }
         } else {
+            // エラー表示（もしIDがあれば）
+            const err = document.getElementById("search-error");
+            if (err) {
+                err.style.opacity = 1;
+                setTimeout(() => { err.style.opacity = 0; }, 3000);
+            }
             console.warn("City not found");
         }
 

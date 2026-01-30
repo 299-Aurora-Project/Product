@@ -813,26 +813,14 @@ function calculateTotal() {
 
 // --- 6. 地図・UI・ヘルパー ---
 function initMap() {
-    if (map) return;
-    map = L.map('map').setView([myLat || 70, myLon || 0], 3);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
-    auroraLayer = L.layerGroup().addTo(map);
-    if (cachedAuroraData) drawAurora(cachedAuroraData);
-    updateMapMarker();
-}
-
-function drawAurora(data) {
-    if (!auroraLayer) return;
-    auroraLayer.clearLayers();
-    data.coordinates.forEach(p => {
-        if (p[2] > 10) {
-            let baseLon = p[0] > 180 ? p[0] - 360 : p[0];
-            L.rectangle([[p[1], baseLon], [p[1] + 2, baseLon + 2]], {
-                color: p[2] > 50 ? '#ff4500' : '#00ff00', weight: 0, fillOpacity: p[2] / 100
-            }).addTo(auroraLayer);
-        }
+    const southLimit = -70, northLimit = 90;
+    map = L.map('map', { 
+        minZoom: 2, maxZoom: 10, worldCopyJump: true, 
+        maxBounds: [[southLimit, -540], [northLimit, 540]], 
+        maxBoundsViscosity: 1.0 
     });
-}
+
+function drawAurora(data) { auroraLayer.clearLayers(); data.coordinates.forEach(p => { if (p[2] > 10) { let baseLon = p[0] > 180 ? p[0] - 360 : p[0]; let color = p[2] > 50 ? '#ff4500' : (p[2] > 25 ? '#ffff00' : '#00ff00'); [-360, 0, 360].forEach(offset => { L.rectangle([[p[1], baseLon + offset], [p[1] + 2, baseLon + 2 + offset]], { color: color, weight: 0, fillOpacity: p[2] / 100, interactive: false }).addTo(auroraLayer); }); } }); }
 
 function updateMapMarker() {
     if (!map || myLat === null) return;

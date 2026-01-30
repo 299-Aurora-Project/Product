@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.7.4</title>
+<title>Easy Aurora Forecast v. t1.7.5</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon
@@ -172,7 +172,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.7.4</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.7.5</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -304,7 +304,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 // --- 1. 定数とグローバル変数 ---
 const PUBLIC_KEY = 'BAp0wnGuvaoZk_Q7Bn4H4DWAR2Zdi9juZECl10m290Ff9sAJqiaXepWYvGgbI7WOb9K3O0MOTG8TVi_hg_ovfEg';
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxG4VH2iu1wihVq_LrE9M-SG6r_aHT-KMlFokBGd7arq2LAsZnXI8swyc1z7uAEDnbZsg/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwfR5SvxP-D0b1WrsGU6XZFmUDoWe6LJDrVq2ILSnShiCzVRhfCvOW41hCojaKIg94M_g/exec";
 const CORS = GAS_URL + "?url="; // GASプロキシはやめて、安定したAllOriginsに戻します
 
 // 候補B (予備):
@@ -648,19 +648,17 @@ async function getKp() {
     try {
         const targetUrl = KP_URL + "?t=" + Date.now();
         const res = await fetch(CORS + encodeURIComponent(targetUrl));
-        const json = await res.json(); // AllOriginsのラッパーJSONを受け取る
         
-        // データが取得できていない場合は、JSON.parseせずに終了する
-        if (!json || !json.contents) {
-            console.error("AllOrigins returned empty contents");
+        // GASプロキシの場合、ここですでにNOAAの純粋なデータ（配列）が返ってきます
+        const data = await res.json(); 
+        
+        // データの存在チェック（GASがエラーを返した場合などの対策）
+        if (!data || !Array.isArray(data)) {
+            console.error("Invalid Kp data received from Proxy");
             return 0;
         }
-        
-        // json.contents の中にNOAAのデータが文字列で入っています
-        const data = JSON.parse(json.contents);
 
-        if (!data || !Array.isArray(data)) return 0;
-
+        // 最新のKp値を取り出す (配列の最後)
         const val = parseFloat(data[data.length - 1][1]);
         const el = document.getElementById("kp");
         if (el) {
@@ -674,42 +672,25 @@ async function getKp() {
     }
 }
 
-async function fetchKp3DayForecast() {
-    try {
-        const res = await fetch(CORS + encodeURIComponent(FORECAST_URL));
-        const json = await res.json(); // AllOriginsのパッケージを受け取る
-        const text = json.contents;    // その中のテキストデータを取り出す
-        
-        const match = text.match(/NOAA Kp index breakdown[\s\S]*?(?=\n[A-Z]|$)/i);
-        const el = document.getElementById("kpForecast");
-        if (el) {
-            el.innerText = match ? match[0].trim() : "Updating...";
-        }
-    } catch (e) {
-        console.error("Forecast Error:", e);
-    }
-}
-
-
-
 async function checkOval() {
     try {
         const targetUrl = OVAL_URL + "?t=" + Date.now();
         const res = await fetch(CORS + encodeURIComponent(targetUrl));
-        const json = await res.json();
         
-        // contents(文字列)をJSONオブジェクトに変換
-        const data = JSON.parse(json.contents);
+        // GASプロキシ経由なので、直接オブジェクトとして受け取る
+        const data = await res.json(); 
 
+        // data.contents へのアクセスと JSON.parse は不要になったので削除
         if (!data || !data.coordinates) return;
 
         cachedAuroraData = data;
-        if (map) drawAurora(data);
+        if (typeof map !== 'undefined' && map) drawAurora(data);
 
         let best = 0;
         data.coordinates.forEach(p => {
             let lon = p[0] > 180 ? p[0] - 360 : p[0];
             let lat = p[1];
+            // 自分の位置に近い座標を探す
             if (Math.abs(myLat - lat) < 2 && Math.abs(myLon - lon) < 2) {
                 best = Math.max(best, p[2]);
             }
@@ -723,6 +704,24 @@ async function checkOval() {
         }
     } catch (e) {
         console.error("Oval fetch error:", e);
+    }
+}
+
+async function fetchKp3DayForecast() {
+    try {
+        const res = await fetch(CORS + encodeURIComponent(FORECAST_URL));
+        
+        // GASプロキシがNOAAのテキストファイルをそのまま返してくる
+        // JSON形式ではなくテキストとして受け取るため、ここだけ .text() にします
+        const text = await res.text(); 
+        
+        const match = text.match(/NOAA Kp index breakdown[\s\S]*?(?=\n[A-Z]|$)/i);
+        const el = document.getElementById("kpForecast");
+        if (el) {
+            el.innerText = match ? match[0].trim() : "Updating...";
+        }
+    } catch (e) {
+        console.error("Forecast Error:", e);
     }
 }
 

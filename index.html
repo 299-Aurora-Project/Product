@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.8.8</title>
+<title>Easy Aurora Forecast v. t1.8.9</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon
@@ -172,7 +172,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.8.8</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.8.9</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -815,11 +815,31 @@ async function getCloud(isDaytime = false) {
 async function shortForecast() {
     if (!cloudDataHourly) return;
     
-    const hr = new Date().getHours();
+    // 1. 現地時間の計算 (経度 myLon を使用)
+    const now = new Date();
+    const utcHr = now.getUTCHours();
+    const localHr = (utcHr + Math.round(myLon / 15) + 24) % 24; 
+
+    // 2. 変数の準備
+    let label1 = "";
+    let val1 = 0;
     
-    // 3時間後と明日の雲量を取得
-    const c3h = cloudDataHourly[hr + 3] || 0;
-    const c24h = cloudDataHourly[hr + 24] || 0;
+    // 3. 時間帯による分岐ロジック
+    if (localHr >= 3 && localHr < 21) {
+        // --- 昼間 (3:00 - 21:00) ---
+        // ラベル: Tonight (21:00) / 今夜 (21:00)
+        label1 = "Tonight (21:00)";
+        val1 = cloudDataHourly[21] || 0; 
+    } else {
+        // --- 夜間 (21:00 - 翌3:00) ---
+        // ラベル: In 3 Hours / 3時間後
+        label1 = "In 3 hours";
+        // 現在のUTC時間インデックスから3つ先を取得
+        val1 = cloudDataHourly[utcHr + 3] || 0; 
+    }
+
+    // 明日の予報 (24時間後) は共通
+    const val2 = cloudDataHourly[utcHr + 24] || 0;
 
     // 0%と100%を避けるフォーマット関数
     const formatCloud = (val) => {
@@ -831,8 +851,8 @@ async function shortForecast() {
     const el = document.getElementById("forecast");
     if (el) {
         el.innerHTML = `
-            <div>🕒 In 3h: ${formatCloud(c3h)}</div>
-            <div>📅 Tomorrow: ${formatCloud(c24h)}</div>
+            <div>🕒 ${label1} : ${formatCloud(val1)}</div>
+            <div>📅 Tomorrow : ${formatCloud(val2)}</div>
         `;
     }
 }

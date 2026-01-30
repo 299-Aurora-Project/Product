@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.7.2</title>
+<title>Easy Aurora Forecast v. t1.7.3</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon
@@ -172,7 +172,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.7.2</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.7.3</span></h1>
         </div>
         <div class="produce-by">Produce by Shin</div>
     </div>
@@ -308,13 +308,13 @@ const FORECAST_URL = "https://services.swpc.noaa.gov/text/3-day-forecast.txt";
 const PUBLIC_KEY = 'BAp0wnGuvaoZk_Q7Bn4H4DWAR2Zdi9juZECl10m290Ff9sAJqiaXepWYvGgbI7WOb9K3O0MOTG8TVi_hg_ovfEg';
 
 // GASプロキシはやめて、安定したAllOriginsに戻します
-const CORS = "https://api.allorigins.win/get?url=";
+const CORS = GAS_URL + "?url=";
 
 // 候補B (予備):
 // const CORS = "https://thingproxy.freeboard.io/fetch/";
 // const CORS = "https://cors-proxy.org/?url=";
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbw3jQtvZvJcvcdeMyQMVfgCwLmKWjKqr6ierohEAKlEc4FtbTHGY6xFS4J78vROLsv-JQ/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxG4VH2iu1wihVq_LrE9M-SG6r_aHT-KMlFokBGd7arq2LAsZnXI8swyc1z7uAEDnbZsg/exec";
 
 let myLat = null, myLon = null, currentTotalScore = 0, lastAuroraProb = 0;
 let notifLat = null, notifLon = null, notifName = ""; // 通知用ロケーションを保持する変数

@@ -697,7 +697,10 @@ async function subscribeUser(forcedLat = null, forcedLon = null) {
             enabled: isEnabled, // 今の通知状態
             reset: !isEnabled   // OFFの時にtrueになる
         };
-            
+        
+        // --- 確認用今まさにサーバーに送ろうとしている座標」が画面に表示 ---
+        alert("Sending to Server:\nLat: " + payload.lat + "\nLon: " + payload.lon + "\nEnabled: " + payload.enabled);
+        
         await fetch(GAS_URL, { 
             method: 'POST', 
             // mode: 'no-cors' を削除（または 'cors' に変更）

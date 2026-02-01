@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.11.6</title>
+<title>Easy Aurora Forecast v. t1.11.7</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon
@@ -115,13 +115,14 @@ button:disabled { opacity: 0.3; cursor: not-allowed; }
 .refresh-btn { position: absolute; top: 15px; right: 15px; font-size: 0.8em; padding: 4px 8px; }
 .sub-refresh-btn { position: absolute; top: 15px; right: 0; font-size: 0.8em; padding: 4px 8px; }
 
-.last-updated { 
-    font-size: 0.65rem; 
-    color: #8b949e; 
-    text-align: right; 
-    margin-top: 4px; 
-    font-family: inherit; 
-    min-height: 1em; 
+.last-updated {
+    display: block;
+    text-align: left;  /* 文字の先頭を揃える */
+    margin-left: auto; /* 要素自体を右端に寄せる */
+    width: fit-content; /* 幅を中身に合わせる */
+    font-size: 0.65rem;
+    color: #8b949e;
+    font-family: inherit;
 }
 
 .error-msg { color: #ff6b6b; font-size: 0.75rem; margin-top: 5px; min-height: 1em; opacity: 0; transition: 0.3s; }
@@ -195,7 +196,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.11.6</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.11.7</span></h1>
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>
@@ -1399,9 +1400,9 @@ function updateTimestamp(id) {
         const mm = String(now.getMinutes()).padStart(2, '0');
         const ss = String(now.getSeconds()).padStart(2, '0');
 
-        // yyyy-mm-dd hh:mm:ss 形式に組み立て
         const formattedDate = `${y}-${m}-${d} ${hh}:${mm}:${ss}`;
-        el.textContent = `Last Update: ${formattedDate}`;
+        // textContent を innerHTML に変えて、<br> を入れる
+        el.innerHTML = `Last Update:<br>${formattedDate}`;
     }
 }
 

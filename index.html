@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.11.7</title>
+<title>Easy Aurora Forecast v. t1.11.8</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon
@@ -196,7 +196,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.11.7</span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.11.8</span></h1>
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>
@@ -212,7 +212,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 
 
     <div class="card" id="card-loc">
-        <div class="label-main">Location</div>
+        <div class="label-main">📍Location</div>
         <div id="loc" class="value">Not Set</div>
         <button id="btn-gps" onclick="getLocation(); event.stopPropagation();">Get Current Location via GPS</button><br>
         Search City:
@@ -229,7 +229,7 @@ input:checked + .slider:before { transform: translateX(20px); }
     <div class="card" id="card-main-result">
 
 
-    <div id="total-label" class="label-main">Overall Probability</div>
+    <div id="total-label" class="label-main">🌌Overall Probability</div>
     <div id="total-sub-label" class="label-sub-current">Current:</div>
 
     <div id="possibility-area" style="text-align: center; margin: 15px 0; display: flex; flex-direction: column; align-items: center; gap: 15px;">
@@ -251,7 +251,7 @@ input:checked + .slider:before { transform: translateX(20px); }
     
     <div class="switch-container" style="position: absolute; top: 15px; right: 22px; margin-top: 0; display: flex; flex-direction: column; align-items: flex-end;">
     	<div style="display: flex; align-items: center; gap: 10px;">
-        	<span class="switch-label">Notification</span>
+        	<span class="switch-label">🔔</span>
         	<label class="switch">
             	<input type="checkbox" id="notif-toggle">
             	<span class="slider"></span>
@@ -278,18 +278,14 @@ input:checked + .slider:before { transform: translateX(20px); }
 
     <div id="hidden-data">
         <div class="card" id="card-oval">
-            <div class="label-main">Aurora Oval</div>
+            <div class="label-main">🌎Aurora Oval</div>
             <div class="label-sub-current">Current: (Click to View Map)</div>
             <div id="oval" class="badge low" onclick="showMapScreen(); event.stopPropagation();">--</div>
             <div id="oval-prob" style="font-size: 0.9rem; color: #8b949e; margin: 10px 0;"></div>
         </div>
 
-
-
-
-
         <div class="card" id="card-kp-group">
-            <div class="label-main">Kp Index</div>
+            <div class="label-main">☀ Kp Index</div>
             <div class="label-sub-current">Current:</div>
             
 
@@ -308,7 +304,7 @@ input:checked + .slider:before { transform: translateX(20px); }
         </div>
 
         <div class="card" id="card-cloud-group">
-            <div class="label-main">Cloud Cover</div>
+            <div class="label-main">☁ Cloud Cover</div>
             <div class="label-sub-current">Current:</div>
             <div id="cloud" class="badge low">--</div>
             <div class="sub-section" id="card-short">
@@ -384,7 +380,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 // --- 1. 定数とグローバル変数 ---
 const PUBLIC_KEY = 'BAp0wnGuvaoZk_Q7Bn4H4DWAR2Zdi9juZECl10m290Ff9sAJqiaXepWYvGgbI7WOb9K3O0MOTG8TVi_hg_ovfEg';
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbx0pgTPAViJbZXOFzdHbAAfll7UJkvxyyiWIEbADoqNsdHzwJUacvgVvz5VPJowR2hicg/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbw_3w0TWN8wZ2yWcbLFOmTELHe2jUmgdTTvhj-7WGiB_3YdDSZ66jSIyht0s2LvLlfUiA/exec";
 const CORS = GAS_URL + "?url="; // GASプロキシはやめて、安定したAllOriginsに戻します
 
 // 候補B (予備):
@@ -642,7 +638,7 @@ async function subscribeUser(forcedLat = null, forcedLon = null) {
     // 3. 最終的な判定
     if (permission !== "granted") {
         // ここでアラートが出るのは「本当に拒否されている時」だけになります
-        alert("To enable notifications, please allow notificatoins in your browser settings.");
+        alert("To enable notifications, please allow notifications in your browser settings.");
         const toggle = document.getElementById("notif-toggle");
         if (toggle) toggle.checked = false; 
         return false;
@@ -666,6 +662,10 @@ async function subscribeUser(forcedLat = null, forcedLon = null) {
                 applicationServerKey: urlBase64ToUint8Array(PUBLIC_KEY)
             });
         }
+        
+        // 通知対象の名前を確定
+        const targetName = notifName || document.getElementById("loc").textContent;
+
         const payload = {
             endpoint: sub.endpoint,
             keys: {
@@ -676,7 +676,8 @@ async function subscribeUser(forcedLat = null, forcedLon = null) {
             lat: targetLat, // 固定された緯度を送る
             lon: targetLon, // 固定された経度を送る
             enabled: isEnabled, // 今の通知状態
-            reset: !isEnabled   // OFFの時にtrueになる
+            name: targetName, // ロケーション名
+            reset: !isEnabled   // OFFの時はtrueにする
         };
         
         // --- デバッグ用(今まさにサーバーに送ろうとしている座標」を画面に表示) ---
@@ -1066,7 +1067,7 @@ async function shortForecast() {
     const el = document.getElementById("forecast");
     if (el) {
         el.innerHTML = `
-            <div>🕒 ${label1} : ${formatCloud(val1)}</div>
+            <div>🌃 ${label1} : ${formatCloud(val1)}</div>
             <div>📅 Tomorrow : ${formatCloud(val2)}</div>
         `;
     }

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.11.3</title>
+<title>Easy Aurora Forecast v. t1.11.4</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon
@@ -189,7 +189,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.11.3</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.11.4</span></h1>
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>
@@ -300,13 +300,6 @@ input:checked + .slider:before { transform: translateX(20px); }
             </div>
         </div>
 
-
-
-
-
-
-
-
         <div class="card" id="card-cloud-group">
             <div class="label-main">Cloud Cover</div>
             <div class="label-sub-current">Current:</div>
@@ -318,21 +311,6 @@ input:checked + .slider:before { transform: translateX(20px); }
         </div>
     </div>
 </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 <div id="detailModal" class="modal-overlay" onclick="closeModal()">
     <div class="modal-content">
@@ -710,11 +688,15 @@ async function subscribeUser(forcedLat = null, forcedLon = null) {
     } catch (e) { return false; }
 }
 
-// スイッチを操作
+// スイッチ操作
 async function handleNotifToggleEvent() {
     const isEnabled = this.checked;
     localStorage.setItem('aurora_enabled', isEnabled);
-
+    
+    //「targetDisplay」と「targetNameLabel」を定義
+    const targetDisplay = document.getElementById("target-area-display");
+    const targetNameLabel = document.getElementById("target-area-name");
+    
     if (isEnabled) {
         if (myLat === null) {
             alert("Please set a location first.");

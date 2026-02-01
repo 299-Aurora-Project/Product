@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.11.2</title>
+<title>Easy Aurora Forecast v. t1.11.3</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon
@@ -189,7 +189,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.11.2</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.11.3</span></h1>
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>
@@ -462,10 +462,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             await reverseGeocode(myLat, myLon);
         }
 
-        // ❌ 削除またはコメントアウト：起動のたびにGASへ送る必要はありません
-        // await subscribeUser(); 
-
-        // ✅ 代わりに：通知が有効な設定なのにブラウザ側で許可が消えていないかチェック
+        // 通知が有効な設定なのにブラウザ側で許可が消えていないかチェック
         if (savedEnabled && Notification.permission !== "granted") {
             console.warn("Notification permission lost on this device.");
             // 必要ならここでスイッチをOFFに戻すなどの処理
@@ -713,6 +710,7 @@ async function subscribeUser(forcedLat = null, forcedLon = null) {
     } catch (e) { return false; }
 }
 
+// スイッチを操作
 async function handleNotifToggleEvent() {
     const isEnabled = this.checked;
     localStorage.setItem('aurora_enabled', isEnabled);
@@ -724,7 +722,7 @@ async function handleNotifToggleEvent() {
             return;
         }
 
-        // ★スイッチを入れた「今の場所」を通知用として固定・保存
+        // スイッチを入れた時点の場所を通知用として固定・保存
         notifLat = parseFloat(myLat);
         notifLon = parseFloat(myLon);
         notifName = document.getElementById("loc").textContent;
@@ -734,10 +732,15 @@ async function handleNotifToggleEvent() {
         localStorage.setItem('aurora_notifLon', notifLon);
         localStorage.setItem('aurora_notifName', notifName);
         
-        // 保存直後に、その値を直接 subscribeUser に渡す
+        // 待機中の表示
+        if (targetDisplay) targetDisplay.style.display = "block";
+        if (targetNameLabel) targetNameLabel.innerHTML = "⏳ <i>Loading...</i>";
+        
+        // 通信実行(保存直後に、その値を直接 subscribeUser に渡す)
         const success = await subscribeUser(notifLat, notifLon); 
         
         if (success) {
+            if (targetNameLabel) targetNameLabel.textContent = notifName;
             document.getElementById("target-area-display").style.display = "block";
             document.getElementById("target-area-name").textContent = notifName;
             alert(`Notifications have been set.\nYou'll receive notifications when aurora visibility is possible.\n\nTarget area: ${notifName}`);
@@ -1178,9 +1181,8 @@ function calculateTotal() {
     
     
 
-/**
- * レーダーチャートを更新する関数
- */
+
+// レーダーチャートを更新する関数
 function updateRadarChart() {
     const ctx = document.getElementById('radarChart').getContext('2d');
     const kp = parseFloat(document.getElementById("kp").textContent) || 0;

@@ -673,8 +673,8 @@ async function subscribeUser(forcedLat = null, forcedLon = null) {
             reset: !isEnabled   // OFFの時にtrueになる
         };
         
-        // --- 確認用今まさにサーバーに送ろうとしている座標」が画面に表示 ---
-        alert("Sending to Server:\nLat: " + payload.lat + "\nLon: " + payload.lon + "\nEnabled: " + payload.enabled);
+        // --- デバッグ用(今まさにサーバーに送ろうとしている座標」を画面に表示) ---
+        // alert("Sending to Server:\nLat: " + payload.lat + "\nLon: " + payload.lon + "\nEnabled: " + payload.enabled);
         
         await fetch(GAS_URL, { 
             method: 'POST', 

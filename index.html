@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.11.8</title>
+<title>Easy Aurora Forecast v. t1.11.9</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon
@@ -196,7 +196,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.11.8</span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.11.9</span></h1>
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>
@@ -279,7 +279,7 @@ input:checked + .slider:before { transform: translateX(20px); }
     <div id="hidden-data">
         <div class="card" id="card-oval">
             <div class="label-main">🌎Aurora Oval</div>
-            <div class="label-sub-current">Current: (Click to View Map)</div>
+            <div class="label-sub-current">Current:</div>
             <div id="oval" class="badge low" onclick="showMapScreen(); event.stopPropagation();">--</div>
             <div id="oval-prob" style="font-size: 0.9rem; color: #8b949e; margin: 10px 0;"></div>
         </div>
@@ -627,30 +627,59 @@ async function getLocation() {
 
 // 通知の購読（subscribe)
 async function subscribeUser(forcedLat = null, forcedLon = null) {
-    // 1. まず現在の権限を「確認」する (これならポップアップは出ない)
+    // スイッチの状態をまず取得（これをしないと下の if でエラー）
+    const toggle = document.getElementById("notif-toggle");
+    const isEnabled = toggle ? toggle.checked : false;
+
+    // 1. まず現在の権限を「確認」(権限確認ポップアップを出さない)
     let permission = Notification.permission;
 
-    // 2. まだ一度も許可/拒否していない(default)場合だけ、許可をリクエストする
+    // オフにする時の処理
+    // 通知許可や座標のチェックを飛ばしてGASに送る
+    if (!isEnabled) {
+        try {
+            const registration = await navigator.serviceWorker.ready;
+            const sub = await registration.pushManager.getSubscription();
+            if (sub) {
+                const payload = {
+                    endpoint: sub.endpoint,
+                    keys: {
+                        p256dh: "'" + btoa(String.fromCharCode.apply(null, new Uint8Array(sub.getKey('p256dh')))),
+                        auth: "'" + btoa(String.fromCharCode.apply(null, new Uint8Array(sub.getKey('auth'))))
+                    },
+                    lat: null,
+                    lon: null,
+                    enabled: false,
+                    name: "",
+                    reset: true // GAS側でH列・I列を掃除
+                };
+                await fetch(GAS_URL, { 
+                    method: 'POST', 
+                    body: JSON.stringify(payload),
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+                });
+            }
+            return true;
+        } catch (e) { return false; }
+    }
+
+    // オンにする時の処理
+    // まだ一度も許可/拒否していない(default)場合だけ、許可をリクエスト
     if (permission === "default") {
         permission = await Notification.requestPermission();
     }
-
-    // 3. 最終的な判定
+    
+    // 最終的な判定
     if (permission !== "granted") {
-        // ここでアラートが出るのは「本当に拒否されている時」だけになります
-        alert("To enable notifications, please allow notifications in your browser settings.");
-        const toggle = document.getElementById("notif-toggle");
+        alert("To enable notifications, please allow notifications in your browser settings."); // ここでアラートが出るのは「本当に拒否されている時」だけ
         if (toggle) toggle.checked = false; 
         return false;
     }
     
     try {
-        const isEnabled = document.getElementById("notif-toggle").checked;
-
         // 引数があればそれを使う、なければグローバルの notifLat、それもなければ myLat
         const targetLat = forcedLat !== null ? forcedLat : (notifLat !== null ? notifLat : myLat);
         const targetLon = forcedLon !== null ? forcedLon : (notifLon !== null ? notifLon : myLon);
-        
         
         if (targetLat === null) return false;
 
@@ -669,27 +698,25 @@ async function subscribeUser(forcedLat = null, forcedLon = null) {
         const payload = {
             endpoint: sub.endpoint,
             keys: {
-        // 先頭に "'" を付けて数式誤認を防止
-            p256dh: "'" + btoa(String.fromCharCode.apply(null, new Uint8Array(sub.getKey('p256dh')))),
-            auth: "'" + btoa(String.fromCharCode.apply(null, new Uint8Array(sub.getKey('auth'))))
+                // 先頭に "'" を付けて数式誤認を防止
+                p256dh: "'" + btoa(String.fromCharCode.apply(null, new Uint8Array(sub.getKey('p256dh')))),
+                auth: "'" + btoa(String.fromCharCode.apply(null, new Uint8Array(sub.getKey('auth'))))
             },
             lat: targetLat, // 固定された緯度を送る
             lon: targetLon, // 固定された経度を送る
-            enabled: isEnabled, // 今の通知状態
+            enabled: true, // 今の通知状態
             name: targetName, // ロケーション名
-            reset: !isEnabled   // OFFの時はtrueにする
+            reset: false // OFFの時はtrueに
         };
         
         // --- デバッグ用(今まさにサーバーに送ろうとしている座標」を画面に表示) ---
         // alert("Sending to Server:\nLat: " + payload.lat + "\nLon: " + payload.lon + "\nEnabled: " + payload.enabled);
+
         
         await fetch(GAS_URL, { 
             method: 'POST', 
-            // mode: 'no-cors' を削除（または 'cors' に変更）
             body: JSON.stringify(payload),
-            headers: {
-                'Content-Type': 'text/plain;charset=utf-8' 
-            }
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' }
         });
         return true;
     } catch (e) { return false; }
@@ -737,7 +764,12 @@ async function handleNotifToggleEvent() {
             this.checked = false;
         }
     } else {
+        // オフにしたとき
         document.getElementById("target-area-display").style.display = "none";
+        const success = await subscribeUser(); // オフの状態を送る
+        if (!success) {
+            console.error("Failed to sync 'OFF' status to server.");
+        }
     }
 }
 

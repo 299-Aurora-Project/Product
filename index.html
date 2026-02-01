@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.11.5</title>
+<title>Easy Aurora Forecast v. t1.11.6</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon
@@ -114,7 +114,16 @@ button:disabled { opacity: 0.3; cursor: not-allowed; }
 .autocomplete-item:hover { background-color: #3a506b; color: #5bc0be; }
 .refresh-btn { position: absolute; top: 15px; right: 15px; font-size: 0.8em; padding: 4px 8px; }
 .sub-refresh-btn { position: absolute; top: 15px; right: 0; font-size: 0.8em; padding: 4px 8px; }
-.last-updated { font-size: 0.65rem; color: #8b949e; text-align: right; margin-top: 4px; font-family: monospace; min-height: 1em; }
+
+.last-updated { 
+    font-size: 0.65rem; 
+    color: #8b949e; 
+    text-align: right; 
+    margin-top: 4px; 
+    font-family: inherit; 
+    min-height: 1em; 
+}
+
 .error-msg { color: #ff6b6b; font-size: 0.75rem; margin-top: 5px; min-height: 1em; opacity: 0; transition: 0.3s; }
 .loading-text { opacity: 0.6; font-size: 1rem; color: #8b949e; font-style: normal; }
 .loading-text i { font-style: italic; }
@@ -173,9 +182,6 @@ input:checked + .slider:before { transform: translateX(20px); }
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-
-
-
 </head>
 <body onkeydown="closeWelcome()" onclick="closeWelcome(); closeAllLists();">
 
@@ -189,7 +195,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.11.5</span></h1>
+            <h1>🌌 Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.11.6</span></h1>
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>
@@ -760,7 +766,7 @@ async function updateAll() {
             getKp(), 
             fetchKp3DayForecast(), 
             checkOval(), 
-            getCloud(isDaytime) // ★ 引数を追加
+            getCloud(isDaytime) // 引数を追加
         ]);
         
         await shortForecast();
@@ -1384,7 +1390,19 @@ async function reverseGeocode(lat, lon) {
 
 function updateTimestamp(id) {
     const el = document.getElementById(id);
-    if (el) el.textContent = `Last Update: ${new Date().toLocaleTimeString()}`;
+    if (el) {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const d = String(now.getDate()).padStart(2, '0');
+        const hh = String(now.getHours()).padStart(2, '0');
+        const mm = String(now.getMinutes()).padStart(2, '0');
+        const ss = String(now.getSeconds()).padStart(2, '0');
+
+        // yyyy-mm-dd hh:mm:ss 形式に組み立て
+        const formattedDate = `${y}-${m}-${d} ${hh}:${mm}:${ss}`;
+        el.textContent = `Last Update: ${formattedDate}`;
+    }
 }
 
 function toggleData() {

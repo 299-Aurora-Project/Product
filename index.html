@@ -649,7 +649,6 @@ async function subscribeUser(forcedLat = null, forcedLon = null) {
         const targetLon = forcedLon !== null ? forcedLon : (notifLon !== null ? notifLon : myLon);
         
         
-        
         if (targetLat === null) return false;
 
         const registration = await navigator.serviceWorker.ready;
@@ -716,7 +715,7 @@ async function handleNotifToggleEvent() {
         
         // 待機中の表示
         if (targetDisplay) targetDisplay.style.display = "block";
-        if (targetNameLabel) targetNameLabel.innerHTML = "⏳ <i>Loading...</i>";
+        if (targetNameLabel) targetNameLabel.innerHTML = "⏳ <i>Configuring...</i>";
         
         // 通信実行(保存直後に、その値を直接 subscribeUser に渡す)
         const success = await subscribeUser(notifLat, notifLon); 

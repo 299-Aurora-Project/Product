@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.11.13</title>
+<title>Easy Aurora Forecast v. t1.11.14</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon
@@ -178,41 +178,45 @@ input:checked + .slider:before { transform: translateX(20px); }
     margin: 10px 0;
 }
 
-/* 候補リスト全体の枠組み */
+/* 候補リストの枠 */
 #autocomplete-list {
     position: absolute;
-    z-index: 999;
+    z-index: 9999;
     top: 100%;
     left: 0;
     right: 0;
     margin-top: 5px;
-    background-color: #ffffff !important; /* 強制的に白背景 */
-    border: 1px solid #ccc !important;   /* 外枠の線 */
+    background-color: #FFFFFF !important;
+    border: 1px solid #ccc !important; /* JSでdisplay:blockにした時だけこれが見える */
     border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15); /* 少し影をつけて浮かせます */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     overflow: hidden;
+    padding: 0;
+    display: none; /* 初期状態は非表示 */
 }
 
-/* 各候補（一行ずつ）のスタイル */
+/* リストに中身がある時だけ枠線を出す */
+#autocomplete-list:not(:empty) {
+    border: 1px solid #CCCCCC !important;
+}
+
+/* 各行のスタイル */
 .autocomplete-item {
-    padding: 12px 15px;
+    padding: 12px 15px !important;
     cursor: pointer;
+    background-color: #FFFFFF !important; /* 絶対に白 */
+    color: #000000 !important;           /* 絶対に黒 */
+    border-bottom: 1px solid #eeeeee !important;
     text-align: left;
-    font-size: 15px;
-    color: #222222 !important;     /* 強制的に濃い文字色 */
-    background-color: #ffffff !important; /* 背景を白に固定 */
-    border-bottom: 1px solid #eeeeee;     /* 行と行の間の線 */
-    line-height: 1.4;
 }
 
-/* 最後の行だけ線を表示しない */
 .autocomplete-item:last-child {
-    border-bottom: none;
+    border-bottom: none !important;
 }
 
-/* タップ・ホバーした時の色（選んでいる感を出します） */
+/* ホバー・タップ時 */
 .autocomplete-item:hover, .autocomplete-item:active {
-    background-color: #f0f0f0 !important;
+    background-color: #e9e9e9 !important;
 }
 </style>
 
@@ -232,7 +236,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.11.13</span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.11.14</span></h1>
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>
@@ -253,9 +257,11 @@ input:checked + .slider:before { transform: translateX(20px); }
         <button id="btn-gps" onclick="getLocation(); event.stopPropagation();">Get Current Location via GPS</button><br>
         Search City:
         <div class="search-container">
-            <input id="cityInput" placeholder="e.g. Yellowknife, Canada" 
-       oninput="handleCityInput(this)" 
-       onclick="event.stopPropagation()">
+            <input id="cityInput" 
+                 placeholder="e.g. Yellowknife, Canada" 
+                 oninput="handleCityInput(this)" 
+                 onclick="event.stopPropagation()"
+                 onfocus="handleCityInput(this)" onclick="event.stopPropagation()">
             <button id="btn-search" onclick="searchCity()">Set</button>
             <div id="autocomplete-list" class="autocomplete-items"></div>
         </div>
@@ -579,12 +585,26 @@ function showAutocomplete(results) {
     list.innerHTML = ""; // リストを一旦空に
     if (!results || results.length === 0) return;
     
+    // 候補がない場合は非表示にして終了
+    if (!results || results.length === 0) {
+        list.style.display = "none";
+        return;
+    }
+
+    // 候補がある場合は表示する
+    list.style.display = "block";
+    
     // リストをクリアする処理
     results.forEach(res => {
         const div = document.createElement("div");
-        // res.name ではなく、都道府県を含んだ customLabel を表示
-        div.textContent = res.customLabel; 
+        // クラス名を付与（これでCSSが適用）
+        div.className = "autocomplete-item";
         
+        // 強制的に文字色を黒に指定
+        div.style.color = "#000000"; 
+        div.textContent = res.customLabel;
+        
+               
         // クリックした時の処理
         div.onclick = async () => {
             // 1. スマホ用：キーボードを閉じ、ズームを解除する
@@ -625,6 +645,8 @@ function closeAllLists() {
     const list = document.getElementById("autocomplete-list");
     if (list) {
         list.innerHTML = "";
+        // CSSの :empty 判定を確実にするため、中身を完全に空にする
+        list.style.display = "none"; // 枠線ごと消す
     }
     
     // ズーム解除（viewportのリセット）

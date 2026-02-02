@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.11.16</title>
+<title>Easy Aurora Forecast v. t1.11.17</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon
@@ -107,12 +107,28 @@ button:active:not(:disabled),
 
 button:disabled { opacity: 0.3; cursor: not-allowed; }
 #btn-gps { width: auto; min-width: 220px; padding: 10px 20px; margin-bottom: 15px; }
-.search-container { position: relative; display: inline-block; width: 100%; margin-top: 5px; }
-#cityInput { width: calc(100% - 100px); box-sizing: border-box; }
-.autocomplete-items { position: absolute; border: 1px solid #3a506b; border-bottom: none; border-top: none; z-index: 99; top: 100%; left: 0; right: 100px; background-color: #1c2541; border-radius: 0 0 4px 4px; max-height: 200px; overflow-y: auto; }
-.autocomplete-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #30363d; font-size: 0.85rem; }
-.autocomplete-item:hover { background-color: #3a506b; color: #5bc0be; }
-.refresh-btn { position: absolute; top: 15px; right: 15px; font-size: 0.8em; padding: 4px 8px; }
+
+.search-container {
+    position: relative;
+    width: auto;           /* 入力窓の幅に合わせる */
+    margin-top: 5px; 
+    vertical-align: middle;
+}
+
+/* 2. 入力窓：角丸を8pxに統一し、ネイビー系に */
+#cityInput {
+    width: 220px;           /* ここで横幅を固定*/
+    box-sizing: border-box;
+    border-radius: 5px !important;     /* 他のボタンと統一 */
+    border: 1px solid #3a506b;
+    background-color: #0b132b;
+    color: #ffffff;
+    padding: 10px 15px;
+    font-size: 1rem;
+    outline: none;
+    transition: border-radius 0.2s;
+}
+
 .sub-refresh-btn { position: absolute; top: 15px; right: 0; font-size: 0.8em; padding: 4px 8px; }
 
 .last-updated {
@@ -178,11 +194,6 @@ input:checked + .slider:before { transform: translateX(20px); }
     margin: 10px 0;
 }
 
-/* 検索窓とリストを包む親要素（基準点にする） */
-.search-container {
-    position: relative; /* リストの横幅の基準 */
-}
-
 /* 候補リストの枠 */
 #autocomplete-list {
     position: absolute;
@@ -194,7 +205,7 @@ input:checked + .slider:before { transform: translateX(20px); }
     /*  right: 0; right: 0; を消して width: 100% にすることで入力窓と一致させます */
     margin-top: 0px;
     background-color: #0b132b !important; /* さらに深いネイビーに変更 */
-    border-radius: 0 0 8px 8px; /* 下側だけ丸くして一体感を出す */
+    border-radius: 0 0 5px 5px; /* 下側だけ丸くして一体感を出す */
     border: 1px solid #3a506b !important; /* 境界線を少し明るいネイビーに */
     box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     overflow: hidden;
@@ -202,20 +213,39 @@ input:checked + .slider:before { transform: translateX(20px); }
     display: none; /* 初期状態は非表示 */
 }
 
-/* リストに中身がある時だけ枠線を出す */
+/* 「中身がある時だけ白くする」設定をネイビーに書き換え */
 #autocomplete-list:not(:empty) {
-    border: 1px solid #CCCCCC !important;
+    border: 1px solid #3a506b !important; /* ネイビー*/
+    border-top: none !important;          /* ここでも上辺を消す */
 }
 
 /* 各行のスタイル */
+/* 3. ドロップダウンリスト：入力窓と完全に一致させる */
+.autocomplete-items, #autocomplete-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 220px;
+    box-sizing: border-box;
+    z-index: 9999;
+    background-color: #0b132b !important;
+    border: 1px solid #3a506b !important;
+    border-top: none !important; /* 上辺を消して一体化 */
+    border-radius: 0 0 5px 5px;
+    margin-top: 0;
+    padding: 0;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+}
+/* 各アイテムの文字色を白に */
 .autocomplete-item {
-    padding: 12px 15px !important;
-    cursor: pointer;
-    background-color: #0b132b !important; /* 背景：一番暗いネイビー */
-    color: #ffffff !important;           /* 文字：ホワイト */
-    border-bottom: 1px solid #1c2541 !important; /* 線も少し暗く */
-    text-align: left;
-    font-family: inherit; /* フォントを親要素（containerやbody）と同じに設定 */
+    color: #ffffff !important;
+    padding: 12px 15px;
+    border-bottom: 1px solid #1c2541;
+}
+
+/* ホバー時は暗めのネイビー */
+.autocomplete-item:hover {
+    background-color: #1c2541 !important;
 }
 
 .autocomplete-item:last-child {
@@ -245,7 +275,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.11.16</span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.11.17</span></h1>
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>
@@ -547,10 +577,19 @@ async function searchCity() {
 function handleCityInput(el) {
     const val = el.value.trim();
     document.getElementById("btn-search").disabled = val.length === 0;
+    const list = document.getElementById("autocomplete-list"); // 追加
+
+    document.getElementById("btn-search").disabled = val.length === 0;
 
     clearTimeout(searchTimer);
+
+    // 文字が少ない時はリストを隠すだけ（ズーム解除はしない）
     if (val.length < 2) {
-        closeAllLists();
+        if (list) {
+            list.innerHTML = "";
+            list.style.display = "none";
+        }
+        el.style.borderRadius = "8px"; 
         return;
     }
 
@@ -652,6 +691,8 @@ function showAutocomplete(results) {
 function closeAllLists() {
     // リストを非表示に
     const list = document.getElementById("autocomplete-list");
+    const cityInput = document.getElementById("cityInput");
+    
     if (list) {
         list.innerHTML = "";
         // CSSの :empty 判定を確実にするため、中身を完全に空にする
@@ -663,15 +704,13 @@ function closeAllLists() {
         cityInput.style.borderRadius = "8px"; 
     }
     
-    // ズーム解除（viewportのリセット）
+    // 外側をタップしてキャンセルした時もズームを解除する
     const viewport = document.querySelector('meta[name="viewport"]');
     if (viewport) {
         const originalContent = viewport.content;
-        // 一時的に最大ズームを1倍に制限して強制リセット
         viewport.content = 'width=device-width, initial-scale=1, maximum-scale=1';
-        
         setTimeout(() => {
-            viewport.content = originalContent; // 元の設定に戻す
+            viewport.content = originalContent;
         }, 300);
     }
 }

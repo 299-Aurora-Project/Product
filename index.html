@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.11.14</title>
+<title>Easy Aurora Forecast v. t1.11.15</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon
@@ -178,17 +178,22 @@ input:checked + .slider:before { transform: translateX(20px); }
     margin: 10px 0;
 }
 
+/* 検索窓とリストを包む親要素（基準点にする） */
+.search-container {
+    position: relative; /* リストの横幅の基準 */
+}
+
 /* 候補リストの枠 */
 #autocomplete-list {
     position: absolute;
     z-index: 9999;
     top: 100%;
     left: 0;
-    right: 0;
+    /*  right: 0; right: 0; を消して width: 100% にすることで入力窓と一致させます */
     margin-top: 5px;
-    background-color: #FFFFFF !important;
-    border: 1px solid #ccc !important; /* JSでdisplay:blockにした時だけこれが見える */
-    border-radius: 8px;
+    background-color: #0b132b !important; /* さらに深いネイビーに変更 */
+    border-radius: 0 0 8px 8px; /* 下側だけ丸くして一体感を出す */
+    border: 1px solid #3a506b !important; /* 境界線を少し明るいネイビーに */
     box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     overflow: hidden;
     padding: 0;
@@ -204,10 +209,11 @@ input:checked + .slider:before { transform: translateX(20px); }
 .autocomplete-item {
     padding: 12px 15px !important;
     cursor: pointer;
-    background-color: #FFFFFF !important; /* 絶対に白 */
-    color: #000000 !important;           /* 絶対に黒 */
-    border-bottom: 1px solid #eeeeee !important;
+    background-color: #0b132b !important; /* 背景：一番暗いネイビー */
+    color: #ffffff !important;           /* 文字：ホワイト */
+    border-bottom: 1px solid #1c2541 !important; /* 線も少し暗く */
     text-align: left;
+    font-family: inherit; /* フォントを親要素（containerやbody）と同じに設定 */
 }
 
 .autocomplete-item:last-child {
@@ -216,7 +222,8 @@ input:checked + .slider:before { transform: translateX(20px); }
 
 /* ホバー・タップ時 */
 .autocomplete-item:hover, .autocomplete-item:active {
-    background-color: #e9e9e9 !important;
+    background-color: #1c2541 !important; /* ホバー時は少しだけ明るく
+    color: #5bc0be !important; /* オーロラカラーのアクセント */
 }
 </style>
 
@@ -236,7 +243,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.11.14</span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.11.15</span></h1>
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.11.9e</title>
+<title>Easy Aurora Forecast v. t1.11.10</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon
@@ -196,7 +196,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.11.9e</span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.11.10</span></h1>
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>
@@ -227,15 +227,12 @@ input:checked + .slider:before { transform: translateX(20px); }
     </div>
 
     <div class="card" id="card-main-result">
-
-
     <div id="total-label" class="label-main">🌌Overall Probability</div>
     <div id="total-sub-label" class="label-sub-current">Current:</div>
-
     <div id="possibility-area" style="text-align: center; margin: 15px 0; display: flex; flex-direction: column; align-items: center; gap: 15px;">
     
         <img id="status-icon" 
-             src="low.png" 
+             src="loading.gif" 
              alt="Status" 
              onclick="openModal()" 
              style="width: 180px; height: auto; cursor: pointer; -webkit-tap-highlight-color: transparent;">
@@ -780,6 +777,15 @@ async function updateAll() {
     const btn = document.getElementById('btn-update-all');
     if(btn) btn.classList.add('loading-btn');
     ['kp','oval','cloud','result'].forEach(id => setItemLoading(id, true));
+    
+    // 画像とバッジを Loading 状態にする
+    const statusIcon = document.getElementById("status-icon");
+    const resultBadge = document.getElementById("result");
+    if (statusIcon) statusIcon.src = "loading.gif"; // Loading画像を表示
+    if (resultBadge) {
+        resultBadge.textContent = "Loading...";
+        resultBadge.className = "badge badge-large loading"; // Loading用の見た目に
+    }
 
     try {
         // 1. 時刻判定

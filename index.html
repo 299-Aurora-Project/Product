@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.11.11</title>
+<title>Easy Aurora Forecast v. t1.11.12</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon
@@ -196,7 +196,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.11.11</span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.11.12</span></h1>
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>
@@ -505,28 +505,50 @@ function handleCityInput(el) {
 
     searchTimer = setTimeout(async () => {
         try {
-            const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(val)}&count=5&language=en`);
+            const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(val)}&count=10&language=en`); // countを少し増やして精査
             const data = await res.json();
-            if (!data) return; // データがなければ処理を中断
-            showAutocomplete(data.results);
+            if (!data || !data.results) return;
+
+            // --- 重複を排除し、詳細な名前を付けるロジック ---
+            const uniqueResults = [];
+            const seen = new Set();
+
+            data.results.forEach(r => {
+                // 都道府県名(admin1)があれば追加して、より詳細なラベルを作る
+                // 例: "Yokohama, Kanagawa, Japan"
+                const admin = r.admin1 ? `${r.admin1}, ` : "";
+                const fullDisplayName = `${r.name}, ${admin}${r.country}`;
+
+                if (!seen.has(fullDisplayName)) {
+                    seen.add(fullDisplayName);
+                    // 表示用のプロパティをオブジェクトに追加
+                    r.customLabel = fullDisplayName; 
+                    uniqueResults.push(r);
+                }
+            });
+
+            // 絞り込んだ結果をオートコンプリートに渡す（最大5件）
+            showAutocomplete(uniqueResults.slice(0, 5));
         } catch(e){ console.error(e); }
     }, 300);
 }
 
 function showAutocomplete(results) {
     const list = document.getElementById("autocomplete-list");
-    list.innerHTML = "";
-    if (!results) return;
-
+    if (!list) return; // リスト要素がない場合の安全策
+    
+    list.innerHTML = ""; // リストを一旦空に
+    if (!results || results.length === 0) return;
+    
+    // リストをクリアする処理
     results.forEach(res => {
-        const item = document.createElement("div");
-        item.className = "autocomplete-item";
-        item.innerHTML = `<strong>${res.name}</strong>, ${res.country}`;
+        const div = document.createElement("div");
+        // res.name ではなく、都道府県を含んだ customLabel を表示
+        div.textContent = res.customLabel; 
         
-        item.onmousedown = async (e) => {
-            e.preventDefault();
-
-            // --- 1. スマホ用：キーボードを閉じ、ズームを解除する ---
+        // クリックした時の処理
+        div.onclick = async () => {
+            // 1. スマホ用：キーボードを閉じ、ズームを解除する
             const cityInput = document.getElementById("cityInput");
             if (cityInput) {
                 cityInput.blur(); // フォーカスを外してキーボードを引っ込める
@@ -543,11 +565,19 @@ function showAutocomplete(results) {
                 }, 300);
             }
 
-            // --- 2. 通常の位置セット処理 ---
-            await setLocation(res.latitude, res.longitude, `${res.name}, ${res.country}`);
-            closeAllLists();
+            // 通常の位置セット処理
+            // res.customLabel を渡すことで、都道府県込みの名前が保存されます
+            // await を使って、setLocation が終わるのを待ってから次に進みます
+            await setLocation(res.latitude, res.longitude, res.customLabel);
+            
+           // 3. 全てのリストを閉じる
+            if (typeof closeAllLists === "function") {
+                closeAllLists();
+            }
         };
-        list.appendChild(item);
+
+        // 親要素（list）に作成した div を追加
+        list.appendChild(div);
     });
 }
 
@@ -582,7 +612,7 @@ async function setLocation(lat, lon, name) {
     }
     
     // 5. 最新の座標に基づいて計算（Overall Possibilityなど）
-    // 修正】await を外し、エラーが起きても次に進めるようにする
+    // await を外し、エラーが起きても次に進めるようにする
     // これにより、updateAll が重くても途中で止まっても、関数自体は完了し、UIのフリーズを防げます。
     updateAll().catch(err => console.error("UpdateAll failed in background:", err));
 }
@@ -1449,13 +1479,7 @@ function toggleData() {
 }
 
 
-/**
- * 次回の更新スケジュールを管理する関数
- */
-/**
- * 次回の更新スケジュールを管理する関数
- * これが setInterval の代わりになります
- */
+// 次回の更新スケジュールを管理する関数
 function scheduleNextUpdate() {
     const now = new Date();
     const hour = now.getHours();

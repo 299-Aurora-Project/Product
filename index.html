@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.11.10</title>
+<title>Easy Aurora Forecast v. t1.11.11</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon
@@ -196,7 +196,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.11.10</span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.11.11</span></h1>
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>
@@ -782,10 +782,10 @@ async function updateAll() {
     const statusIcon = document.getElementById("status-icon");
     const resultBadge = document.getElementById("result");
     if (statusIcon) statusIcon.src = "loading.gif"; // Loading画像を表示
-    if (resultBadge) {
-        resultBadge.textContent = "Loading...";
-        resultBadge.className = "badge badge-large loading"; // Loading用の見た目に
-    }
+//    if (resultBadge) {
+//        resultBadge.textContent = "Loading...";
+//        resultBadge.className = "badge badge-large loading"; // Loading用の見た目に
+//    }
 
     try {
         // 1. 時刻判定
@@ -1492,15 +1492,6 @@ function scheduleNextUpdate() {
 // 最初のスケジュールを開始(初回実行のトリガー（ページ読み込み時など）)
 scheduleNextUpdate();
 
-
-
-
-
 </script>
 </body>
 </html>
-
-
-
-
-

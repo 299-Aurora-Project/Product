@@ -377,7 +377,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 // --- 1. 定数とグローバル変数 ---
 const PUBLIC_KEY = 'BAp0wnGuvaoZk_Q7Bn4H4DWAR2Zdi9juZECl10m290Ff9sAJqiaXepWYvGgbI7WOb9K3O0MOTG8TVi_hg_ovfEg';
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwqxOewFo--rdOi1Om_Qf76F9SNAJdXAQXbPuhQtM9JGKiEY24BV-hfjmWb_S0CmaSwcg/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzdchTpdP7-N1ZlsQjZR7FocEtOTtZI26GM5tV0RQC5YVWg4xgM9BVLmmGAXcbfjIPmYQ/exec";
 const CORS = GAS_URL + "?url="; // GASプロキシはやめて、安定したAllOriginsに戻します
 
 // 候補B (予備):
@@ -782,10 +782,7 @@ async function updateAll() {
     const statusIcon = document.getElementById("status-icon");
     const resultBadge = document.getElementById("result");
     if (statusIcon) statusIcon.src = "loading.gif"; // Loading画像を表示
-//    if (resultBadge) {
-//        resultBadge.textContent = "Loading...";
-//        resultBadge.className = "badge badge-large loading"; // Loading用の見た目に
-//    }
+
 
     try {
         // 1. 時刻判定

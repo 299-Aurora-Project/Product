@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.11.12</title>
+<title>Easy Aurora Forecast v. t1.11.13</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon
@@ -178,6 +178,42 @@ input:checked + .slider:before { transform: translateX(20px); }
     margin: 10px 0;
 }
 
+/* 候補リスト全体の枠組み */
+#autocomplete-list {
+    position: absolute;
+    z-index: 999;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 5px;
+    background-color: #ffffff !important; /* 強制的に白背景 */
+    border: 1px solid #ccc !important;   /* 外枠の線 */
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15); /* 少し影をつけて浮かせます */
+    overflow: hidden;
+}
+
+/* 各候補（一行ずつ）のスタイル */
+.autocomplete-item {
+    padding: 12px 15px;
+    cursor: pointer;
+    text-align: left;
+    font-size: 15px;
+    color: #222222 !important;     /* 強制的に濃い文字色 */
+    background-color: #ffffff !important; /* 背景を白に固定 */
+    border-bottom: 1px solid #eeeeee;     /* 行と行の間の線 */
+    line-height: 1.4;
+}
+
+/* 最後の行だけ線を表示しない */
+.autocomplete-item:last-child {
+    border-bottom: none;
+}
+
+/* タップ・ホバーした時の色（選んでいる感を出します） */
+.autocomplete-item:hover, .autocomplete-item:active {
+    background-color: #f0f0f0 !important;
+}
 </style>
 
 
@@ -196,7 +232,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.11.12</span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.11.13</span></h1>
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>
@@ -456,7 +492,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
-// --- 3. 検索・入力関連 (searchCity, handleCityInput, closeAllLists) ---
+// 検索・入力関連
 async function searchCity() {
     const cityInput = document.getElementById("cityInput");
     if (!cityInput) return;
@@ -514,17 +550,20 @@ function handleCityInput(el) {
             const seen = new Set();
 
             data.results.forEach(r => {
-                // 都道府県名(admin1)があれば追加して、より詳細なラベルを作る
-                // 例: "Yokohama, Kanagawa, Japan"
-                const admin = r.admin1 ? `${r.admin1}, ` : "";
-                const fullDisplayName = `${r.name}, ${admin}${r.country}`;
+                
+                // PPL（集落・都市）で始まるコード、または地域コードに絞る(施設名(S系コード)が除外)
+                const isCity = r.feature_code && (r.feature_code.startsWith('PPL') || r.feature_code === 'ADM2');
+                
+                if (isCity) {
+                    const admin = r.admin1 ? `${r.admin1}, ` : "";
+                    const fullDisplayName = `${r.name}, ${admin}${r.country}`;
 
-                if (!seen.has(fullDisplayName)) {
+                    if (!seen.has(fullDisplayName)) {
                     seen.add(fullDisplayName);
-                    // 表示用のプロパティをオブジェクトに追加
                     r.customLabel = fullDisplayName; 
                     uniqueResults.push(r);
-                }
+                    }
+                 }
             });
 
             // 絞り込んだ結果をオートコンプリートに渡す（最大5件）
@@ -582,8 +621,23 @@ function showAutocomplete(results) {
 }
 
 function closeAllLists() {
+    // リストを非表示に
     const list = document.getElementById("autocomplete-list");
-    if (list) list.innerHTML = "";
+    if (list) {
+        list.innerHTML = "";
+    }
+    
+    // ズーム解除（viewportのリセット）
+    const viewport = document.querySelector('meta[name="viewport"]');
+    if (viewport) {
+        const originalContent = viewport.content;
+        // 一時的に最大ズームを1倍に制限して強制リセット
+        viewport.content = 'width=device-width, initial-scale=1, maximum-scale=1';
+        
+        setTimeout(() => {
+            viewport.content = originalContent; // 元の設定に戻す
+        }, 300);
+    }
 }
 
 // --- 4. 位置設定・GAS同期 ---

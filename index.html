@@ -313,25 +313,16 @@ input:checked + .slider:before { transform: translateX(20px); }
 <body onkeydown="closeWelcome()" onclick="closeWelcome(); closeAllLists();">
 
 <div id="welcome-overlay" class="overlay hidden">
-
-
-    <div class="arrow-container">
-        <div class="thin-arrow">↑</div>
-        <div class="thin-arrow">↑</div>
-        <div class="thin-arrow">↑</div>
+    <div class="arrow-container" style="display: flex; justify-content: center; gap: 15px; margin-bottom: 5px;">
+        <div class="thin-arrow" style="color: #5bc0be; font-size: 1.5rem;">↑</div>
+        <div class="thin-arrow" style="color: #5bc0be; font-size: 1.5rem;">↑</div>
+        <div class="thin-arrow" style="color: #5bc0be; font-size: 1.5rem;">↑</div>
     </div>
-    
-    <div id="welcome-overlay" class="overlay hidden">
-        <div class="arrow-container">
-            <div class="thin-arrow">↑</div>
-            <div class="thin-arrow">↑</div>
-            <div class="thin-arrow">↑</div>
-        </div>
-    
-        <div class="welcome-box">
-            Please set a location first
-        </div>
+
+    <div class="welcome-box">
+        Please set a location first
     </div>
+</div>
     
 
 <!-- 

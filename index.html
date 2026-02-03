@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.12.3</title>
+<title>Easy Aurora Forecast v. t1.12.4</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon
@@ -320,6 +320,19 @@ input:checked + .slider:before { transform: translateX(20px); }
         <div class="thin-arrow">↑</div>
         <div class="thin-arrow">↑</div>
     </div>
+    
+    <div id="welcome-overlay" class="overlay hidden">
+        <div class="arrow-container">
+            <div class="thin-arrow">↑</div>
+            <div class="thin-arrow">↑</div>
+            <div class="thin-arrow">↑</div>
+        </div>
+    
+        <div class="welcome-box">
+            Please set a location first
+        </div>
+    </div>
+    
 
 <!-- 
     <div class="welcome-box" style="padding: 30px; min-width: 280px;">
@@ -336,7 +349,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.12.3</span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.12.4</span></h1>
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>
@@ -496,7 +509,7 @@ input:checked + .slider:before { transform: translateX(20px); }
             </table>
             <p style="margin-top:10px; color: #ffab70; font-size: 0.8rem;">
                 * <strong>Cloud Impact:</strong> If cloud cover exceeds 70%, the score is significantly reduced. If it exceeds 85%, the result is forced to "Low".<br><br>
-                * <strong>Cloud overlay:</strong> <strong>Clounds</strong> will be added to the image when other conditions are favorable but thick cloud cover reduces aurora visability.
+                * <strong>Cloud overlay:</strong> <strong>Clouds</strong> will be added to the image when other conditions are favorable but thick cloud cover reduces aurora visability.
             </p>
         </div>
     </div>

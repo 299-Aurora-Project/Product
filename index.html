@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.11.17</title>
+<title>Easy Aurora Forecast v. t1.12.0</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon
@@ -169,7 +169,12 @@ pre { background:#0b132b; padding:12px; border-radius:8px; font-family: monospac
 .score-big { font-size: 2.5rem; text-align: center; color: #fff; margin: 10px 0; font-weight: bold; }
 .detail-table { width: 100%; font-size: 0.85rem; border-collapse: collapse; margin-top: 10px; margin-bottom: 15px; }
 .detail-table th, .detail-table td { text-align: left; padding: 8px; border-bottom: 1px solid #30363d; }
+
+
 #map-screen { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; background: #000; }
+
+
+
 #map { width: 100%; height: 100%; background: #000; }
 #back-btn { position: absolute; top: 90px; left: 10px; z-index: 10000; background: #21262d; border: 1px solid #30363d; color: white; padding: 8px 16px; }
 .notification-card { border: 1px dashed #5bc0be !important; margin-top: 10px; }
@@ -257,8 +262,25 @@ input:checked + .slider:before { transform: translateX(20px); }
     background-color: #1c2541 !important; /* ホバー時は少しだけ明るく
     color: #5bc0be !important; /* オーロラカラーのアクセント */
 }
-</style>
 
+/* 地図画面の上部に浮かせるガイド */
+.map-instruction {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10001;
+    background: rgba(11, 19, 43, 0.8);
+    color: #5bc0be;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    pointer-events: none; /* タップの邪魔をしない */
+    border: 1px solid #5bc0be;
+}
+
+
+</style>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -275,32 +297,30 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.11.17</span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.12.0</span></h1>
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>
 
-
-<!-- App Settings (Temporarily Disabled)
-    <div class="card notification-card">
-        <div class="label-main" style="font-size: 0.9rem;">App Settings</div>
-        <button id="btn-notif-test" class="btn-test" onclick="testNotification(); event.stopPropagation();">Send Test Notification</button>
-        <div id="notif-status" style="font-size: 0.7rem; color: #8b949e; margin-top: 5px;">Push notifications: Triggered on "Possible" or "High"</div>
-    </div>``
--->
-
-
     <div class="card" id="card-loc">
         <div class="label-main">📍Location</div>
         <div id="loc" class="value">Not Set</div>
+        
+        <br>
         <button id="btn-gps" onclick="getLocation(); event.stopPropagation();">Get Current Location via GPS</button><br>
+
+        <button id="btn-map-select" onclick="openMapForSelection()" 
+            style="display: block; clear: both; width: auto; min-width: 220px; margin: 10px 0; padding: 12px 20px; background: #5bc0be; color: #0b132b; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">
+            <i class="fas fa-map-marked-alt"></i> Select from a Map
+        </button>
+
         Search City:
         <div class="search-container">
             <input id="cityInput" 
-                 placeholder="e.g. Yellowknife, Canada" 
-                 oninput="handleCityInput(this)" 
-                 onclick="event.stopPropagation()"
-                 onfocus="handleCityInput(this)" onclick="event.stopPropagation()">
+                   placeholder="e.g. Yellowknife, Canada" 
+                   oninput="handleCityInput(this)" 
+                   onfocus="handleCityInput(this)" 
+                   onclick="event.stopPropagation()">
             <button id="btn-search" onclick="searchCity()">Set</button>
             <div id="autocomplete-list" class="autocomplete-items"></div>
         </div>
@@ -444,14 +464,23 @@ input:checked + .slider:before { transform: translateX(20px); }
     </div>
 </div>
 
+<div id="map-screen" style="display:none; position:relative;">
+    <button class="btn" id="back-btn" onclick="hideMapScreen();" 
+        style="position: absolute; top: 80px; left: 12px; z-index: 10001; ...">
+        ← Back
+    </button>
 
+    <div id="map" style="height: 100vh; width: 100%;"></div>
 
-
-<div id="map-screen">
-    <button class="btn" id="back-btn" onclick="hideMapScreen();">← Back</button>
-    <div id="map"></div>
+    <div id="map-control-panel" style="position: absolute; bottom: 30px; right: 20px; z-index: 10001; display: flex; flex-direction: column; align-items: flex-end; pointer-events: none;">
+        <div id="map-location-name" style="background: rgba(11, 19, 43, 0.9); color: #5bc0be; padding: 5px 12px; border-radius: 5px; font-size: 0.85rem; margin-bottom: 8px; border: 1px solid #3a506b; display: none; pointer-events: auto; font-family: sans-serif;">
+            Selected: <span id="target-city-name">None</span>
+        </div>
+        <button id="btn-confirm-location" style="background: #5bc0be; color: #0b132b; border: none; padding: 12px 24px; border-radius: 30px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.5); pointer-events: auto; display: none; font-family: sans-serif;">
+            Set this location
+        </button>
+    </div>
 </div>
-
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -1335,10 +1364,6 @@ function calculateTotal() {
     }
 }
 
-
-
-
-
     const resEl = document.getElementById("result");
     const targetScore = currentTotalScore; // ここで currentTotalScore を使う
 
@@ -1362,8 +1387,6 @@ function calculateTotal() {
     resEl.textContent = statusText;
     resEl.classList.add(statusClass);
     
-    
-
 
 // レーダーチャートを更新する関数
 function updateRadarChart() {
@@ -1439,6 +1462,22 @@ function openModal() {
 }
 
 // --- 6. 地図・UI・ヘルパー ---
+// エラー対策：もし関数がなくてもエラーで止まらないように空の関数を定義しておく
+if (typeof closeWelcome !== 'function') {
+    window.closeWelcome = function() {
+        const welcome = document.getElementById('welcome-overlay');
+        if (welcome) welcome.style.display = 'none';
+    };
+}
+
+// エラー対策：もし関数がなくてもエラーで止まらないように空の関数を定義しておく
+if (typeof closeWelcome !== 'function') {
+    window.closeWelcome = function() {
+        const welcome = document.getElementById('welcome-overlay');
+        if (welcome) welcome.style.display = 'none';
+    };
+}
+
 function initMap() {
     if (map) return; // 二重初期化防止
 
@@ -1450,11 +1489,23 @@ function initMap() {
         maxBounds: [[southLimit, -540], [northLimit, 540]], 
         maxBoundsViscosity: 1.0 
     });
+    
+    // Set the default cursor for the map container
+    map.getContainer().style.cursor = 'default';
 
-    // マーカーを最前面に持ってくる設定を復元
+    // Update cursor during dragging
+    map.on('dragstart', function() {
+        map.getContainer().style.cursor = 'grabbing';
+    });
+
+    map.on('dragend', function() {
+        map.getContainer().style.cursor = 'default';
+    });
+    
+
+    // マーカーを最前面に持ってくる設定
     map.createPane('userMarkerPane');
     map.getPane('userMarkerPane').style.zIndex = 650;　// オーロラ(400)より上に
-    // map.getPane('userMarkerPane').style.pointerEvents = 'none';
 
     const startLat = myLat !== null ? myLat : 70;
     const startLon = myLon !== null ? myLon : 0;
@@ -1464,9 +1515,94 @@ function initMap() {
         noWrap: false 
     }).addTo(map);
     
-    auroraLayer = L.layerGroup().addTo(map); 
-    if (cachedAuroraData) drawAurora(cachedAuroraData); 
-    updateMapMarker(); 
+    // 地図クリック時のイベント
+    map.on('click', async function(e) {
+        if (!isSelectionMode) return; // 選択モードでないなら、クリックしても何も反応させない
+        
+        const lat = e.latlng.lat;
+        const lon = e.latlng.lng;
+
+        // 1. マーカーを選択位置に移動させる
+        updateMapMarker(lat, lon);
+        
+        // UIを表示状態にする
+        const nameEl = document.getElementById('map-location-name');
+        const btnEl = document.getElementById('btn-confirm-location');
+        const cityText = document.getElementById('target-city-name');
+        
+        nameEl.style.display = 'block';
+        btnEl.style.display = 'block';
+        cityText.textContent = "Searching...";
+        
+        
+        // 2. 逆ジオコーディングで地名を取得
+        try {
+            // OpenStreetMapの無料APIを利用
+            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10&accept-language=en`);
+            const data = await response.json();
+            
+            // 地名（市町村名や州名）を抽出
+            const cityName = data.address.city || data.address.town || data.address.village || data.address.county || data.address.state || "Selected Location";
+            const countryName = data.address.country || "";
+            const displayName = countryName ? `${cityName}, ${countryName}` : cityName;
+            
+            // 地名を表示し、一時保存
+            cityText.textContent = displayName;
+            tempLocation = { lat, lon, name: displayName };
+
+        } catch (error) {
+            console.error("Map click reverse geocode error:", error);
+            // エラー時は座標を表示して進められるようにする
+            const fallbackName = `${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+            cityText.textContent = fallbackName;
+            tempLocation = { lat, lon, name: fallbackName };
+        }
+    });
+    
+    // --- 決定ボタンのクリックイベント ---
+    document.getElementById('btn-confirm-location').onclick = async function() {
+        if (!tempLocation) return;
+        await setLocation(tempLocation.lat, tempLocation.lon, tempLocation.name);
+        hideMapScreen();
+    };
+        
+   
+    // オーロラレイヤーの設定
+    if (!window.auroraLayer) {
+        auroraLayer = L.layerGroup().addTo(map); 
+    } else {
+        auroraLayer.addTo(map);
+    }
+    
+    if (typeof cachedAuroraData !== 'undefined' && cachedAuroraData) {
+        drawAurora(cachedAuroraData); 
+    }
+    updateMapMarker();
+}
+
+// グローバル変数と初期設定
+let isSelectionMode = false; // 場所選択モードかどうかのフラグ
+let tempLocation = null;
+
+// closeWelcomeのエラー対策
+window.closeWelcome = function() {
+    const welcome = document.getElementById('welcome-overlay');
+    if (welcome) welcome.style.display = 'none';
+};
+
+// 「Select from a Map」ボタンから呼ばれる関数
+function openMapForSelection() {
+    isSelectionMode = true; // 選択モードON
+    showMapScreen(); // 地図を表示
+}
+
+// 既存の「ただ地図を見る」ボタンやメニューから呼ばれる関数
+function openMapForViewing() {
+    isSelectionMode = false; // 選択モードOFF
+    // 念のためUIを隠す
+    document.getElementById('map-location-name').style.display = 'none';
+    document.getElementById('btn-confirm-location').style.display = 'none';
+    showMapScreen();
 }
 
 function drawAurora(data) {
@@ -1530,8 +1666,15 @@ function hideMapScreen() {
     document.getElementById('map-screen').style.display = 'none';
     document.getElementById('home-screen').style.display = 'block';
     
+    // パネルを非表示にリセット
+    document.getElementById('map-location-name').style.display = 'none';
+    document.getElementById('btn-confirm-location').style.display = 'none';
+    isSelectionMode = false; // モードもリセット
+    
     // メイン画面が表示された直後に、元の位置へジャンプ
-    window.scrollTo(0, savedScrollY);
+    if (typeof savedScrollY !== 'undefined') {
+        window.scrollTo(0, savedScrollY);
+    }
 }
 
 function setItemLoading(id, isLoading) {

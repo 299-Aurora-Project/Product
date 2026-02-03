@@ -150,30 +150,30 @@ button:disabled { opacity: 0.3; cursor: not-allowed; }
 pre { background:#0b132b; padding:12px; border-radius:8px; font-family: monospace; font-size: 0.85em; overflow-x: auto; white-space: pre-wrap; border: 1px solid #3a506b; min-height: 50px; }
 #welcome-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 30000; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; }
 .welcome-box {
-    /* 背景色を明るい色から、深いネイビーブラックへ変更 */
-    background: #050810; 
+    /* メインカラーの #0b132b をベースに、ほんの少しだけ明るくしたネイビー */
+    background: #141d38; 
     
-    /* 文字色を暗い色から、明るいオフホワイトへ変更 */
+    /* 文字色は明るい白系 */
     color: #eaeaea; 
     
-    /* 枠線を追加して、暗い背景でも境界をはっきりさせる */
-    border: 1px solid #5bc0be; 
+    /* 枠線をメインのティールカラーにして、存在感を出す */
+    border: 1.5px solid #5bc0be; 
     
-    /* 影を追加して浮遊感を出す */
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+    /* ボックスを少し光らせるシャドウ */
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7), 0 0 15px rgba(91, 192, 190, 0.1);
     
-    padding: 30px; /* 画像を入れるために少し広げました */
+    padding: 30px;
     border-radius: 15px;
     text-align: center;
     font-weight: bold;
     font-size: 1.1rem;
     z-index: 30001;
     
-    /* 中身を中央に整列させる設定 */
+    /* 中身を中央に揃える */
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    gap: 15px; /* 画像とテキストの間に少し隙間を作る */
 }
 .arrow-container { display: flex; gap: 15px; margin-bottom: 10px; }
 .thin-arrow { font-size: 2.5rem; color: #5bc0be; font-weight: 100; animation: bounceThin 1.2s infinite; }
@@ -327,7 +327,7 @@ input:checked + .slider:before { transform: translateX(20px); }
              style="width: 200px; height: auto; margin-bottom: 20px; display: block; margin-left: auto; margin-right: auto;">
         
         <div style="font-size: 1.1rem; font-weight: bold;">
-            Please set a location first
+            ↑Please set a location first↑
         </div>
     </div>
 </div>

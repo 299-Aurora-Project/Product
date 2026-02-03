@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.12.2</title>
+<title>Easy Aurora Forecast v. t1.12.3</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon
@@ -307,7 +307,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.12.2</span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.12.3</span></h1>
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>
@@ -343,10 +343,9 @@ input:checked + .slider:before { transform: translateX(20px); }
     <div id="possibility-area" style="text-align: center; margin: 15px 0; display: flex; flex-direction: column; align-items: center; gap: 15px;">
     
         <img id="status-icon" 
-             src="loading.gif" 
-             alt="Status" 
-             onclick="openModal()" 
-             style="width: 180px; height: auto; cursor: pointer; -webkit-tap-highlight-color: transparent;">
+     src="location.png"  alt="Status" 
+     onclick="openModal()" 
+     style="width: 180px; height: auto; cursor: pointer; -webkit-tap-highlight-color: transparent;">
     
         <div id="result" 
              class="badge badge-large low" 
@@ -971,16 +970,26 @@ async function handleNotifToggleEvent() {
 // --- 5. データ取得・予報 ---
 async function updateAll() {
     if (myLat === null || myLon === null) return;
+    
+    const statusIcon = document.getElementById("status-icon");
+    const resultBadge = document.getElementById("result");
 
+    // 1. ロケーションがセットされていない場合の処理
+    if (myLat === null || myLon === null) {
+        if (statusIcon) statusIcon.src = "location.png"; // 未設定用画像を表示
+        if (resultBadge) {
+            resultBadge.textContent = "---";
+            resultBadge.className = "badge badge-large low"; // グレー系のスタイルがあればそれに変更
+        }
+        return;
+    }
+    
     const btn = document.getElementById('btn-update-all');
     if(btn) btn.classList.add('loading-btn');
     ['kp','oval','cloud','result'].forEach(id => setItemLoading(id, true));
     
     // 画像とバッジを Loading 状態にする
-    const statusIcon = document.getElementById("status-icon");
-    const resultBadge = document.getElementById("result");
     if (statusIcon) statusIcon.src = "loading.gif"; // Loading画像を表示
-
 
     try {
         // 1. 時刻判定

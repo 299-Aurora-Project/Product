@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.12.5</title>
+<title>Easy Aurora Forecast v. t1.13.0</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon
@@ -191,10 +191,40 @@ pre { background:#0b132b; padding:12px; border-radius:8px; font-family: monospac
 	max-height: 90vh; overflow-y: auto; }
 
 .close-modal { position: absolute; top: 10px; right: 15px; font-size: 24px; cursor: pointer; color: #8b949e; }
+
+/* ガイドテキストのスタイル */
+.tap-to-close {
+    margin-top: 25px;
+    text-align: center;
+    color: #5bc0be;
+    font-size: 0.85rem;
+    font-weight: bold;
+    letter-spacing: 0.05em;
+    /* アニメーションの指定：2秒かけてループ */
+    animation: tapPulse 2s infinite ease-in-out;
+}
+
+/* じわじわと浮かび上がって消えるエフェクト */
+@keyframes tapPulse {
+    0% { opacity: 0.3; transform: scale(0.98); }
+    50% { opacity: 0.8; transform: scale(1); }
+    100% { opacity: 0.3; transform: scale(0.98); }
+}
+
+/* モーダル内もどこでも閉じられることを示すカーソル */
+#detail-modal-overlay .modal-content {
+    cursor: pointer;
+}
+
+
 .score-big { font-size: 2.5rem; text-align: center; color: #fff; margin: 10px 0; font-weight: bold; }
 .detail-table { width: 100%; font-size: 0.85rem; border-collapse: collapse; margin-top: 10px; margin-bottom: 15px; }
 .detail-table th, .detail-table td { text-align: left; padding: 8px; border-bottom: 1px solid #30363d; }
 
+#detail-modal-overlay, 
+#detail-modal-overlay .modal-content {
+    cursor: pointer; /* モーダル内も外も指マークにする */
+}
 
 #map-screen { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; background: #000; }
 
@@ -305,6 +335,22 @@ input:checked + .slider:before { transform: translateX(20px); }
 }
 
 
+/* サブタイトルをボタンのように見せる */
+.label-main {
+    cursor: pointer;
+    display: inline-block;
+    transition: color 0.2s, transform 0.1s;
+}
+
+.label-main:hover {
+    color: #ffffff;
+    text-decoration: underline;
+}
+
+.label-main:active {
+    transform: scale(0.98);
+}
+
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -340,13 +386,13 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.12.5</span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.13.0</span></h1>
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>
 
     <div class="card" id="card-loc">
-        <div class="label-main">📍Location</div>
+        <div class="label-main" onclick="openDetail('location')">📍Location</div>
         <div id="loc" class="value">Not Set</div>
         
         <br>
@@ -371,7 +417,7 @@ input:checked + .slider:before { transform: translateX(20px); }
     </div>
 
     <div class="card" id="card-main-result">
-    <div id="total-label" class="label-main">🌌Overall Probability</div>
+    <div id="total-label" class="label-main" onclick="openDetail('probability')">🌌Overall Probability</div>
     <div id="total-sub-label" class="label-sub-current">Current:</div>
     <div id="possibility-area" style="text-align: center; margin: 15px 0; display: flex; flex-direction: column; align-items: center; gap: 15px;">
     
@@ -418,14 +464,14 @@ input:checked + .slider:before { transform: translateX(20px); }
 
     <div id="hidden-data">
         <div class="card" id="card-oval">
-            <div class="label-main">🌎Aurora Oval</div>
+            <div class="label-main" onclick="openDetail('oval')">🌎Aurora Oval</div>
             <div class="label-sub-current">Current:</div>
             <div id="oval" class="badge low" onclick="showMapScreen(); event.stopPropagation();">--</div>
             <div id="oval-prob" style="font-size: 0.9rem; color: #8b949e; margin: 10px 0;"></div>
         </div>
 
         <div class="card" id="card-kp-group">
-            <div class="label-main">☀Kp Index</div>
+            <div class="label-main" onclick="openDetail('kp')">☀Kp Index</div>
             <div class="label-sub-current">Current:</div>
             
 
@@ -444,7 +490,7 @@ input:checked + .slider:before { transform: translateX(20px); }
         </div>
 
         <div class="card" id="card-cloud-group">
-            <div class="label-main">☁Cloud Cover</div>
+            <div class="label-main" onclick="openDetail('cloud')">☁Cloud Cover</div>
             <div class="label-sub-current">Current:</div>
             <div id="cloud" class="badge low">--</div>
             <div class="sub-section" id="card-short">
@@ -502,6 +548,7 @@ input:checked + .slider:before { transform: translateX(20px); }
                 * <strong>Cloud Impact:</strong> If cloud cover exceeds 70%, the score is significantly reduced. If it exceeds 85%, the result is forced to "Low".<br><br>
                 * <strong>Cloud overlay:</strong> <strong>Clouds</strong> will be added to the image when other conditions are favorable but thick cloud cover reduces aurora visability.
             </p>
+            <div class="tap-to-close">Tap to close</div>
         </div>
     </div>
 </div>
@@ -521,6 +568,16 @@ input:checked + .slider:before { transform: translateX(20px); }
         <button id="btn-confirm-location" style="background: #5bc0be; color: #0b132b; border: none; padding: 12px 24px; border-radius: 30px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.5); pointer-events: auto; display: none; font-family: sans-serif;">
             Set this location
         </button>
+    </div>
+</div>
+
+<div id="detail-modal-overlay" class="modal-overlay" onclick="closeDetailModal()">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeDetailModal()">&times;</span>
+        <h2 id="detail-title" style="color: #5bc0be; margin-top: 0; font-size: 1.3rem;"></h2>
+        <div id="detail-body" style="font-size: 0.95rem; color: #eaeaea; line-height: 1.6;"></div>
+        
+        <div class="tap-to-close">Tap to close</div>
     </div>
 </div>
 
@@ -1837,6 +1894,54 @@ function scheduleNextUpdate() {
 // 最初のスケジュールを開始(初回実行のトリガー（ページ読み込み時など）)
 scheduleNextUpdate();
 
+
+// 詳細データ（説明文）の定義
+const detailContent = {
+    "location": {
+        title: "Location",
+        body: "In aurora observation, your location is the most important factor. The closer you are to the Arctic or Antarctic region (higher latitude), the higher your chances of seeing auroras — even during weak geomagnetic activity. By setting your precise location via GPS or search, the probability is calculated specifically for your position."
+    },
+    "probability": {
+        title: "Aurora Probability",
+        body: "This is the visibility probability based on overall conditions, including geomagnetic activity (Kp), proximity to the auroral oval (Oval), and cloud cover There is a chance of seeing auroras at 35% or higher, and when it exceeds 50%, the likelihood of seeing them with the naked eye becomes very high."
+    },
+    "oval": {
+        title: "Aurora Oval",
+        body: "This indicates how close the “donut-shaped” auroral zone is to being directly overhead. Higher values mean the aurora is closer to your location, while lower values indicate it is positioned farther away, near or beyond the horizon."
+    },
+    "kp": {
+        title: "Kp Index",
+        body: "This is an index from 0 to 9 that measures disturbances in Earth’s magnetic field. Higher values indicate stronger auroral activity, allowing auroras to extend farther toward lower latitudes (closer to the equator)."
+    },
+    "cloud": {
+        title: "Cloud Cover",
+        body: "This shows the percentage of the sky currently covered by clouds. Auroras occur above the clouds (over 100 km in altitude), so even strong geomagnetic activity will not be visible if cloud cover is heavy. 85% or more is considered extremely unfavorable."
+    }
+};
+
+// 詳細モーダルを開く関数
+function openDetail(key) {
+    const data = detailContent[key];
+    if (!data) return;
+
+    document.getElementById('detail-title').textContent = data.title;
+    document.getElementById('detail-body').textContent = data.body;
+    document.getElementById('detail-modal-overlay').style.display = 'flex';
+}
+
+// 詳細モーダルを閉じる関数
+function closeDetailModal() {
+    document.getElementById('detail-modal-overlay').style.display = 'none';
+}
+
+// 画面が非表示から表示に切り替わった（スマホをロック解除した）瞬間に更新
+// 画面が消えている間は、アプリが勝手にAPI（気象データや磁気データ）を叩きに行かないよう制限がかかる
+document.addEventListener("visibilitychange", function() {
+    if (document.visibilityState === 'visible') {
+        console.log("Welcome back! Updating data...");
+        updateAll();
+    }
+});
 </script>
 </body>
 </html>

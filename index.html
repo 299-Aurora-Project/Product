@@ -553,11 +553,11 @@ input:checked + .slider:before { transform: translateX(20px); }
 
 <div id="imageModal" class="modal-overlay" onclick="closeImageModal()">
     <div class="modal-content">
-        <h2 style="color: #5bc0be; margin-top: 0; font-size: 1.3rem; text-align: center;">Observation Guide</h2>
+        <h2 style="color: #5bc0be; margin-top: 0; font-size: 1.3rem; text-align: center;">About the mascot</h2>
         
         <div style="margin: 15px 0; text-align: center;">
             <img src="aurōra.png" alt="Guide Image" 
-                 style="max-width: 100%; height: auto; border-radius: 8px; border: 1px solid #3a506b; display: inline-block;">
+                 style="max-width: 50%; height: auto; border-radius: 8px; border: 1px solid #3a506b; display: inline-block;">
         </div>
 
         <div style="font-size: 0.9rem; color: #eaeaea; line-height: 1.6; text-align: left; margin-bottom: 10px;">
@@ -1960,12 +1960,12 @@ function closeImageModal() {
 
 // 画面が非表示から表示に切り替わった（スマホをロック解除した）瞬間に更新
 // 画面が消えている間は、アプリが勝手にAPI（気象データや磁気データ）を叩きに行かないよう制限がかかる
-document.addEventListener("visibilitychange", function() {
-    if (document.visibilityState === 'visible') {
-        console.log("Welcome back! Updating data...");
-        updateAll();
-    }
-});
+//document.addEventListener("visibilitychange", function() {
+//    if (document.visibilityState === 'visible') {
+//        console.log("Welcome back! Updating data...");
+//        updateAll();
+//    }
+//});
 </script>
 </body>
 </html>

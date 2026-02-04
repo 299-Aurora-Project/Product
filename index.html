@@ -553,14 +553,15 @@ input:checked + .slider:before { transform: translateX(20px); }
 
 <div id="imageModal" class="modal-overlay" onclick="closeImageModal()">
     <div class="modal-content">
-        <h2 style="color: #5bc0be; margin-top: 0; font-size: 1.3rem;">Observation Guide</h2>
+        <h2 style="color: #5bc0be; margin-top: 0; font-size: 1.3rem; text-align: center;">Observation Guide</h2>
         
-        <div style="margin: 15px 0;">
-            <img src="aurōra.png" alt="Guide Image" style="width: 100%; border-radius: 8px; border: 1px solid #3a506b;">
+        <div style="margin: 15px 0; text-align: center;">
+            <img src="aurōra.png" alt="Guide Image" 
+                 style="max-width: 100%; height: auto; border-radius: 8px; border: 1px solid #3a506b; display: inline-block;">
         </div>
 
-        <div style="font-size: 0.9rem; color: #eaeaea; line-height: 1.6; text-align: left;">
-            Auroras are named after Aurōra, the Roman goddess. She symbolizes the arrival of the light of intelligence and creativity, and is identified with Eos in Greek mythology. She is also known as a goddess of many romances, and numerous myths tell stories of her love affairs.
+        <div style="font-size: 0.9rem; color: #eaeaea; line-height: 1.6; text-align: left; margin-bottom: 10px;">
+            Auroras are named after <strong>Aurōra</strong>, the Roman goddess. She symbolizes the arrival of the light of intelligence and creativity, and is identified with Eos in Greek mythology. She is also known as a goddess of many romances, and numerous myths tell stories of her love affairs.
         </div>
 
         <div class="tap-to-close">Tap to close</div>

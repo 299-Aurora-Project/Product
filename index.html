@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.13.2</title>
+<title>Easy Aurora Forecast v. t1.13.3</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon
@@ -390,7 +390,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.13.2</span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.13.3</span></h1>
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>
@@ -425,23 +425,17 @@ input:checked + .slider:before { transform: translateX(20px); }
     <div id="total-sub-label" class="label-sub-current">Current:</div>
     <div id="possibility-area" style="text-align: center; margin: 15px 0; display: flex; flex-direction: column; align-items: center; gap: 15px;">
     
-        <img id="status-icon" 
-             src="location.png" 
-             alt="Status" 
-             onclick="openModal()" 
-             style="width: 180px; height: auto; cursor: pointer; -webkit-tap-highlight-color: transparent;">
-    
-        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; max-width: 280px;">
-            <div style="width: 35px;"></div> 
-
-            <div id="result" class="badge badge-large low" onclick="openModal()" style="margin: 0;">Low</div>
+        <div style="position: relative; display: inline-block;">
+        <img id="status-icon" src="location.png" alt="Status" onclick="openModal()" 
+             style="width: 180px; height: auto; cursor: pointer; display: block; -webkit-tap-highlight-color: transparent;">
         
-            <div onclick="openImageModal(); event.stopPropagation();" 
-         style="width: 24px; height: 24px; background: #3a506b; color: #5bc0be; 
-                border-radius: 50%; display: flex; align-items: center; justify-content: center; 
-                font-weight: bold; cursor: pointer; font-size: 0.8rem; border: 1px solid #3a506b;
-                transition: 0.2s; flex-shrink: 0;">
-                ?
+        <div onclick="openImageModal(); event.stopPropagation();" 
+             style="position: absolute; bottom: 0; right: 0; width: 22px; height: 22px; 
+                    background: #3a506b; color: #5bc0be; border-radius: 50%; 
+                    display: flex; align-items: center; justify-content: center; 
+                    font-weight: bold; cursor: pointer; font-size: 0.8rem; border: 1px solid #3a506b;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.3); z-index: 10;">
+            ?
             </div>
         </div>
     </div>

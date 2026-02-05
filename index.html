@@ -1278,7 +1278,7 @@ async function fetchKp3DayForecast() {
 
 function drawKpChart(labels, values) {
     const ctx = document.getElementById('kpLineChart').getContext('2d');
-    if (myLineChart) myLineChart.destroy(); // 既存のグラフがあれば破棄
+    if (myLineChart) myLineChart.destroy(); 
 
     myLineChart = new Chart(ctx, {
         type: 'line',
@@ -1291,54 +1291,62 @@ function drawKpChart(labels, values) {
                 backgroundColor: 'rgba(91, 192, 190, 0.2)',
                 borderWidth: 2,
                 fill: true,
-                tension: 0.4, // 滑らかな曲線に
-                pointRadius: 2 // 点を少し小さくしてスッキリさせる
+                tension: 0.4,
+                pointRadius: 2
             }]
         },
         options: {
             animation: false,
             responsive: true,
             maintainAspectRatio: false,
+            // 1. 右端の余白を確保して最後の日付見切れを防止
+            layout: {
+                padding: {
+                    right: 10 
+                }
+            },
             scales: {
                 y: { 
                     min: 0, 
                     max: 9, 
                     ticks: { stepSize: 1, color: '#8b949e' },
                     grid: { color: 'rgba(255,255,255,0.05)' }
-                    },
+                },
                 x: {
                     grid: {
                         display: true,
-                        color: (context) => { // colorの宣言
-                            // ラベルに "00-03" が含まれる場合（日の境目）は線を強調
-                            const label = context.tick ? labels[context.index] : "";
-                            return label && label.includes("00-03") 
-                                ? 'rgba(255, 255, 255, 0.4)' // 境目の線の色（白っぽく）
-                                : 'rgba(255, 255, 255, 0.05)'; // 通常の線の色
+                        // 2. 縦線を「くっきり」させる (0.8まで濃度UP)
+                        color: (context) => {
+                            if (!context.tick) return 'rgba(255, 255, 255, 0.05)';
+                            const label = labels[context.index];
+                            return (label && label.includes("00")) || context.index % 8 === 0
+                                ? 'rgba(255, 255, 255, 0.8)' 
+                                : 'rgba(255, 255, 255, 0.05)';
                         },
-                        // 線の太さを動的に変更
+                        // 3. 縦線を「はっきり」させる (太さ1.5)
                         lineWidth: (context) => {
                             if (!context.tick) return 1;
                             const label = labels[context.index];
                             return (label && label.includes("00")) || context.index % 8 === 0 
-                                ? 2 : 1; // 境目だけ太さを2にする
+                                ? 1.5 : 1; 
                         }
                     },
-                    // オプション追加
                     ticks: {
-                        color: '#8b949e',
-                        font: { size: 10 },
+                        // 4. 文字を明るく太くして視認性を上げる
+                        color: '#eaeaea', 
+                        font: { 
+                            size: 10,
+                        },
                         maxRotation: 0,
                         minRotation: 0,
                         autoSkip: false,
+                        overflow: 'allow',
+                        // 重複していたcallbackを1つに統合
                         callback: function(value, index) {
                             const label = labels[index];
                             if (!label) return "";
-                    
-                            // 「00」という文字が含まれているか、
-                            // あるいはデータが8個おき（24時間ごと）であれば日付を表示
+                            // 24時間周期、または"00"を含む場合のみラベルを表示
                             if (label.includes("00") || index % 8 === 0) {
-                                // 文字列が長すぎる場合は "04日 00:00" のように短く整形してもOK
                                 return label; 
                             }
                             return "";

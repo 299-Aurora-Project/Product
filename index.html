@@ -2139,14 +2139,14 @@ function showKpInfo(event) {
     const detailEl = document.getElementById("g-scale-detail");
     
     const descriptions = {
-        1: "<b>G1 (Minor):</b> 小規模な磁気嵐。高緯度で活発なオーロラが見られます。電力網に軽微な影響があるかもしれません。",
-        2: "<b>G2 (Moderate):</b> 中規模な磁気嵐。オーロラが少し南下します。高緯度の変電所で警告が出るレベルです。",
-        3: "<b>G3 (Strong):</b> 強い磁気嵐。オーロラが非常に明るくなり、より低い緯度でも観測可能になります。",
-        4: "<b>G4 (Severe):</b> 深刻な磁気嵐。広範囲でオーロラが観測され、無線通信に障害が出る可能性があります。",
-        5: "<b>G5 (Extreme):</b> 極めて強い磁気嵐。歴史的なオーロラが低緯度で見られ、電力網に大きな影響が出る恐れがあります。"
+        1: "<b>G1 (Minor):</b> A small geomagnetic storm. Active auroras may be visible at high latitudes. Minor impacts on power grids are possible.",
+        2: "<b>G2 (Moderate):</b> A moderate geomagnetic storm. The auroral zone expands slightly southward. Power systems at high latitudes may experience warnings.",
+        3: "<b>G3 (Strong):</b> A strong geomagnetic storm. Auroras become very bright and may be visible at lower latitudes than usual.",
+        4: "<b>G4 (Severe):</b> A severe geomagnetic storm. Auroras may be observed over a wide area, and radio communication disruptions are possible.",
+        5: "<b>G5 (Extreme):</b> An extremely strong geomagnetic storm. Historic-level auroras may be seen at low latitudes, and significant impacts on power grids are possible."
     };
 
-    detailEl.innerHTML = descriptions[level] || "磁気嵐の階級（Gスケール）が表示されています。数値が高いほどオーロラが強く、広範囲で見られます。";
+    detailEl.innerHTML = descriptions[level] || "The geomagnetic storm level (G-scale) is shown. Higher levels indicate stronger auroras that can be seen over a wider area.";
     document.getElementById("kp-modal").style.display = "flex";
 }
 

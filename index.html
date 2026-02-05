@@ -391,7 +391,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.14.0</span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.14.2</span></h1>
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>
@@ -479,7 +479,7 @@ input:checked + .slider:before { transform: translateX(20px); }
         <div class="card" id="card-oval">
             <div class="label-main" onclick="openDetail('oval')">🌎Aurora Oval</div>
             <div class="label-sub-current">Current:</div>
-            <div id="oval" class="badge low" onclick="showMapScreen(); event.stopPropagation();">--</div>
+            <div id="oval" class="badge low" onclick="isSelectionMode=false; showMapScreen(); event.stopPropagation();">--</div>
             <div id="oval-prob" style="font-size: 0.9rem; color: #8b949e; margin: 10px 0;"></div>
         </div>
 
@@ -586,7 +586,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 
 
 <div id="map-screen" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh;">
-    <div id="oval-toggle-wrapper" style="position: absolute; bottom: 30px; right: 12px; z-index: 10001; background: rgba(11, 19, 43, 0.9); padding: 8px 12px; border-radius: 8px; border: 1px solid #3a506b; display: flex; align-items: center; pointer-events: auto;">
+    <div id="oval-toggle-wrapper" style="position: absolute; bottom: 30px; right: 12px; z-index: 10001; background: rgba(11, 19, 43, 0.9); padding: 8px 12px; border-radius: 8px; border: 1px solid #3a506b; display: none; align-items: center; pointer-events: auto;">
         <label class="switch" style="position: relative; display: inline-block; width: 34px; height: 20px; margin-right: 8px;">
             <input type="checkbox" id="oval-visibility-toggle" checked onchange="toggleOvalLayer()" style="opacity: 0; width: 0; height: 0;">
             <span class="slider round"></span>
@@ -1317,14 +1317,20 @@ function drawKpChart(labels, values) {
             animation: false,
             responsive: true,
             maintainAspectRatio: false,
-
             scales: {
+                // --- 縦軸（Y軸）の設定 ---
                 y: { 
                     min: 0, 
                     max: 9, 
-                    ticks: { stepSize: 1, color: '#8b949e' },
+                    ticks: { 
+                        stepSize: 1, 
+                        autoSkip: false, // 0-9を強制表示
+                        color: '#8b949e',
+                        font: { size: 10 }
+                    },
                     grid: { color: 'rgba(255,255,255,0.05)' }
                 },
+                // --- 横軸（X軸）の設定 ---
                 x: {
                     grid: {
                         display: true,
@@ -1339,7 +1345,7 @@ function drawKpChart(labels, values) {
                             if (!context.tick) return 1;
                             const label = labels[context.index];
                             return (label && label.includes("00")) || context.index % 8 === 0 
-                                ? 1.5 : 1; // 以前のように「はっきり」させるため2程度がおすすめ
+                                ? 1.5 : 1;
                         }
                     },
                     ticks: {
@@ -1353,13 +1359,13 @@ function drawKpChart(labels, values) {
                         autoSkip: false,
                         overflow: 'allow',
                         padding: 5,
+                        // X軸は「日付」を表示するためのロジックだけを残す
                         callback: function(value, index) {
                             const label = labels[index];
                             if (!label) return "";
                             
                             if (label.includes("00") || index % 8 === 0) {
                                 const parts = label.split(' '); 
-                                // 改行ロジック：配列で返すと2行になります
                                 if (parts.length >= 3) {
                                     return [parts[0] + " " + parts[1], parts[2]];
                                 }
@@ -1794,28 +1800,39 @@ function drawAurora(data) {
     if (!auroraLayer) return;
     auroraLayer.clearLayers();
     
-    if (!data || !data.coordinates) return;
+    // オーバル描写
+    if (data && data.coordinates) {
+        data.coordinates.forEach(p => {
+            if (p[2] > 10) { 
+                let baseLon = p[0] > 180 ? p[0] - 360 : p[0];
+                let color = p[2] > 50 ? '#ff4500' : (p[2] > 25 ? '#ffff00' : '#00ff00');
+                
+                [-360, 0, 360].forEach(offset => {
+                    L.rectangle(
+                        [[p[1], baseLon + offset], [p[1] + 2, baseLon + 2 + offset]], 
+                        { 
+                            color: color, 
+                            weight: 0, 
+                            fillOpacity: p[2] / 100, 
+                            interactive: false 
+                        }
+                    ).addTo(auroraLayer);
+                });
+            }
+        });
+    }
 
-    data.coordinates.forEach(p => {
-        if (p[2] > 10) { 
-            let baseLon = p[0] > 180 ? p[0] - 360 : p[0];
-            let color = p[2] > 50 ? '#ff4500' : (p[2] > 25 ? '#ffff00' : '#00ff00');
-            
-            [-360, 0, 360].forEach(offset => {
-                L.rectangle(
-                    [[p[1], baseLon + offset], [p[1] + 2, baseLon + 2 + offset]], 
-                    { 
-                        color: color, 
-                        weight: 0, 
-                        fillOpacity: p[2] / 100, 
-                        interactive: false 
-                    }
-                ).addTo(auroraLayer);
-            });
+    // 2. 【スイッチ制御】現在のモードに応じて表示/非表示を切り替え
+    const toggle = document.getElementById("oval-toggle-wrapper");
+    if (toggle) {
+        if (typeof isSelectionMode !== 'undefined' && isSelectionMode === true) {
+            toggle.style.display = "flex";
+        } else {
+            toggle.style.display = "none";
         }
-    });
+    }
 
-    // 重要：描画が終わったあと、現在のスイッチの状態を反映させる
+    // 3. レイヤーの状態を反映
     toggleOvalLayer(); 
 }
 
@@ -1843,22 +1860,41 @@ function updateMapMarker(targetLat = myLat, targetLon = myLon) {
 }
 
 function showMapScreen() {
-    savedScrollY = window.scrollY; // 今のスクロール位置を記録
+    savedScrollY = window.scrollY; // 現在のスクロール位置を記録
     document.getElementById('home-screen').style.display = 'none';
     document.getElementById('map-screen').style.display = 'block';
-    setTimeout(() => { initMap(); map.invalidateSize(); }, 100);
+
+    // ロケーション選択時はトグルスイッチを表示する
+    const toggle = document.getElementById("oval-toggle-wrapper");
+    if (toggle) {
+        // ロケーション選択モードの時だけスイッチを出し、それ以外（詳細経由など）は隠す
+        if (typeof isSelectionMode !== 'undefined' && isSelectionMode === true) {
+            toggle.style.display = 'flex';
+        } else {
+            toggle.style.display = 'none';
+        }
+    }
+
+    setTimeout(() => { 
+        initMap(); 
+        if (map) map.invalidateSize(); 
+    }, 100);
 }
 
 function hideMapScreen() {
     document.getElementById('map-screen').style.display = 'none';
     document.getElementById('home-screen').style.display = 'block';
     
-    // パネルを非表示にリセット
+    // 各種パネルとモードのリセット
     document.getElementById('map-location-name').style.display = 'none';
     document.getElementById('btn-confirm-location').style.display = 'none';
-    isSelectionMode = false; // モードもリセット
     
-    // メイン画面が表示された直後に、元の位置へジャンプ
+    // スイッチも一旦隠す
+    const toggle = document.getElementById("oval-toggle-wrapper");
+    if (toggle) toggle.style.display = 'none';
+
+    isSelectionMode = false; // モードをリセット
+    
     if (typeof savedScrollY !== 'undefined') {
         window.scrollTo(0, savedScrollY);
     }
@@ -2005,8 +2041,21 @@ function openDetail(key) {
     const data = detailContent[key];
     if (!data) return;
 
+    // 1. タイトルと本文の更新（innerHTMLにしてタグを有効化）
     document.getElementById('detail-title').textContent = data.title;
-    document.getElementById('detail-body').textContent = data.body;
+    document.getElementById('detail-body').innerHTML = data.body; // <br>や<strong>を有効にする
+
+    // 2. オーロラオーバルの詳細モーダル時のみスイッチを隠す
+    const toggle = document.getElementById("oval-toggle-wrapper");
+    if (toggle) {
+        if (key === 'oval') { // 'oval' はAurora Ovalのキー名に合わせてください
+            toggle.style.display = "none";
+        } else {
+            // 他のモーダルから地図が見える可能性があるならここで display を制御
+        }
+    }
+
+    // 3. モーダルを表示
     document.getElementById('detail-modal-overlay').style.display = 'flex';
 }
 

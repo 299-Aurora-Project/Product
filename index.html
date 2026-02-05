@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.13.6</title>
+<title>Easy Aurora Forecast v. t1.13.x</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon
@@ -390,7 +390,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.13.6</span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.13.7</span></h1>
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>
@@ -1299,11 +1299,7 @@ function drawKpChart(labels, values) {
             animation: false,
             responsive: true,
             maintainAspectRatio: false,
-            layout: {
-                padding: {
-                    right: 40 // ラベルの改行・見切れ対策に少し広めに確保
-                }
-            },
+
             scales: {
                 y: { 
                     min: 0, 
@@ -1617,13 +1613,6 @@ function updateRadarChart() {
     }
 }
 
-// モーダルを開く関数を拡張
-function openModal() { 
-    document.getElementById("detailModal").style.display = "flex"; 
-    // モーダルが表示されてからチャートを描画（サイズ計算のため）
-    setTimeout(updateRadarChart, 100);
-}
-
 // --- 6. 地図・UI・ヘルパー ---
 // エラー対策：もし関数がなくてもエラーで止まらないように空の関数を定義しておく
 if (typeof closeWelcome !== 'function') {
@@ -1853,6 +1842,9 @@ function closeWelcome() { document.getElementById('welcome-overlay').style.displ
 function openModal() { 
     // モーダルを表示
     document.getElementById("detailModal").style.display = "flex"; 
+    
+    // モーダルが表示されてからチャートを描画（サイズ計算のため）
+    setTimeout(updateRadarChart, 100);
     
     // スコアの表示（もしHTMLに score-pct が残っていれば更新、なければスキップ）
     const pctText = currentTotalScore < 1 ? "< 1%" : (currentTotalScore > 99 ? "> 99%" : Math.round(currentTotalScore) + "%");

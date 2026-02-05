@@ -391,7 +391,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.14.4</span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.14.5</span></h1>
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>
@@ -632,7 +632,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 // --- 1. 定数とグローバル変数 ---
 const PUBLIC_KEY = 'BAp0wnGuvaoZk_Q7Bn4H4DWAR2Zdi9juZECl10m290Ff9sAJqiaXepWYvGgbI7WOb9K3O0MOTG8TVi_hg_ovfEg';
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwzBfA93jMluy6K-jNVTYymWGARbPBueEY2yPyFs1wDzysigG77_jk1tKJFRmBkWL2eTQ/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxQh0Z1-PcJi04SszV8ZrZELl6dVWHlAour5TaFt6oT9dr03WPcAgaMkRspjhrRctQIfQ/exec";
 const CORS = GAS_URL + "?url="; // GASプロキシはやめて、安定したAllOriginsに戻します
 
 // 候補B (予備):
@@ -1388,7 +1388,7 @@ async function getCloud(isDaytime = false) {
 
     try {
         // パラメータに low, middle, high_cloud_cover を追加
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${myLat}&longitude=${myLon}&current=cloudcover,low_cloud_cover,middle_cloud_cover,high_cloud_cover&hourly=cloudcover&timezone=auto`;
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${myLat}&longitude=${myLon}&current=cloudcover,low_cloud_cover,moderate_cloud_cover,high_cloud_cover&hourly=cloudcover&timezone=auto`;
         const res = await fetch(url);
         const data = await res.json();
         
@@ -1479,67 +1479,54 @@ let myRadarChart = null;
 
 //Overall Possibility判定ロジック
 function calculateTotal() {
-    // 各要素の取得
     const kp = parseFloat(document.getElementById("kp").textContent) || 0;
     const cloud = parseInt(document.getElementById("cloud").dataset.value) || 0;
     const icon = document.getElementById("status-icon");
 
-    // --- スコア計算ロジック（ここから） ---
+    // 1. 各項目のスコア計算
     let ovalScore = Math.min(lastAuroraProb * 1.5, 45); 
     let magneticScore = Math.min(kp * 5, 40); 
     let skyScore = Math.max(0, 15 * (1 - cloud / 100));
     
-    // 倍率計算
+    // 2. 倍率計算
     let visibilityMultiplier = 1.0;
     if (lastAuroraProb < 20) {
         visibilityMultiplier = Math.max(0, (lastAuroraProb - 2) / (20 - 2));
     }
     
-    // 基礎計算（倍率をかける）
-    let baseScore = (ovalScore + magneticScore + skyScore) * visibilityMultiplier;
+    // 3. 最終計算（倍率をかける）
+    let calculatedScore = (ovalScore + magneticScore + skyScore) * visibilityMultiplier;
     
-    // 雲量抑制
-    let finalScoreRaw = baseScore;
+    // 4. 雲量による強制抑制
+    let finalValue = calculatedScore;
     if (cloud > 85) {
-        finalScoreRaw = Math.min(baseScore, 20);
+        finalValue = Math.min(calculatedScore, 20);
     }
     
-    // GASと同期：四捨五入して最終値を決定
-    let finalScore = Math.round(finalScoreRaw);
-
-    // 数値を保持
+    // 5. GASと同期するために四捨五入
+    let finalScore = Math.round(finalValue);
     currentTotalScore = finalScore;
 
-    // 表示テキストとバッジ色の決定 (判定基準: 50/35)
+    // --- 表示更新 ---
     const resEl = document.getElementById("result");
     if (resEl) {
         resEl.classList.remove("low", "mid", "high");
-        let statusText = "";
-        let statusClass = "";
-
-        if (finalScore >= 50) {
-            statusText = "High";
-            statusClass = "high";
-        } else if (finalScore >= 35) {
-            statusText = "Possible";
-            statusClass = "mid";
-        } else {
-            statusText = "Low";
-            statusClass = "low";
-        }
+        let statusText = (finalScore >= 50) ? "High" : (finalScore >= 35 ? "Possible" : "Low");
+        let statusClass = (finalScore >= 50) ? "high" : (finalScore >= 35 ? "mid" : "low");
         resEl.textContent = statusText;
         resEl.classList.add(statusClass);
     }
 
-    // 画像の切り替え
+    // --- アイコン更新 ---
     if (icon) {
         if (finalScore >= 50) {
             icon.src = "high.png";
         } else if (finalScore >= 35) {
             icon.src = "possible.png";
         } else {
-            // Lowかつ「晴れていればチャンス(35以上)だった」場合は雲画像
-            if (score >= 35 && cloud >= 70) {
+            // ここで「倍率をかける前のポテンシャル」で雲画像判定をする
+            let potentialScore = ovalScore + magneticScore + skyScore;
+            if (potentialScore >= 35 && cloud >= 70) {
                 icon.src = "cloud.png";
             } else {
                 icon.src = "low.png";
@@ -1547,10 +1534,10 @@ function calculateTotal() {
         }
     }
 
-    // パーセント表示の更新
+    // --- パーセント表示 ---
     const pctEl = document.getElementById("score-pct");
     if (pctEl) {
-        pctEl.textContent = (finalScore < 1 ? "< 1%" : (finalScore > 99 ? "> 99%" : Math.round(finalScore) + "%"));
+        pctEl.textContent = (finalScore < 1 ? "< 1%" : (finalScore > 99 ? "> 99%" : finalScore + "%"));
     }
 }
 

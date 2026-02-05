@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Easy Aurora Forecast v. t1.13.4</title>
+<title>Easy Aurora Forecast v. t1.13.6</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b132b">
 <link rel="apple-touch-icon
@@ -390,7 +390,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.13.4</span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.13.6</span></h1>
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>
@@ -468,17 +468,6 @@ input:checked + .slider:before { transform: translateX(20px); }
             </button>
         </div>
     </div>
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     <div id="time-update-all" class="last-updated" style="margin-top: 10px;"></div>
 </div>
@@ -625,7 +614,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 // --- 1. 定数とグローバル変数 ---
 const PUBLIC_KEY = 'BAp0wnGuvaoZk_Q7Bn4H4DWAR2Zdi9juZECl10m290Ff9sAJqiaXepWYvGgbI7WOb9K3O0MOTG8TVi_hg_ovfEg';
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzprK_X07yPdns8QJ62lhj_-kbiHGJj1jhe4VLjqu8Ndf1x22wW3WFEzx8WvB0Hj_CpFw/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwFskMCT7Owxi1BMG0AWCgI1nFCSJMJ4NjV6e5TfqckA7IDHaicDfJMr8w-kkCvfmUZTw/exec";
 const CORS = GAS_URL + "?url="; // GASプロキシはやめて、安定したAllOriginsに戻します
 
 // 候補B (予備):
@@ -1327,26 +1316,32 @@ function drawKpChart(labels, values) {
                                 ? 'rgba(255, 255, 255, 0.4)' // 境目の線の色（白っぽく）
                                 : 'rgba(255, 255, 255, 0.05)'; // 通常の線の色
                         },
+                        // 線の太さを動的に変更
                         lineWidth: (context) => {
-                            const label = context.tick ? labels[context.index] : "";
-                            return label && label.includes("00-03") ? 2 : 1; // 境目だけ太くする
+                            if (!context.tick) return 1;
+                            const label = labels[context.index];
+                            return (label && label.includes("00")) || context.index % 8 === 0 
+                                ? 2 : 1; // 境目だけ太さを2にする
                         }
-                    
                     },
                     // オプション追加
                     ticks: {
                         color: '#8b949e',
                         font: { size: 10 },
-                        maxRotation: 0, // 最大0度傾ける
-                        minRotation: 0, // 常に0度傾けて固定
-                        autoSkip: false,   // 自動で間引かない
-                        overflow: 'allow', // 枠からはみ出しても表示する
+                        maxRotation: 0,
+                        minRotation: 0,
+                        autoSkip: false,
                         callback: function(value, index) {
                             const label = labels[index];
-                            return label && label.includes("00-03") ? label : "";
-                            // この表記は「0時ちょうど」という点ではなく、「0時00分から03時00分までの3時間」という期間（スロット）を表しています。
-                        //autoSkip: true,  // 重なりそうな時に自動でラベルを飛ばす
-                        // maxTicksLimit: 9 // 画面幅に合わせて表示するラベル数を制限（3日分なら9個程度が綺麗です）
+                            if (!label) return "";
+                    
+                            // 「00」という文字が含まれているか、
+                            // あるいはデータが8個おき（24時間ごと）であれば日付を表示
+                            if (label.includes("00") || index % 8 === 0) {
+                                // 文字列が長すぎる場合は "04日 00:00" のように短く整形してもOK
+                                return label; 
+                            }
+                            return "";
                         }
                     }
                 }
@@ -1447,30 +1442,41 @@ async function shortForecast() {
 // --- レーダーチャート保持用の変数 ---
 let myRadarChart = null;
 
+
+//Overall Possibility判定ロジック
 function calculateTotal() {
     // 1. 各要素の取得
     const kp = parseFloat(document.getElementById("kp").textContent) || 0;
     const cloud = parseInt(document.getElementById("cloud").dataset.value) || 0;
     const icon = document.getElementById("status-icon");
 
-    // 2. 基本スコア計算（維持：AuroraProbとKpの加算）
-    let score = (lastAuroraProb * 1.2) + (kp * 10);
-    
-    // 【維持】低緯度・遠距離フィルター
-    if (lastAuroraProb < 5) score *= 0.01;
+    // 2. 【最新：Radar Chart版ロジック】配分を最適化
+    // Oval(Max 45) + Magnetic(Max 40) + Sky(Max 15) = 100点満点
+    let ovalScore = Math.min(lastAuroraProb * 1.5, 45); 
+    let magneticScore = Math.min(kp * 5, 40); 
+    let skyScore = Math.max(0, 15 * (1 - cloud / 100));
 
-    // 【維持】雲量による最終減衰
+    let score = ovalScore + magneticScore + skyScore;
+
+    // 3. 【最重要】低緯度・遠距離フィルター
+    if (lastAuroraProb < 5) {
+        score *= 0.01;
+    }
+
+    // 4. 【最新】厚い雲による強制抑制
+    // 雲量85%以上は肉眼視不可のため、スコアを20（Low確定）に封じ込める
     let finalScore = score;
-    if (cloud > 85) finalScore *= 0.1;
+    if (cloud > 85) {
+        finalScore = Math.min(score, 20);
+    }
 
     // 数値をグローバル変数に保持
     currentTotalScore = finalScore;
 
-    // 3. 表示テキストとバッジ色の決定（判定基準をGASと同期: 50/35）
+    // 5. 表示テキストとバッジ色の決定 (判定基準: 50/35)
     const resEl = document.getElementById("result");
     if (resEl) {
-        resEl.classList.remove("low", "mid", "high"); // 古い色を掃除
-
+        resEl.classList.remove("low", "mid", "high");
         let statusText = "";
         let statusClass = "";
 
@@ -1484,19 +1490,18 @@ function calculateTotal() {
             statusText = "Low";
             statusClass = "low";
         }
-
         resEl.textContent = statusText;
-        resEl.classList.add(statusClass); // 新しい色を付与
+        resEl.classList.add(statusClass);
     }
 
-    // 4. 画像の切り替え
+    // 6. 画像の切り替え
     if (icon) {
         if (finalScore >= 50) {
             icon.src = "high.png";
         } else if (finalScore >= 35) {
             icon.src = "possible.png";
         } else {
-            // Lowかつ「もし晴れていればチャンスがあった(35以上)」場合は雲バージョン
+            // Lowかつ「晴れていればチャンス(35以上)だった」場合は雲画像
             if (score >= 35 && cloud >= 70) {
                 icon.src = "cloud.png";
             } else {
@@ -1505,7 +1510,7 @@ function calculateTotal() {
         }
     }
 
-    // 5. パーセント表示の更新
+    // 7. パーセント表示の更新
     const pctEl = document.getElementById("score-pct");
     if (pctEl) {
         pctEl.textContent = (finalScore < 1 ? "< 1%" : (finalScore > 99 ? "> 99%" : Math.round(finalScore) + "%"));

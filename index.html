@@ -391,7 +391,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.14.7</span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.14.8</span></h1>
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>
@@ -483,24 +483,47 @@ input:checked + .slider:before { transform: translateX(20px); }
             <div id="oval-prob" style="font-size: 0.9rem; color: #8b949e; margin: 10px 0;"></div>
         </div>
 
+
         <div class="card" id="card-kp-group">
             <div class="label-main" onclick="openDetail('kp')">☀Kp Index</div>
             <div class="label-sub-current">Current:</div>
-            
-
-            <div id="kp" class="badge low">--</div>
+        
+            <div class="kp-wrapper" style="position: relative; display: inline-block;">
+                <div id="kp" class="badge low">--</div>
+                
+                <div id="g-scale-indicator" onclick="showKpInfo(event)" 
+                     style="display: none; position: absolute; top: -8px; right: -8px; 
+                            background: #ff4d4d; color: white; border-radius: 50%; 
+                            width: 18px; height: 18px; font-size: 11px; line-height: 18px; 
+                            text-align: center; font-weight: bold; border: 1.5px solid #1a1a1a; 
+                            cursor: pointer; box-shadow: 0 0 5px rgba(255,77,77,0.5); z-index: 10;">
+                    ①
+                </div>
+            </div>
+        
+            <div id="kp-modal" onclick="closeKpInfo()" 
+                 style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                        background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center;">
+                <div style="background: #1a1a1a; color: white; padding: 20px; border-radius: 12px; 
+                            max-width: 85%; border: 1px solid #ff4d4d; font-size: 14px;">
+                    <h3 style="margin-top: 0; color: #ff4d4d;">Geomagnetic Storm (G-Scale)</h3>
+                    <p id="g-scale-detail"></p>
+                    <p style="font-size: 11px; color: #888; margin-top: 15px; text-align: center;">タップで閉じる</p>
+                </div>
+            </div>
+        
             <div class="sub-section" id="card-kp3">
                 <div style="font-size: 0.8rem; color: #8b949e; margin-bottom: 5px;">Short Forecast:</div>
-
                 <div id="kp-short" class="value" style="font-size: 0.85rem; color: #5bc0be;">Ref 3-day forecast (NOAA)</div>
-<!--        テーブル
+        <!--テーブル -->
                 <pre id="kpForecast" style="margin-top:10px;">--</pre>
--->   
+        <!---->
             </div>
             <div class="chart-container" style="position: relative; height:200px; width:100%">
                 <canvas id="kpLineChart"></canvas>
             </div>
         </div>
+
 
         <div class="card" id="card-cloud-group">
             <div class="label-main" onclick="openDetail('cloud')">☁Cloud Cover</div>
@@ -586,7 +609,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 
 
 <div id="map-screen" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh;">
-    <div id="oval-toggle-wrapper" style="position: absolute; bottom: 30px; right: 12px; z-index: 10001; background: rgba(11, 19, 43, 0.9); padding: 8px 12px; border-radius: 8px; border: 1px solid #3a506b; display: none; align-items: center; pointer-events: auto;">
+    <div id="oval-toggle-wrapper" style="position: absolute; bottom: 30px; left: 12px; z-index: 10001; background: rgba(11, 19, 43, 0.9); padding: 8px 12px; border-radius: 8px; border: 1px solid #3a506b; display: none; align-items: center; pointer-events: auto;">
         <label class="switch" style="position: relative; display: inline-block; width: 34px; height: 20px; margin-right: 8px;">
             <input type="checkbox" id="oval-visibility-toggle" checked onchange="toggleOvalLayer()" style="opacity: 0; width: 0; height: 0;">
             <span class="slider round"></span>
@@ -599,11 +622,6 @@ input:checked + .slider:before { transform: translateX(20px); }
         style="position: absolute; top: 80px; left: 12px; z-index: 10001; ...">
         ← Back
     </button>
-    
-    
-    
-    
-    
     
 
     <div id="map" style="height: 100vh; width: 100%;"></div>
@@ -1233,66 +1251,67 @@ async function fetchKp3DayForecast() {
         const res = await fetch(CORS + encodeURIComponent(FORECAST_URL));
         const text = await res.text(); 
         
-        // 1. テキストからデータの行を抽出
-        // NOAAのフォーマットから 00-03UT などの時間帯とKp値を抜き出す
         const lines = text.split('\n');
         let dates = [];
-        let dataPoints = []; // { label: "日付 時間", value: Kp値 }
+        let dataPoints = [];
 
-        // 1.テキスト内の "00-03UT" といったパターンの行を探して数値を抽出 (例: "            Jan 31      Feb 01      Feb 02")
         lines.forEach(line => {
             const dateMatch = line.match(/([A-Z][a-z]{2}\s+\d{2})/g);
-            if (dateMatch && dateMatch.length >= 3) {
-                dates = dateMatch; // 3日分の日付を取得
-            }
+            if (dateMatch && dateMatch.length >= 3) { dates = dateMatch; }
         });
 
-        // 2. Kp値の行を処理 (例: "00-03UT      2.33        3.00        1.67")
         lines.forEach(line => {
-            const timeMatch = line.match(/(\d{2}-\d{2})UT\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)/);
+            const timeMatch = line.match(/(\d{2}-\d{2})UT\s+([\d.]+).*?\s+([\d.]+).*?\s+([\d.]+)/);
             if (timeMatch && dates.length >= 3) {
-                // 3日分のデータが含まれるので、簡易的に時間ラベルと値を収集
-                // 実際には日付も考慮するとより正確ですが、まずは時間帯で並べます
-                const hourRange = timeMatch[1]; // "00-03"
-                
-                // 3日分それぞれのデータをラベル付きで保存
+                const hourRange = timeMatch[1];
                 for (let i = 0; i < 3; i++) {
                     dataPoints.push({
-                        label: `${dates[i]} ${hourRange}`, // "Jan 31 00-03"
+                        dateStr: dates[i].trim(),
+                        timeStr: hourRange.trim(),
                         value: parseFloat(timeMatch[i + 2]),
-                        dayIndex: i // 並び替え用
+                        dayIndex: i
                     });
                 }
             }
         });
 
-        // 3. 時系列順に並び替え（1日目、2日目、3日目の順）
         dataPoints.sort((a, b) => {
-            // 日付インデックスで比較し、同じ日なら時間帯で比較
             if (a.dayIndex !== b.dayIndex) return a.dayIndex - b.dayIndex;
-            return a.label.localeCompare(b.label);
+            return a.timeStr.localeCompare(b.timeStr);
         });
 
-        const labels = dataPoints.map(p => p.label);
+        let lastDate = "";
+        const labels = dataPoints.map((p, index) => {
+            if (index === 0 || p.dateStr !== lastDate) {
+                lastDate = p.dateStr;
+                // ★検証のため、まずは2行表示[ ]をやめて1行の文字列にします
+                return p.dateStr + " " + p.timeStr; 
+            } 
+//            if (p.timeStr === "12-15") return "12:00";
+            return "";
+        });
+
         const values = dataPoints.map(p => p.value);
 
-        // 2. グラフの描画呼び出し
-        if (labels.length > 0) {
+        // --- 🔍 デバッグ用ログ：これを確認してください ---
+        console.log("Labels ready:", labels);
+        console.log("Values ready:", values);
+
+        if (typeof drawKpChart === "function" && labels.length > 0) {
+            console.log("Calling drawKpChart...");
             drawKpChart(labels, values);
+        } else {
+            console.error("drawKpChart function not found or labels empty!");
         }
         
-        // 従来のテキスト表示（念のため残す）
         const match = text.match(/NOAA Kp index breakdown[\s\S]*?(?=\n[A-Z]|$)/i);
         const el = document.getElementById("kpForecast");
         if (el) el.innerText = match ? match[0].trim() : "Updating...";
-        
 
     } catch (e) {
         console.error("Forecast Error:", e);
     }
 }
-
-
 
 function drawKpChart(labels, values) {
     const ctx = document.getElementById('kpLineChart').getContext('2d');
@@ -2087,6 +2106,54 @@ function closeImageModal() {
 //        updateAll();
 //    }
 //});
+
+function updateGScaleIndicator(kpValue) {
+    const indicator = document.getElementById("g-scale-indicator");
+    if (!indicator) return;
+
+    let gLevel = 0;
+    if (kpValue >= 9) gLevel = 5;
+    else if (kpValue >= 8) gLevel = 4;
+    else if (kpValue >= 7) gLevel = 3;
+    else if (kpValue >= 6) gLevel = 2;
+    else if (kpValue >= 5) gLevel = 1;
+
+    if (gLevel > 0) {
+        // 丸数字に変換 (1->①, 2->②...)
+        const circleNumbers = ["", "①", "②", "③", "④", "⑤"];
+        indicator.textContent = circleNumbers[gLevel];
+        indicator.style.display = "block";
+        // グローバル変数やdatasetに現在のレベルを保存
+        indicator.dataset.level = gLevel;
+    } else {
+        indicator.style.display = "none";
+    }
+}
+
+
+
+// 説明を表示する関数
+function showKpInfo(event) {
+    event.stopPropagation(); // 親要素のクリックイベント伝播を防止
+    const level = document.getElementById("g-scale-indicator").dataset.level;
+    const detailEl = document.getElementById("g-scale-detail");
+    
+    const descriptions = {
+        1: "<b>G1 (Minor):</b> 小規模な磁気嵐。高緯度で活発なオーロラが見られます。電力網に軽微な影響があるかもしれません。",
+        2: "<b>G2 (Moderate):</b> 中規模な磁気嵐。オーロラが少し南下します。高緯度の変電所で警告が出るレベルです。",
+        3: "<b>G3 (Strong):</b> 強い磁気嵐。オーロラが非常に明るくなり、より低い緯度でも観測可能になります。",
+        4: "<b>G4 (Severe):</b> 深刻な磁気嵐。広範囲でオーロラが観測され、無線通信に障害が出る可能性があります。",
+        5: "<b>G5 (Extreme):</b> 極めて強い磁気嵐。歴史的なオーロラが低緯度で見られ、電力網に大きな影響が出る恐れがあります。"
+    };
+
+    detailEl.innerHTML = descriptions[level] || "磁気嵐の階級（Gスケール）が表示されています。数値が高いほどオーロラが強く、広範囲で見られます。";
+    document.getElementById("kp-modal").style.display = "flex";
+}
+
+function closeKpInfo() {
+    document.getElementById("kp-modal").style.display = "none";
+}
+
 </script>
 </body>
 </html>

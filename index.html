@@ -1392,6 +1392,11 @@ async function getCloud(isDaytime = false) {
         const data = await res.json();
         
         if (!data || !data.current) return; 
+        
+        // ここで取得した配列をグローバル変数に保存する
+        if (data.hourly && data.hourly.cloud_cover) {
+            cloudDataHourly = data.hourly.cloud_cover;
+        }
 
         // 1. 今の雲量（各層の最大値）
         const currentCloudMax = Math.max(
@@ -1433,6 +1438,7 @@ async function getCloud(isDaytime = false) {
         console.error("Cloud Fetch Error:", e);
     }
 }
+
 async function shortForecast() {
     if (!cloudDataHourly) return;
     

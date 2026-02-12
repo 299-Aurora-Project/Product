@@ -391,7 +391,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.14.8</span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.14.9</span></h1>
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>
@@ -515,9 +515,9 @@ input:checked + .slider:before { transform: translateX(20px); }
             <div class="sub-section" id="card-kp3">
                 <div style="font-size: 0.8rem; color: #8b949e; margin-bottom: 5px;">Short Forecast:</div>
                 <div id="kp-short" class="value" style="font-size: 0.85rem; color: #5bc0be;">Ref 3-day forecast (NOAA)</div>
-        <!--テーブル -->
+        <!--テーブル
                 <pre id="kpForecast" style="margin-top:10px;">--</pre>
-        <!---->
+        -->
             </div>
             <div class="chart-container" style="position: relative; height:200px; width:100%">
                 <canvas id="kpLineChart"></canvas>
@@ -611,7 +611,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="map-screen" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh;">
     <div id="oval-toggle-wrapper" style="position: absolute; bottom: 30px; left: 12px; z-index: 10001; background: rgba(11, 19, 43, 0.9); padding: 8px 12px; border-radius: 8px; border: 1px solid #3a506b; display: none; align-items: center; pointer-events: auto;">
         <label class="switch" style="position: relative; display: inline-block; width: 34px; height: 20px; margin-right: 8px;">
-            <input type="checkbox" id="oval-visibility-toggle" checked onchange="toggleOvalLayer()" style="opacity: 0; width: 0; height: 0;">
+            <input type="checkbox" id="oval-visibility-toggle" onchange="toggleOvalLayer()" style="opacity: 0; width: 0; height: 0;">
             <span class="slider round"></span>
         </label>
         <span style="color: white; font-size: 0.75rem; font-weight: bold; font-family: sans-serif;">Aurora Oval</span>
@@ -934,7 +934,7 @@ async function setLocation(lat, lon, name) {
     
     // 5. 最新の座標に基づいて計算（Overall Possibilityなど）
     // await を外し、エラーが起きても次に進めるようにする
-    // これにより、updateAll が重くても途中で止まっても、関数自体は完了し、UIのフリーズを防げます。
+    // updateAll が重くても途中で止まっても、関数自体は完了し、UIのフリーズを防げます。
     updateAll().catch(err => console.error("UpdateAll failed in background:", err));
 }
 

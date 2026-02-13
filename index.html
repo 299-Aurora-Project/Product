@@ -391,7 +391,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.15.4</span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.15.5</span></h1>
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>
@@ -1910,6 +1910,12 @@ function updateMapMarker(targetLat = myLat, targetLon = myLon) {
 }
 
 function showMapScreen(isSelection = false, showOvalByDefault = false) {
+    
+    // 画面を切り替える瞬間に、前回の残骸を真っさらに掃除する
+    if (window.auroraLayer) {
+        window.auroraLayer.clearLayers();
+    }
+    
     isSelectionMode = isSelection;
     savedScrollY = window.scrollY;
     document.getElementById('home-screen').style.display = 'none';
@@ -1918,12 +1924,12 @@ function showMapScreen(isSelection = false, showOvalByDefault = false) {
     const ovalCheckbox = document.getElementById("oval-visibility-toggle");
     const toggleWrapper = document.getElementById("oval-toggle-wrapper");
 
-    // モードに関わらず、まずチェック状態をセット（これが描画の基準になる）
+    // モードに関わらず、まずチェック状態をセット（描画の基準）
     if (ovalCheckbox) {
         ovalCheckbox.checked = showOvalByDefault;
     }
 
-    // スイッチの見た目（枠）を出すか出さないかだけを判定
+    // スイッチの見た目の判定(スイッチを描写するかを判定)
     if (toggleWrapper) {
         toggleWrapper.style.display = isSelectionMode ? 'flex' : 'none';
     }

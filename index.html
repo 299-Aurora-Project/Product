@@ -1911,10 +1911,8 @@ function updateMapMarker(targetLat = myLat, targetLon = myLon) {
 
 function showMapScreen(isSelection = false, showOvalByDefault = false) {
     
-    // 画面を切り替える瞬間に、前回の残骸を真っさらに掃除する
-    if (window.auroraLayer) {
-        window.auroraLayer.clearLayers();
-    }
+    // 画面を切り替える瞬間に、前回の残骸を真っさらに
+    if (window.auroraLayer) window.auroraLayer.clearLayers();
     
     isSelectionMode = isSelection;
     savedScrollY = window.scrollY;
@@ -1935,9 +1933,23 @@ function showMapScreen(isSelection = false, showOvalByDefault = false) {
     }
 
     setTimeout(() => { 
-        initMap();
-        toggleOvalLayer(); // ここで checked を見て描画される
-        updateMapMarker();
+        initMap(); // 初回なら作成、2回目以降は何もしない
+
+        // スクロール（表示位置）を初期位置に戻す処理
+        if (map) {
+            const startLat = myLat !== null ? myLat : 70;
+            const startLon = myLon !== null ? myLon : 0;
+            map.setView([startLat, startLon], 3, { 
+                animate: false, 
+                noMoveStart: true 
+            });
+            
+            // 地図の表示崩れを防ぐための再計算
+            map.invalidateSize(); 
+        }
+
+        toggleOvalLayer(); 
+        updateMapMarker(); 
         if (map) map.invalidateSize(); 
     }, 100);
 }

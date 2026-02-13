@@ -391,7 +391,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.15.3</span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.15.4</span></h1>
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>
@@ -1717,7 +1717,7 @@ if (typeof closeWelcome !== 'function') {
 }
 
 function initMap() {
-    if (map) return; // 二重初期化防止
+    if (map) return; // 地図が既にあれば何もしない(二重初期化防止)
 
     const southLimit = -70, northLimit = 90;
     map = L.map('map', { 
@@ -1732,26 +1732,19 @@ function initMap() {
     map.getContainer().style.cursor = 'default';
 
     // Update cursor during dragging
-    map.on('dragstart', function() {
-        map.getContainer().style.cursor = 'grabbing';
-    });
-
-    map.on('dragend', function() {
-        map.getContainer().style.cursor = 'default';
-});
-    
+    map.on('dragstart', function() { map.getContainer().style.cursor = 'grabbing'; });
+    map.on('dragend', function() { map.getContainer().style.cursor = 'default'; });
 
     // マーカーを最前面に持ってくる設定
     map.createPane('userMarkerPane');
-    map.getPane('userMarkerPane').style.zIndex = 650;　// オーロラ(400)より上に
+    map.getPane('userMarkerPane').style.zIndex = 650; // オーロラ(400)より上に
 
     const startLat = myLat !== null ? myLat : 70;
     const startLon = myLon !== null ? myLon : 0;
     map.setView([startLat, startLon], 3);
     
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { 
-        noWrap: false 
-    }).addTo(map);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { noWrap: false }).addTo(map);
+
     
     // 地図クリック時のイベント
     map.on('click', async function(e) {
@@ -1773,7 +1766,7 @@ function initMap() {
         cityText.textContent = "Searching...";
         
         
-        // 2. 逆ジオコーディングで地名を取得
+        // 逆ジオコーディングで地名を取得
         try {
             // OpenStreetMapの無料APIを利用
             const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10&accept-language=en`);
@@ -1797,7 +1790,7 @@ function initMap() {
         }
     });
     
-    // --- 決定ボタンのクリックイベント ---
+    // 決定ボタンのクリックイベント
     document.getElementById('btn-confirm-location').onclick = async function() {
         if (!tempLocation) return;
         await setLocation(tempLocation.lat, tempLocation.lon, tempLocation.name);
@@ -1805,17 +1798,12 @@ function initMap() {
     };
         
    
-    // オーロラレイヤーの設定
+    // オーロラ描写部分（オーロラレイヤーを準備）
     if (!window.auroraLayer) {
-        auroraLayer = L.layerGroup().addTo(map); 
+        window.auroraLayer = L.layerGroup().addTo(map); 
     } else {
-        auroraLayer.addTo(map);
+        window.auroraLayer.addTo(map);
     }
-    
-    if (typeof cachedAuroraData !== 'undefined' && cachedAuroraData) {
-        drawAurora(cachedAuroraData); 
-    }
-    updateMapMarker();
 }
 
 // グローバル変数と初期設定
@@ -1831,38 +1819,51 @@ window.closeWelcome = function() {
 // 「Select from a Map」ボタンから呼ばれる関数
 function openMapForSelection() {
     isSelectionMode = true; // 選択モードON
-    showMapScreen(); // 地図を表示
+    showMapScreen(true, false);; // 地図を表示
 }
 
-// 既存の「ただ地図を見る」ボタンやメニューから呼ばれる関数
+// 「Aurora Oval」ボタンから呼ばれる関数
 function openMapForViewing() {
     isSelectionMode = false; // 選択モードOFF
     // 念のためUIを隠す
     document.getElementById('map-location-name').style.display = 'none';
     document.getElementById('btn-confirm-location').style.display = 'none';
-    showMapScreen();
+    showMapScreen(false, true);
 }
 
 // スイッチと連動するための関数
 function toggleOvalLayer() {
-    const isVisible = document.getElementById("oval-visibility-toggle").checked;
-    
-    // map 変数と auroraLayer 変数が存在することを確認
-    if (typeof map !== 'undefined' && auroraLayer) {
-        if (isVisible) {
-            auroraLayer.addTo(map); // 地図に追加（表示）
-        } else {
-            map.removeLayer(auroraLayer); // 地図から削除（非表示）
+    const oc = document.getElementById("oval-visibility-toggle");
+    if (!oc || !window.auroraLayer) return;
+
+    // 選択モード中のスイッチ操作、またはOvalモードでの初期表示に対応
+    if (oc.checked || !isSelectionMode) {
+        if (typeof cachedAuroraData !== 'undefined' && cachedAuroraData) {
+            drawAurora(cachedAuroraData);
         }
+    } else {
+        window.auroraLayer.clearLayers();
     }
 }
 
 // オーバル描画関数
 function drawAurora(data) {
-    if (!auroraLayer) return;
-    auroraLayer.clearLayers();
+    if (!window.auroraLayer) return;
+
+    // スイッチの要素を取得
+    const oc = document.getElementById("oval-visibility-toggle");
+
+
+    // 「場所選択モード」かつ「スイッチが明確に存在し、かつチェックされていない」時だけ、消去して終了。
+    // Ovalモード（isSelectionMode=false）なら、このif文をスルーして必ず描画されます。
+    if (isSelectionMode && oc && oc.checked === false) {
+        window.auroraLayer.clearLayers();
+        return;
+    }
+
+    // それ以外（Ovalモード時、または選択モードでONの時）は描画を実行
+    window.auroraLayer.clearLayers();
     
-    // オーバル描写
     if (data && data.coordinates) {
         data.coordinates.forEach(p => {
             if (p[2] > 10) { 
@@ -1878,24 +1879,11 @@ function drawAurora(data) {
                             fillOpacity: p[2] / 100, 
                             interactive: false 
                         }
-                    ).addTo(auroraLayer);
+                    ).addTo(window.auroraLayer);
                 });
             }
         });
     }
-
-    // 2. 【スイッチ制御】現在のモードに応じて表示/非表示を切り替え
-    const toggle = document.getElementById("oval-toggle-wrapper");
-    if (toggle) {
-        if (typeof isSelectionMode !== 'undefined' && isSelectionMode === true) {
-            toggle.style.display = "flex";
-        } else {
-            toggle.style.display = "none";
-        }
-    }
-
-    // 3. レイヤーの状態を反映
-    toggleOvalLayer(); 
 }
 
 // 引数を受け取れるように変更（引数がない場合はグローバル変数を使用）
@@ -1921,24 +1909,29 @@ function updateMapMarker(targetLat = myLat, targetLon = myLon) {
     }).addTo(map);
 }
 
-function showMapScreen() {
-    savedScrollY = window.scrollY; // 現在のスクロール位置を記録
+function showMapScreen(isSelection = false, showOvalByDefault = false) {
+    isSelectionMode = isSelection;
+    savedScrollY = window.scrollY;
     document.getElementById('home-screen').style.display = 'none';
     document.getElementById('map-screen').style.display = 'block';
+    
+    const ovalCheckbox = document.getElementById("oval-visibility-toggle");
+    const toggleWrapper = document.getElementById("oval-toggle-wrapper");
 
-    // ロケーション選択時はトグルスイッチを表示する
-    const toggle = document.getElementById("oval-toggle-wrapper");
-    if (toggle) {
-        // ロケーション選択モードの時だけスイッチを出し、それ以外（詳細経由など）は隠す
-        if (typeof isSelectionMode !== 'undefined' && isSelectionMode === true) {
-            toggle.style.display = 'flex';
-        } else {
-            toggle.style.display = 'none';
-        }
+    // モードに関わらず、まずチェック状態をセット（これが描画の基準になる）
+    if (ovalCheckbox) {
+        ovalCheckbox.checked = showOvalByDefault;
+    }
+
+    // スイッチの見た目（枠）を出すか出さないかだけを判定
+    if (toggleWrapper) {
+        toggleWrapper.style.display = isSelectionMode ? 'flex' : 'none';
     }
 
     setTimeout(() => { 
-        initMap(); 
+        initMap();
+        toggleOvalLayer(); // ここで checked を見て描画される
+        updateMapMarker();
         if (map) map.invalidateSize(); 
     }, 100);
 }

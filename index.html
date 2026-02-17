@@ -356,6 +356,24 @@ input:checked + .slider:before { transform: translateX(20px); }
     transform: scale(0.98);
 }
 
+.advice-text {
+    margin-top: 8px;
+    font-size: 0.9rem;
+    color: #00ffff; /* シアン色。背景に合わせて調整してください */
+    font-style: italic;
+    min-height: 1.2em; /* 文字がない時も高さを確保してガタつきを防止 */
+    text-align: center;
+    opacity: 0.9;
+}
+
+/* 画面が暗い場合や警告の意味を強めたい場合は、少しオレンジ寄りにしても良いです */
+#observation-advice {
+    max-width: 80%;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.4;
+}
+
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -391,7 +409,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t1.15.5</span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t2.0.0</span></h1>
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>
@@ -443,6 +461,8 @@ input:checked + .slider:before { transform: translateX(20px); }
             </div>
 
             <div id="result" class="badge badge-large low" onclick="openModal()" style="margin: 0 auto;">--</div>
+            
+            <div id="observation-advice" style="font-size: 0.85rem; color: #5bc0be; font-style: italic; min-height: 1.2em; max-width: 200px; line-height: 1.3;"></div>
         
             <div class="last-updated" id="time-update-all" style="margin-top: 5px;">Last Update: --:--:--</div>
         </div>
@@ -1159,6 +1179,7 @@ async function handleNotifToggleEvent() {
     }
 }
 
+
 // データ取得・予報
 async function updateAll() {
     if (myLat === null || myLon === null) return;
@@ -1218,6 +1239,13 @@ async function updateAll() {
         if(btn) btn.classList.remove('loading-btn');
     }
 }
+
+
+
+
+
+
+
 
 async function getKp() {
     try {
@@ -1545,7 +1573,7 @@ async function shortForecast() {
 let myRadarChart = null;
 
 
-//Overall Possibility判定ロジック
+// Overall Possibility判定ロジック
 function calculateTotal() {
     const kp = parseFloat(document.getElementById("kp").textContent) || 0;
     const cloud = parseInt(document.getElementById("cloud").dataset.value) || 0;
@@ -1565,13 +1593,33 @@ function calculateTotal() {
     // 3. 最終計算（倍率をかける）
     let calculatedScore = (ovalScore + magneticScore + skyScore) * visibilityMultiplier;
     
+    // ---------------------------------------------------------
+    // 【Enhancement】街の明かり（Bortle）と霧（Visibility）による調整
+    // ---------------------------------------------------------
+    const bortle = window.myBortle || 5;
+    let minKpRequired = 0;
+    if (bortle >= 7) minKpRequired = 4.5;
+    else if (bortle >= 4) minKpRequired = 2.0;
+
+    if (kp < minKpRequired) {
+        calculatedScore = calculatedScore * 0.1;
+    }
+
+    const vis = window.myVisibility || 10000; 
+    if (vis < 1000) {
+        calculatedScore = calculatedScore * 0.1;
+    } else if (vis < 3000) {
+        calculatedScore = calculatedScore * 0.5;
+    }
+    // ---------------------------------------------------------
+    
     // 4. 雲量による強制抑制
     let finalValue = calculatedScore;
     if (cloud > 85) {
         finalValue = Math.min(calculatedScore, 20);
     }
     
-    // 5. GASと同期するために四捨五入
+    // 5. 最終スコア確定
     let finalScore = Math.round(finalValue);
     currentTotalScore = finalScore;
 
@@ -1592,9 +1640,12 @@ function calculateTotal() {
         } else if (finalScore >= 35) {
             icon.src = "possible.png";
         } else {
-            // ここで「倍率をかける前のポテンシャル」で雲画像判定をする
             let potentialScore = ovalScore + magneticScore + skyScore;
-            if (potentialScore >= 35 && cloud >= 70) {
+            // 霧の場合のアイコン分岐（もしあれば）
+            if (vis < 2000) {
+                // icon.src = "fog.png"; // 霧用画像があれば有効化
+                icon.src = "low.png"; 
+            } else if (potentialScore >= 35 && cloud >= 70) {
                 icon.src = "cloud.png";
             } else {
                 icon.src = "low.png";
@@ -1607,6 +1658,23 @@ function calculateTotal() {
     if (pctEl) {
         pctEl.textContent = (finalScore < 1 ? "< 1%" : (finalScore > 99 ? "> 99%" : finalScore + "%"));
     }
+
+    // --- アドバイス表示 ---
+    let adviceMessage = "";
+    if (finalScore < 35) {
+        if (vis < 2000) {
+            adviceMessage = "Fog is blocking the view.";
+        } else if (kp < minKpRequired) {
+            adviceMessage = "City lights are too bright. Move to a darker area.";
+        } else if (cloud > 70) {
+            adviceMessage = "Clouds are covering the sky.";
+        } else {
+            adviceMessage = "Aurora activity is currently low.";
+        }
+    }
+    
+    const adviceEl = document.getElementById("observation-advice");
+    if (adviceEl) adviceEl.textContent = adviceMessage;
 }
 
     const resEl = document.getElementById("result");
@@ -1616,6 +1684,7 @@ function calculateTotal() {
 
     let statusText = "";
     let statusClass = "";
+    
 
     // 'score' ではなく 'targetScore' (中身はcurrentTotalScore) で判定
     if (targetScore >= 50) {
@@ -1746,49 +1815,78 @@ function initMap() {
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { noWrap: false }).addTo(map);
 
     
+
+
+
+    
     // 地図クリック時のイベント
     map.on('click', async function(e) {
-        if (!isSelectionMode) return; // 選択モードでないなら、クリックしても何も反応させない
+        if (!isSelectionMode) return; 
         
         const lat = e.latlng.lat;
         const lon = e.latlng.lng;
 
-        // 1. マーカーを選択位置に移動させる
         updateMapMarker(lat, lon);
         
-        // UIを表示状態にする
-        const nameEl = document.getElementById('map-location-name');
-        const btnEl = document.getElementById('btn-confirm-location');
         const cityText = document.getElementById('target-city-name');
+        document.getElementById('map-location-name').style.display = 'block';
+        document.getElementById('btn-confirm-location').style.display = 'block';
+        cityText.textContent = "Analyzing environment...";
         
-        nameEl.style.display = 'block';
-        btnEl.style.display = 'block';
-        cityText.textContent = "Searching...";
-        
-        
-        // 逆ジオコーディングで地名を取得
         try {
-            // OpenStreetMapの無料APIを利用
-            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10&accept-language=en`);
-            const data = await response.json();
+            // 1. 地名と場所の種類（光害推定用）を取得
+            const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10&accept-language=en`);
+            const geoData = await geoRes.json();
             
-            // 地名（市町村名や州名）を抽出
-            const cityName = data.address.city || data.address.town || data.address.village || data.address.county || data.address.state || "Selected Location";
-            const countryName = data.address.country || "";
+            const addr = geoData.address;
+            const cityName = addr.city || addr.town || addr.village || addr.county || addr.state || "Selected Location";
+            const countryName = addr.country || "";
             const displayName = countryName ? `${cityName}, ${countryName}` : cityName;
-            
-            // 地名を表示し、一時保存
+
+            // --- 【新機能】街の明かり(Bortle Scale)の推定 ---
+            let estimatedBortle = 2; // デフォルトは好条件(村・山)
+            if (addr.city || addr.metropolis) {
+                estimatedBortle = 8; // 大都市
+            } else if (addr.town || addr.borough) {
+                estimatedBortle = 5; // 地方都市・郊外
+            }
+
+            // --- 【新機能】霧(視程)の取得 ---
+            // ※あなたのシステムで使用している気象APIのKeyがあれば差し替えてください
+            let visibility = 10000; // デフォルト 10km (クリア)
+            try {
+                const weatherRes = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=YOUR_API_KEY`);
+                const weatherData = await weatherRes.json();
+                if (weatherData.visibility) {
+                    visibility = weatherData.visibility; // メートル単位
+                }
+            } catch (wError) {
+                console.warn("Visibility fetch failed, using default.");
+            }
+
             cityText.textContent = displayName;
-            tempLocation = { lat, lon, name: displayName };
+
+            // 一時保存オブジェクトに光害と視程を追加
+            tempLocation = { 
+                lat, 
+                lon, 
+                name: displayName,
+                bortle: estimatedBortle,
+                visibility: visibility 
+            };
 
         } catch (error) {
-            console.error("Map click reverse geocode error:", error);
-            // エラー時は座標を表示して進められるようにする
+            console.error("Analysis error:", error);
             const fallbackName = `${lat.toFixed(2)}, ${lon.toFixed(2)}`;
             cityText.textContent = fallbackName;
-            tempLocation = { lat, lon, name: fallbackName };
+            tempLocation = { lat, lon, name: fallbackName, bortle: 5, visibility: 10000 };
         }
     });
+
+
+
+        
+
     
     // 決定ボタンのクリックイベント
     document.getElementById('btn-confirm-location').onclick = async function() {

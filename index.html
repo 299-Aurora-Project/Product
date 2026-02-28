@@ -409,7 +409,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t2.0.2</span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t2.0.3</span></h1>
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>
@@ -1633,6 +1633,7 @@ function calculateTotal() {
         resEl.classList.add(statusClass);
     }
 
+    
     // --- アイコン更新 ---
     if (icon) {
         if (finalScore >= 50) {
@@ -1640,15 +1641,15 @@ function calculateTotal() {
         } else if (finalScore >= 35) {
             icon.src = "possible.png";
         } else {
-            let potentialScore = ovalScore + magneticScore + skyScore;
-            // 霧の場合のアイコン分岐（もしあれば）
+            // Low判定（35%未満）の場合、原因に応じてアイコンを切り替え
             if (vis < 2000) {
-                // icon.src = "fog.png"; // 霧用画像があれば有効化
-                icon.src = "low.png"; 
-            } else if (potentialScore >= 35 && cloud >= 70) {
-                icon.src = "cloud.png";
+                icon.src = "fog.png";    // 霧が原因
+            } else if (lastAuroraProb >= 5 && kp < minKpRequired) {
+                icon.src = "bright.png"; // 街の明かりが原因
+            } else if (cloud > 70) {
+                icon.src = "cloud.png";  // 雲が原因
             } else {
-                icon.src = "low.png";
+                icon.src = "low.png";    // そもそも活動が弱い
             }
         }
     }
@@ -1663,21 +1664,21 @@ function calculateTotal() {
     let adviceMessage = "";
     if (finalScore < 35) {
         if (vis < 2000) {
-            adviceMessage = "Fog is blocking the view.";
+            // adviceMessage = "Fog is possibly blocking the view.";
         } 
-        // 【最優先】そもそもオーロラが遠い場合
+        // そもそもオーロラオーバルが遠い場合
         else if (lastAuroraProb < 5) { 
-            adviceMessage = "Aurora activity is currently low."; 
+            // adviceMessage = "Aurora activity is currently low."; 
         }
-        // オーロラは近くにいる可能性があるが、街が明るすぎる場合
+        // オーロラオーバルは近くにいる可能性があるが、街が明るすぎる場合
         else if (kp < minKpRequired) {
-            adviceMessage = "City lights are too bright. Move to a darker area.";
+            adviceMessage = "Move to a darker area.";
         } 
         else if (cloud > 70) {
-            adviceMessage = "Clouds are covering the sky.";
+            // adviceMessage = "Clouds are covering the sky.";
         } 
         else {
-            adviceMessage = "Aurora activity is currently low.";
+            // adviceMessage = "Aurora activity is currently low.";
         }
     }
     

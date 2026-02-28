@@ -409,7 +409,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t2.0.0</span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t2.0.2</span></h1>
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>
@@ -1664,11 +1664,19 @@ function calculateTotal() {
     if (finalScore < 35) {
         if (vis < 2000) {
             adviceMessage = "Fog is blocking the view.";
-        } else if (kp < minKpRequired) {
+        } 
+        // 【最優先】そもそもオーロラが遠い場合
+        else if (lastAuroraProb < 5) { 
+            adviceMessage = "Aurora activity is currently low."; 
+        }
+        // オーロラは近くにいる可能性があるが、街が明るすぎる場合
+        else if (kp < minKpRequired) {
             adviceMessage = "City lights are too bright. Move to a darker area.";
-        } else if (cloud > 70) {
+        } 
+        else if (cloud > 70) {
             adviceMessage = "Clouds are covering the sky.";
-        } else {
+        } 
+        else {
             adviceMessage = "Aurora activity is currently low.";
         }
     }

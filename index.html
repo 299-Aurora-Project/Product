@@ -409,7 +409,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t2.0.3</span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t2.1.0</span></h1>
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>
@@ -1852,7 +1852,7 @@ function initMap() {
             const countryName = addr.country || "";
             const displayName = countryName ? `${cityName}, ${countryName}` : cityName;
 
-            // --- 【新機能】街の明かり(Bortle Scale)の推定 ---
+            // --- 【Enhancement】街の明かり(Bortle Scale)の推定 ---
             let estimatedBortle = 2; // デフォルトは好条件(村・山)
             if (addr.city || addr.metropolis) {
                 estimatedBortle = 8; // 大都市
@@ -1860,7 +1860,7 @@ function initMap() {
                 estimatedBortle = 5; // 地方都市・郊外
             }
 
-            // --- 【新機能】霧(視程)の取得 ---
+            // --- 【Enhancement】霧(視程)の取得 ---
             // ※あなたのシステムで使用している気象APIのKeyがあれば差し替えてください
             let visibility = 10000; // デフォルト 10km (クリア)
             try {
@@ -1953,37 +1953,55 @@ function toggleOvalLayer() {
     }
 }
 
+// 強度(0-100)に応じた色を返すカラースケール関数
+function getAuroraColor(intensity) {
+    if (intensity > 90) return '#ff00ff'; // マゼンタ・紫（最強）
+    if (intensity > 75) return '#ff0000'; // 赤
+    if (intensity > 60) return '#ff8c00'; // ダークオレンジ
+    if (intensity > 45) return '#ffd700'; // ゴールド・濃い黄
+    if (intensity > 30) return '#ccff00'; // ライムグリーン
+    if (intensity > 15) return '#00ff00'; // 緑（標準）
+    return '#00ff7f'; // スプリンググリーン（最弱）
+}
+
+
 // オーバル描画関数
 function drawAurora(data) {
     if (!window.auroraLayer) return;
 
-    // スイッチの要素を取得
     const oc = document.getElementById("oval-visibility-toggle");
 
-
-    // 「場所選択モード」かつ「スイッチが明確に存在し、かつチェックされていない」時だけ、消去して終了。
-    // Ovalモード（isSelectionMode=false）なら、このif文をスルーして必ず描画されます。
+    // モードとスイッチの判定
     if (isSelectionMode && oc && oc.checked === false) {
         window.auroraLayer.clearLayers();
         return;
     }
 
-    // それ以外（Ovalモード時、または選択モードでONの時）は描画を実行
     window.auroraLayer.clearLayers();
     
     if (data && data.coordinates) {
         data.coordinates.forEach(p => {
-            if (p[2] > 10) { 
-                let baseLon = p[0] > 180 ? p[0] - 360 : p[0];
-                let color = p[2] > 50 ? '#ff4500' : (p[2] > 25 ? '#ffff00' : '#00ff00');
+            // 重要：配列 p の各要素にアクセスするためのインデックスを追加
+            const lon = p[0];       // 経度
+            const lat = p[1];       // 緯度
+            const intensity = p[2]; // 強度
+
+            if (intensity > 10) { 
+                // 1. 経度の正規化
+                let baseLon = lon > 180 ? lon - 360 : lon;
                 
+                // 2. 強度に応じた色を取得
+                let color = getAuroraColor(intensity);
+                
+                // 3. Leafletに描画
                 [-360, 0, 360].forEach(offset => {
                     L.rectangle(
-                        [[p[1], baseLon + offset], [p[1] + 2, baseLon + 2 + offset]], 
+                        [[lat, baseLon + offset], [lat + 2, baseLon + 2 + offset]], 
                         { 
                             color: color, 
                             weight: 0, 
-                            fillOpacity: p[2] / 100, 
+                            fillColor: color, 
+                            fillOpacity: (intensity / 100) * 0.8, 
                             interactive: false 
                         }
                     ).addTo(window.auroraLayer);
@@ -1992,6 +2010,7 @@ function drawAurora(data) {
         });
     }
 }
+    
 
 // 引数を受け取れるように変更（引数がない場合はグローバル変数を使用）
 function updateMapMarker(targetLat = myLat, targetLon = myLon) {

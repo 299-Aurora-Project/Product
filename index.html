@@ -409,7 +409,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t2.1.0</span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t2.1.1</span></h1>
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>
@@ -1646,10 +1646,10 @@ function calculateTotal() {
                 icon.src = "fog.png";    // 霧が原因
             } else if (lastAuroraProb >= 5 && kp < minKpRequired) {
                 icon.src = "bright.png"; // 街の明かりが原因
-            } else if (cloud > 70) {
-                icon.src = "cloud.png";  // 雲が原因
+            } else if (cloud > 70 && potentialScore >= 35) { //ポテンシャルが35以上（本来なら見えるはず）なのに、雲のせいでダメな場合
+                icon.src = "cloud.png";
             } else {
-                icon.src = "low.png";    // そもそも活動が弱い
+                icon.src = "low.png"; // そもそもオーロラが来ていない
             }
         }
     }

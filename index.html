@@ -374,6 +374,48 @@ input:checked + .slider:before { transform: translateX(20px); }
     line-height: 1.4;
 }
 
+
+
+
+
+/* オーロラ凡例のスタイル */
+.oval-legend {
+    margin-top: 10px;
+    width: 100%;
+    display: none; /* 初期状態は非表示 */
+}
+
+.legend-bar {
+    height: 8px;
+    width: 100%;
+    border-radius: 4px;
+    /* getAuroraColorの配色に合わせたグラデーション */
+    background: linear-gradient(to right, 
+        #00ff7f 0%,   /* Low */
+        #00ff00 20%,  /* Normal */
+        #ccff00 40%,  /* Lime */
+        #ffd700 60%,  /* Gold */
+        #ff8c00 75%,  /* Orange */
+        #ff0000 90%,  /* Red */
+        #ff00ff 100%  /* Strong */
+    );
+    margin-bottom: 5px;
+}
+
+.legend-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.65rem;
+    color: #8b949e;
+}
+
+
+
+
+
+
+
+
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -409,7 +451,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t2.1.5</span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t3.0.0</span></h1>
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>
@@ -533,9 +575,6 @@ input:checked + .slider:before { transform: translateX(20px); }
             <div class="sub-section" id="card-kp3">
                 <div style="font-size: 0.8rem; color: #8b949e; margin-bottom: 5px;">Short Forecast:</div>
                 <div id="kp-short" class="value" style="font-size: 0.85rem; color: #5bc0be;">Ref 3-day forecast (NOAA)</div>
-        <!--テーブル
-                <pre id="kpForecast" style="margin-top:10px;">--</pre>
-        -->
             </div>
             <div class="chart-container" style="position: relative; height:200px; width:100%">
                 <canvas id="kpLineChart"></canvas>
@@ -664,21 +703,31 @@ input:checked + .slider:before { transform: translateX(20px); }
 
 
 
-<div id="map-screen" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh;">
-    <div id="oval-toggle-wrapper" style="position: absolute; bottom: 30px; left: 12px; z-index: 10001; background: rgba(11, 19, 43, 0.9); padding: 8px 12px; border-radius: 8px; border: 1px solid #3a506b; display: none; align-items: center; pointer-events: auto;">
-        <label class="switch" style="position: relative; display: inline-block; width: 34px; height: 20px; margin-right: 8px;">
-            <input type="checkbox" id="oval-visibility-toggle" onchange="toggleOvalLayer()" style="opacity: 0; width: 0; height: 0;">
-            <span class="slider round"></span>
-        </label>
-        <span style="color: white; font-size: 0.75rem; font-weight: bold; font-family: sans-serif;">Aurora Oval</span>
-    </div>
-
-
-    <button class="btn" id="back-btn" onclick="hideMapScreen();" 
-        style="position: absolute; top: 80px; left: 12px; z-index: 10001; ...">
-        ← Back
-    </button>
+<div id="map-screen">
+    <div id="map"></div>
     
+    <button id="back-btn" onclick="hideMapScreen()">← Back</button>
+
+    <div style="position: absolute; top: 10px; right: 10px; z-index: 10001; background: rgba(11, 19, 43, 0.9); padding: 12px; border-radius: 12px; border: 1px solid #3a506b; width: 140px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+            <span style="font-size: 0.8rem; color: #5bc0be; font-weight: bold;">Aurora Oval</span>
+            <label class="switch">
+                <input type="checkbox" id="oval-visibility-toggle" checked onchange="toggleOvalLayer()">
+                <span class="slider"></span>
+            </label>
+        </div>
+        
+        <div id="oval-legend-container">
+            <div class="legend-bar" style="height: 6px; width: 100%; border-radius: 3px; background: linear-gradient(to right, #00ff7f, #00ff00, #ccff00, #ffd700, #ff8c00, #ff0000, #ff00ff); margin-bottom: 4px;"></div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.6rem; color: #8b949e;">
+                <span>Low</span>
+                <span>High</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 
     <div id="map" style="height: 100vh; width: 100%;"></div>
 
@@ -1802,7 +1851,8 @@ function initMap() {
         maxZoom: 10, 
         worldCopyJump: true, 
         maxBounds: [[southLimit, -540], [northLimit, 540]], 
-        maxBoundsViscosity: 1.0 
+        maxBoundsViscosity: 1.0, 
+        // zoomControl: false // 拡大縮小ボタン（+/-）非表示
     });
     
     // Set the default cursor for the map container
@@ -1940,14 +1990,17 @@ function openMapForViewing() {
 // スイッチと連動するための関数
 function toggleOvalLayer() {
     const oc = document.getElementById("oval-visibility-toggle");
+    const legend = document.getElementById("oval-legend-container"); // 凡例を取得
     if (!oc || !window.auroraLayer) return;
 
     // 選択モード中のスイッチ操作、またはOvalモードでの初期表示に対応
     if (oc.checked || !isSelectionMode) {
+        if (legend) legend.style.display = 'block';
         if (typeof cachedAuroraData !== 'undefined' && cachedAuroraData) {
             drawAurora(cachedAuroraData);
         }
     } else {
+        if (legend) legend.style.display = 'none'; // スイッチOFF: オーロラを消し、凡例を隠す
         window.auroraLayer.clearLayers();
     }
 }

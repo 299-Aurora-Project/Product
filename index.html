@@ -409,7 +409,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t2.1.4</span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t2.1.5</span></h1>
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>
@@ -436,10 +436,11 @@ input:checked + .slider:before { transform: translateX(20px); }
             <button id="btn-search" onclick="searchCity()">Set</button>
             <div id="autocomplete-list" class="autocomplete-items"></div>
         </div>
-        <div id="search-error" class="error-msg">City not found. Please check your input.</div>
+        
+        <div id="search-error" class="error-msg" style="min-height: 0; margin-top: 2px;">City not found. Please check your input.</div>
     </div>
 
-    
+
     <div class="card" id="card-main-result">
     <div id="total-label" class="label-main" onclick="openDetail('probability')">🌌Overall Probability</div>
     <div id="total-sub-label" class="label-sub-current">Current:</div>

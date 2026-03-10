@@ -451,7 +451,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t3.0.0</span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t3.0.1</span></h1>
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>
@@ -591,8 +591,7 @@ input:checked + .slider:before { transform: translateX(20px); }
                 <div id="forecast" class="value" style="font-size: 1rem;">--</div>
             </div>
         </div>
-    </div>
-</div>
+    </div> </div>
 
 <div id="detailModal" class="modal-overlay" onclick="closeModal()">
     <div class="modal-content">
@@ -703,19 +702,30 @@ input:checked + .slider:before { transform: translateX(20px); }
 
 
 
-<div id="map-screen">
-    <div id="map"></div>
-    
+<div id="map-screen" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; z-index: 10000;">
     <button id="back-btn" onclick="hideMapScreen()">← Back</button>
+    
+    <div id="map" style="height: 100%; width: 100%;"></div>
 
     <div style="position: absolute; top: 10px; right: 10px; z-index: 10001; background: rgba(11, 19, 43, 0.9); padding: 12px; border-radius: 12px; border: 1px solid #3a506b; width: 140px;">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-            <span style="font-size: 0.8rem; color: #5bc0be; font-weight: bold;">Aurora Oval</span>
-            <label class="switch">
-                <input type="checkbox" id="oval-visibility-toggle" checked onchange="toggleOvalLayer()">
-                <span class="slider"></span>
-            </label>
+        <div style="display: flex; align-items: center; margin-bottom: 8px; gap: 10px;"> <span style="font-size: 0.8rem; color: #5bc0be; font-weight: bold;">Aurora Oval</span>
+        
+            <div id="oval-toggle-wrapper" style="display: flex; align-items: center;"> 
+                <label class="switch">
+                    <input type="checkbox" id="oval-visibility-toggle" checked onchange="toggleOvalLayer()">
+                    <span class="slider"></span>
+                </label>
+            </div>
         </div>
+     
+     
+     
+     
+     
+     
+     
+     
+        
         
         <div id="oval-legend-container">
             <div class="legend-bar" style="height: 6px; width: 100%; border-radius: 3px; background: linear-gradient(to right, #00ff7f, #00ff00, #ccff00, #ffd700, #ff8c00, #ff0000, #ff00ff); margin-bottom: 4px;"></div>
@@ -729,7 +739,9 @@ input:checked + .slider:before { transform: translateX(20px); }
 
 
 
-    <div id="map" style="height: 100vh; width: 100%;"></div>
+
+
+    <div id="map" style="height: 100vh; width: 100%; position: fixed; top: 0; left: 0; z-index: -1;"></div>
 
     <div id="map-control-panel" style="position: absolute; bottom: 30px; right: 20px; z-index: 10001; display: flex; flex-direction: column; align-items: flex-end; pointer-events: none;">
         <div id="map-location-name" style="background: rgba(11, 19, 43, 0.9); color: #5bc0be; padding: 5px 12px; border-radius: 5px; font-size: 0.85rem; margin-bottom: 8px; border: 1px solid #3a506b; display: none; pointer-events: auto; font-family: sans-serif;">
@@ -740,6 +752,9 @@ input:checked + .slider:before { transform: translateX(20px); }
         </button>
     </div>
 </div>
+
+
+
 
 <div id="detail-modal-overlay" class="modal-overlay" onclick="closeDetailModal()">
     <div class="modal-content">
@@ -1980,10 +1995,14 @@ function openMapForSelection() {
 
 // 「Aurora Oval」ボタンから呼ばれる関数
 function openMapForViewing() {
-    isSelectionMode = false; // 選択モードOFF
-    // 念のためUIを隠す
+    isSelectionMode = false;
     document.getElementById('map-location-name').style.display = 'none';
     document.getElementById('btn-confirm-location').style.display = 'none';
+    
+    // 凡例を強制的に表示状態にする
+    const legend = document.getElementById("oval-legend-container");
+    if (legend) legend.style.display = 'block';
+
     showMapScreen(false, true);
 }
 
@@ -1994,7 +2013,7 @@ function toggleOvalLayer() {
     if (!oc || !window.auroraLayer) return;
 
     // 選択モード中のスイッチ操作、またはOvalモードでの初期表示に対応
-    if (oc.checked || !isSelectionMode) {
+    if (!isSelectionMode || (oc && oc.checked)) {
         if (legend) legend.style.display = 'block';
         if (typeof cachedAuroraData !== 'undefined' && cachedAuroraData) {
             drawAurora(cachedAuroraData);
@@ -2107,7 +2126,7 @@ function showMapScreen(isSelection = false, showOvalByDefault = false) {
 
     // スイッチの見た目の判定(スイッチを描写するかを判定)
     if (toggleWrapper) {
-        toggleWrapper.style.display = isSelectionMode ? 'flex' : 'none';
+        toggleWrapper.style.display = isSelectionMode ? 'inline-flex' : 'none';
     }
 
     setTimeout(() => { 

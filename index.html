@@ -435,7 +435,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t3.3.0</span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t3.3.1</span></h1>
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>
@@ -1037,7 +1037,7 @@ async function getLocation() {
         // 2. 「爆速版 setLocation」を即座に実行！
         // これにより、住所検索を待たずに地図とピンが新しい場所に飛びます。
         // とりあえず地名は "Loading address..." などにしておきます。
-        await setLocation(lat, lon, "Locating...");
+        await setLocation(lat, lon, "⌛Locating...");
 
         // 3. その後、バックグラウンドで住所を調べて表示を上書き
         try {
@@ -1746,17 +1746,52 @@ function updateRadarChart() {
     const kp = parseFloat(document.getElementById("kp").textContent) || 0;
     const cloud = parseInt(document.getElementById("cloud").dataset.value) || 0;
 
-    // 3軸のデータを 0-100 に正規化
-    const dataValues = [
-        // 1. 総合確率ではなく、オーバル自体の強さ/近さを参照するように変更
-        // 係数を調整（例えば 1.2倍）して、色が濃いエリアならすぐ100に届くようにします
-        Math.min(currentOvalScore * 1.2, 100), 
+
+
+
+
+
+
+
+// --- 【修正の核心】総合確率から「場所の条件」だけを逆算して取り出す ---
+    // 総合確率は [場所スコア × 雲の影響 × Kpの影響] で算出されているはずです。
+    // そのため、雲(cloud)とKpの影響を排除して、純粋な「オーバルの位置関係」を計算します。
     
-        Math.min(kp * 12.5, 100), // Magnetic (Kp 8以上で満点)
-        Math.max(100 - cloud, 0)   // Sky (快晴で満点)
+    let rawProb = lastAuroraProb || 0;
+    
+    // 雲の影響を打ち消す (例: 雲80%なら確率は0.2倍になっているので、5倍して元に戻す)
+    let cloudImpact = (100 - cloud) / 100;
+    if (cloudImpact < 0.1) cloudImpact = 0.1; // 0除算防止
+    
+    // Kpの影響を打ち消す (低Kpで確率が抑えられている分を戻す)
+    let kpImpact = (kp + 1) / 5; 
+    if (kpImpact < 0.2) kpImpact = 0.2;
+
+    // これが「雲も磁気嵐も関係ない、その場所自体のオーバル接近度」になります
+    let pureOvalPositionScore = rawProb / (cloudImpact * kpImpact);
+
+    const dataValues = [
+        // この pureOvalPositionScore を使えば、マップで色が濃い（位置が良い）だけで
+        // 他の要素に関わらず 100 に到達します。
+        Math.min(pureOvalPositionScore * 1.5, 100), 
+        
+        Math.min(kp * 12.5, 100), // Magnetic
+        Math.max(100 - cloud, 0)   // Sky
     ];
 
 
+
+
+
+
+
+
+
+
+//        Math.min(lastAuroraProb * 2, 100), // Oval/Horizon (50%以上で満点)
+//        Math.min(kp * 12.5, 100),         // Magnetic (Kp 8以上で満点)
+//        Math.max(100 - cloud, 0)          // Sky (快晴で満点)
+//    ];
 
     // 中央の％表示を更新
     const pctText = currentTotalScore < 1 ? "<1%" : (currentTotalScore > 99 ? "99%+" : Math.round(currentTotalScore) + "%");

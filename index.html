@@ -435,7 +435,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t3.2.5</span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t3.2.5-</span></h1>
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>
@@ -446,21 +446,39 @@ input:checked + .slider:before { transform: translateX(20px); }
         
             
         <div style="display: flex; gap: 10px; width: 100%; margin-bottom: 5px; box-sizing: border-box;">
-            
-            <button id="btn-gps" onclick="getLocation(); event.stopPropagation();" 
-                style="width: calc(50% - 5px); height: 50px; background: #3a506b; color: white; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: normal; padding: 0;">
-                <span style="font-size: 1.5rem; margin-right: 5px;">🛰️</span>
-                <span style="font-size: 0.9rem;">GPS</span>
-            </button>
-        
-            <button id="btn-map-select" onclick="openMapForSelection()" 
-                style="width: calc(50% - 5px); height: 50px; background: #3a506b; color: white; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: normal; padding: 0;">
-                <span style="font-size: 1.5rem; margin-right: 5px;">🗺️</span>
-                <span style="font-size: 0.9rem;">MAP</span>
-            </button>
-        
-        </div>
 
+
+
+
+
+
+
+
+
+            
+        <button id="btn-gps" onclick="getLocation(); event.stopPropagation();" 
+            style="width: calc(50% - 5px) !important; min-width: 0 !important; max-width: 50% !important; height: 50px; background: #3a506b; color: white; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: normal; padding: 0 !important; flex: none !important;">
+            <span style="font-size: 1.5rem; margin-right: 5px;">🛰️</span>
+            <span style="font-size: 0.9rem;">GPS</span>
+        </button>
+        
+        <button id="btn-map-select" onclick="openMapForSelection()" 
+            style="width: calc(50% - 5px) !important; min-width: 0 !important; max-width: 50% !important; height: 50px; background: #3a506b; color: white; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: normal; padding: 0 !important; flex: none !important;">
+            <span style="font-size: 1.5rem; margin-right: 5px;">🗺️</span>
+            <span style="font-size: 0.9rem;">MAP</span>
+        </button>
+        
+
+
+
+
+
+
+
+
+
+    
+        </div>
     
         <div style="text-align: left; font-size: 0.9rem; margin-bottom: 5px; font-weight: bold; margin-top: 15px;">Search City:</div>
         <div class="search-container">
@@ -2351,4 +2369,3 @@ function closeKpInfo() {
 </script>
 </body>
 </html>
-

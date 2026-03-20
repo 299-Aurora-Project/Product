@@ -435,7 +435,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t3.2.1</span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t3.2.2</span></h1>
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>
@@ -445,61 +445,44 @@ input:checked + .slider:before { transform: translateX(20px); }
         <div id="loc" class="value" style="word-break: break-all; margin-bottom: 25px;">Not Set</div>
         
         <div style="display: flex; gap: 10px; width: 100%; margin-bottom: 5px; box-sizing: border-box;">
-            
             <button id="btn-gps" onclick="getLocation(); event.stopPropagation();" 
                 style="flex: 1; height: 50px; background: #3a506b; color: white; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: normal; overflow: hidden;">
                 <span style="font-size: 1.5rem; margin-right: 5px;">🛰️</span>
                 <span style="font-size: 0.9rem;">GPS</span>
             </button>
-    
+
             <button id="btn-map-select" onclick="openMapForSelection()" 
                 style="flex: 1; height: 50px; background: #3a506b; color: white; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: normal; overflow: hidden;">
                 <span style="font-size: 1.5rem; margin-right: 5px;">🗺️</span>
                 <span style="font-size: 0.9rem;">MAP</span>
             </button>
-    
         </div> 
-
 
         <div style="text-align: left; font-size: 0.9rem; margin-bottom: 5px; font-weight: bold;">Search City:</div>
         <div class="search-container">
-            <input id="cityInput" 
-                   placeholder="e.g. Yellowknife, Canada" 
-                   oninput="handleCityInput(this)" 
-                   onfocus="handleCityInput(this)" 
-                   onclick="event.stopPropagation()">
+            <input id="cityInput" placeholder="e.g. Yellowknife, Canada" oninput="handleCityInput(this)" onfocus="handleCityInput(this)" onclick="event.stopPropagation()">
             <button id="btn-search" onclick="searchCity()">Set</button>
             <div id="autocomplete-list" class="autocomplete-items"></div>
         </div>
         
         <div id="search-error" class="error-msg" style="min-height: 0; margin-top: 5px;">City not found. Please check your input.</div>
-    </div> <div class="card" id="card-main-result">
+    </div> 
+
+    <div class="card" id="card-main-result">
         <div id="total-label" class="label-main" onclick="openDetail('probability')">🌌Overall Probability</div>
         <div id="total-sub-label" class="label-sub-current">Current:</div>
 
         <div id="possibility-area" style="text-align: center; margin: 10px 0 0; display: flex; flex-direction: column; align-items: center; gap: 10px;">
             <div style="position: relative; display: inline-block;">
-                <img id="status-icon" src="location.png" alt="Status" onclick="openModal()" 
-                     style="width: 180px; height: auto; cursor: pointer; display: block; -webkit-tap-highlight-color: transparent;">
-            
-                <div onclick="openImageModal(); event.stopPropagation();" 
-                     style="position: absolute; bottom: 0; right: 0; width: 22px; height: 22px; 
-                            background: #3a506b; color: #5bc0be; border-radius: 50%; 
-                            display: flex; align-items: center; justify-content: center; 
-                            font-weight: bold; cursor: pointer; font-size: 0.8rem; border: 1px solid #3a506b;
-                            box-shadow: 0 2px 4px rgba(0,0,0,0.3); z-index: 10;">
-                    ?
-                </div>
+                <img id="status-icon" src="location.png" alt="Status" onclick="openModal()" style="width: 180px; height: auto; cursor: pointer; display: block;">
+                <div onclick="openImageModal(); event.stopPropagation();" style="position: absolute; bottom: 0; right: 0; width: 22px; height: 22px; background: #3a506b; color: #5bc0be; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; font-size: 0.8rem; border: 1px solid #3a506b; box-shadow: 0 2px 4px rgba(0,0,0,0.3); z-index: 10;">?</div>
             </div>
-
             <div id="result" class="badge badge-large low" onclick="openModal()" style="margin: 0 auto;">--</div>
-            
             <div id="observation-advice" style="font-size: 0.85rem; color: #5bc0be; font-style: italic; min-height: 1.2em; max-width: 200px; line-height: 1.3;"></div>
-        
             <div class="last-updated" id="time-update-all" style="margin-top: 0px;">Last Update: --:--:--</div>
         </div>
 
-        <div class="switch-container" style="position: absolute; top: 15px; right: 22px; margin-top: 0; display: flex; flex-direction: column; align-items: flex-end;">
+        <div class="switch-container" style="position: absolute; top: 15px; right: 22px; display: flex; flex-direction: column; align-items: flex-end;">
             <div style="display: flex; align-items: center; gap: 10px;">
                 <span class="switch-label">🔔</span>
                 <label class="switch">
@@ -507,22 +490,15 @@ input:checked + .slider:before { transform: translateX(20px); }
                     <span class="slider"></span>
                 </label>
             </div>
-            <div id="target-area-display" style="font-size: 0.65rem; color: #5bc0be; margin-top: 5px; text-align: right; line-height: 1.2; display: none;">
-                Target area:<br>
-                <span id="target-area-name" style="color: #8b949e;"></span>
-            </div>
+            <div id="target-area-display" style="font-size: 0.65rem; color: #5bc0be; margin-top: 5px; text-align: right; line-height: 1.2; display: none;">Target area:<br><span id="target-area-name" style="color: #8b949e;"></span></div>
         </div>
 
         <div style="margin-top: 5px; display: flex; justify-content: flex-end;">
-            <button id="btn-update-all" 
-                    style="width: auto; min-width: 100px; white-space: nowrap; font-size: 0.85em; background: #3a506b; padding: 8px 12px;" 
-                    onclick="updateAll(); event.stopPropagation();">
-                Update Data
-            </button>
+            <button id="btn-update-all" style="width: auto; min-width: 100px; white-space: nowrap; font-size: 0.85em; background: #3a506b; padding: 8px 12px;" onclick="updateAll(); event.stopPropagation();">Update Data</button>
         </div>
-    </div> </div>
+    </div>
 
-    <button id="toggle-data-btn" class="toggle-btn" onclick="toggleData(); event.stopPropagation();">Show All Information</button>
+    <button id="toggle-data-btn" class="toggle-btn" style="margin: 20px auto; display: block;" onclick="toggleData(); event.stopPropagation();">Show All Information</button>
 
     <div id="hidden-data">
         <div class="card" id="card-oval">
@@ -532,35 +508,13 @@ input:checked + .slider:before { transform: translateX(20px); }
             <div id="oval-prob" style="font-size: 0.9rem; color: #8b949e; margin: 10px 0;"></div>
         </div>
 
-
         <div class="card" id="card-kp-group">
             <div class="label-main" onclick="openDetail('kp')">☀Kp Index</div>
             <div class="label-sub-current">Current:</div>
-        
             <div class="kp-wrapper" style="position: relative; display: inline-block;">
                 <div id="kp" class="badge low">--</div>
-                
-                <div id="g-scale-indicator" onclick="showKpInfo(event)" 
-                     style="display: none; position: absolute; top: -8px; right: -8px; 
-                            background: #ff4d4d; color: white; border-radius: 50%; 
-                            width: 18px; height: 18px; font-size: 11px; line-height: 18px; 
-                            text-align: center; font-weight: bold; border: 1.5px solid #1a1a1a; 
-                            cursor: pointer; box-shadow: 0 0 5px rgba(255,77,77,0.5); z-index: 10;">
-                    ①
-                </div>
+                <div id="g-scale-indicator" onclick="showKpInfo(event)" style="display: none; position: absolute; top: -8px; right: -8px; background: #ff4d4d; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 11px; line-height: 18px; text-align: center; font-weight: bold; border: 1.5px solid #1a1a1a; cursor: pointer; z-index: 10;">①</div>
             </div>
-        
-            <div id="kp-modal" onclick="closeKpInfo()" 
-                 style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-                        background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center;">
-                <div style="background: #1a1a1a; color: white; padding: 20px; border-radius: 12px; 
-                            max-width: 85%; border: 1px solid #ff4d4d; font-size: 14px;">
-                    <h3 style="margin-top: 0; color: #ff4d4d;">Geomagnetic Storm (G-Scale)</h3>
-                    <p id="g-scale-detail"></p>
-                    <p style="font-size: 11px; color: #888; margin-top: 15px; text-align: center;">タップで閉じる</p>
-                </div>
-            </div>
-        
             <div class="sub-section" id="card-kp3">
                 <div style="font-size: 0.8rem; color: #8b949e; margin-bottom: 5px;">Short Forecast:</div>
                 <div id="kp-short" class="value" style="font-size: 0.85rem; color: #5bc0be;">Ref 3-day forecast (NOAA)</div>
@@ -569,7 +523,6 @@ input:checked + .slider:before { transform: translateX(20px); }
                 <canvas id="kpLineChart"></canvas>
             </div>
         </div>
-
 
         <div class="card" id="card-cloud-group">
             <div class="label-main" onclick="openDetail('cloud')">☁Cloud Cover</div>
@@ -580,7 +533,8 @@ input:checked + .slider:before { transform: translateX(20px); }
                 <div id="forecast" class="value" style="font-size: 1rem;">--</div>
             </div>
         </div>
-    </div> </div>
+    </div>
+</div>
 
 <div id="detailModal" class="modal-overlay" onclick="closeModal()">
     <div class="modal-content">

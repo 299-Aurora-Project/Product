@@ -435,7 +435,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t3.2.5-</span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t3.3.0</span></h1>
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>
@@ -1748,10 +1748,15 @@ function updateRadarChart() {
 
     // 3軸のデータを 0-100 に正規化
     const dataValues = [
-        Math.min(lastAuroraProb * 2, 100), // Oval/Horizon (50%以上で満点)
-        Math.min(kp * 12.5, 100),         // Magnetic (Kp 8以上で満点)
-        Math.max(100 - cloud, 0)          // Sky (快晴で満点)
+        // 1. 総合確率ではなく、オーバル自体の強さ/近さを参照するように変更
+        // 係数を調整（例えば 1.2倍）して、色が濃いエリアならすぐ100に届くようにします
+        Math.min(currentOvalScore * 1.2, 100), 
+    
+        Math.min(kp * 12.5, 100), // Magnetic (Kp 8以上で満点)
+        Math.max(100 - cloud, 0)   // Sky (快晴で満点)
     ];
+
+
 
     // 中央の％表示を更新
     const pctText = currentTotalScore < 1 ? "<1%" : (currentTotalScore > 99 ? "99%+" : Math.round(currentTotalScore) + "%");

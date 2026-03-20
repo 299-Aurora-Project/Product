@@ -446,12 +446,14 @@ input:checked + .slider:before { transform: translateX(20px); }
         </div>
     </div>
 </div>
--->
+
+--> 
+
 
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t3.1.0</span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t3.1.1</span></h1>
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>
@@ -461,12 +463,56 @@ input:checked + .slider:before { transform: translateX(20px); }
         <div id="loc" class="value">Not Set</div>
         
         <br>
-        <button id="btn-gps" onclick="getLocation(); event.stopPropagation();">Get Current Location via GPS</button><br>
+        <button id="btn-gps" onclick="getLocation(); event.stopPropagation();">🛰️GPS
+        </button>
+        <br>
 
         <button id="btn-map-select" onclick="openMapForSelection()" 
             style="display: block; clear: both; width: auto; min-width: 220px; margin: 10px 0; padding: 12px 20px; background: #5bc0be; color: #0b132b; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">
-            <i class="fas fa-map-marked-alt"></i> Select from a Map
+            <i class="fas fa-map-marked-alt"></i>🗺️MAP
         </button>
+
+
+
+
+
+
+
+
+<!-- 
+<div id="home-screen" class="container">
+    <div class="header-area">
+        <div class="title-row">
+            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t3.1.0</span></h1>
+        </div>
+        <div class="produced-by">Produced by Shin</div>
+    </div>
+
+
+    <div class="card" id="card-loc">
+        <div class="label-main" onclick="openDetail('location')">📍Location</div>
+        <div id="loc" class="value">Not Set</div>
+        
+        <br>
+        
+<div class="card" id="card-loc">
+    <div style="display: flex; gap: 10px; margin-bottom: 12px;">
+        <button id="btn-gps" onclick="getLocation(); event.stopPropagation();" 
+            style="flex: 1; padding: 12px; font-size: 2rem; background: #3a506b; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+            🛰️GPS
+        </button>
+
+        <button id="btn-map-select" onclick="openMapForSelection()" 
+            style="flex: 1; padding: 12px; font-size: 2rem; background: #5bc0be; color: #0b132b; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+            🗺️MAP
+        </button>
+    </div>
+
+-->
+
+
+
+
 
         Search City:
         <div class="search-container">

@@ -446,7 +446,7 @@ input:checked + .slider:before { transform: translateX(20px); }
         
         
         
-            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t3.3.2-t1.2<span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t3.3.2-t1.3<span></h1>
             
             
             
@@ -1317,22 +1317,22 @@ async function getKp() {
         }
 
         // --- 修正：テスト用コードをループの外へ ---
-        console.log("確定した数値(val):", val);
-        const el = document.getElementById("kp");
-        
-        if (el) {
-            console.log("要素 ID 'kp' を発見。赤枠にして TEST と書き込みます。");
-            el.style.border = "5px solid red"; // 目立つように太く
-            el.textContent = "TEST";           // これが表示されるか確認
-            
-            // 1秒後に本来の数値を上書き（一瞬 TEST が見えるか確認）
-            setTimeout(() => {
-                el.textContent = val.toFixed(1);
-                el.className = `badge ${val >= 5 ? 'high' : (val >= 3 ? 'mid' : 'low')}`;
-            }, 1000);
-        } else {
-            console.error("要素 ID 'kp' が見つかりません！HTML側を確認してください。");
-        }
+//        console.log("確定した数値(val):", val);
+//        const el = document.getElementById("kp");
+//        
+//        if (el) {
+//            console.log("要素 ID 'kp' を発見。赤枠にして TEST と書き込みます。");
+//            el.style.border = "5px solid red"; // 目立つように太く
+//            el.textContent = "TEST";           // これが表示されるか確認
+//            
+//            // 1秒後に本来の数値を上書き（一瞬 TEST が見えるか確認）
+//            setTimeout(() => {
+//                el.textContent = val.toFixed(1);
+//                el.className = `badge ${val >= 5 ? 'high' : (val >= 3 ? 'mid' : 'l//ow')}`;
+//            }, 1000);
+//        } else {
+//            console.error("要素 ID 'kp' が見つかりません！HTML側を確認してください//。");
+//        }
         
         return val;
 
@@ -1392,6 +1392,13 @@ async function checkOval() {
 
 let myLineChart = null; // グラフを保持する変数
 
+
+
+
+
+
+
+
 async function fetchKp3DayForecast() {
     try {
         const res = await fetch(CORS + encodeURIComponent(FORECAST_URL));
@@ -1401,66 +1408,102 @@ async function fetchKp3DayForecast() {
         let dates = [];
         let dataPoints = [];
 
+        // 日付の抽出
         lines.forEach(line => {
             const dateMatch = line.match(/([A-Z][a-z]{2}\s+\d{2})/g);
             if (dateMatch && dateMatch.length >= 3) { dates = dateMatch; }
         });
 
+        // データの抽出
         lines.forEach(line => {
             const timeMatch = line.match(/(\d{2}-\d{2})UT\s+([\d.]+).*?\s+([\d.]+).*?\s+([\d.]+)/);
             if (timeMatch && dates.length >= 3) {
                 const hourRange = timeMatch[1];
                 for (let i = 0; i < 3; i++) {
-                    dataPoints.push({
-                        dateStr: dates[i].trim(),
-                        timeStr: hourRange.trim(),
-                        value: parseFloat(timeMatch[i + 2]),
-                        dayIndex: i
-                    });
+                    const val = parseFloat(timeMatch[i + 2]);
+                    if (!isNaN(val)) {
+                        dataPoints.push({
+                            dateStr: dates[i].trim(),
+                            timeStr: hourRange.trim(),
+                            value: val,
+                            dayIndex: i,
+                            hourStart: parseInt(hourRange.split('-')[0])
+                        });
+                    }
                 }
             }
         });
+
+        if (dataPoints.length === 0) {
+            console.warn("No data points parsed.");
+            return;
+        }
 
         dataPoints.sort((a, b) => {
             if (a.dayIndex !== b.dayIndex) return a.dayIndex - b.dayIndex;
             return a.timeStr.localeCompare(b.timeStr);
         });
 
-        let lastDate = "";
+        // --- 現在の時刻に最適なデータを探す（安全策付き） ---
+        const now = new Date();
+        const currentUTCHours = now.getUTCHours();
+        const currentUTCDate = now.getUTCDate();
+        
+        let currentVal = dataPoints[0].value; // デフォルトは最初の値
+
+        const target = dataPoints.find(p => {
+            const dMatch = p.dateStr.match(/\d+/);
+            const pDay = dMatch ? parseInt(dMatch[0]) : -1;
+            return pDay === currentUTCDate && (currentUTCHours >= p.hourStart && currentUTCHours < p.hourStart + 3);
+        });
+
+        if (target) {
+            currentVal = target.value;
+            console.log("Current UTCHour matched:", currentUTCHours, "Value:", currentVal);
+        }
+
+        // 表示の更新
+        const elKp = document.getElementById("kp");
+        if (elKp) {
+            const currentText = elKp.textContent.trim();
+            // Loading中か、0.0か、空の場合のみ上書き
+            if (currentText === "0.0" || currentText === "Loading..." || currentText === "") {
+                elKp.textContent = currentVal.toFixed(1);
+                elKp.className = `badge ${currentVal >= 5 ? 'high' : (currentVal >= 3 ? 'mid' : 'low')}`;
+            }
+        }
+
+        window.latestKpValueFromForecast = currentVal;
+
+        // チャートの描画
+        const values = dataPoints.map(p => p.value);
         const labels = dataPoints.map((p, index) => {
-            if (index === 0 || p.dateStr !== lastDate) {
-                lastDate = p.dateStr;
-                // ★検証のため、まずは2行表示[ ]をやめて1行の文字列にします
-                return p.dateStr + " " + p.timeStr; 
-            } 
-//            if (p.timeStr === "12-15") return "12:00";
+            if (index === 0 || p.dateStr !== dataPoints[index-1].dateStr) {
+                return p.dateStr + " " + p.timeStr;
+            }
             return "";
         });
 
-        const values = dataPoints.map(p => p.value);
-
-        // --- 🔍 デバッグ用ログ
-        console.log("Labels ready:", labels);
-        console.log("Values ready:", values);
-        
-        // ★ここに追加：最新のKp値をグローバル変数に保存（他の関数から使えるようにする）
-window.latestKpValueFromForecast = values[0]; // 最初のデータ（現在時刻に一番近いもの）を保存
-
-        if (typeof drawKpChart === "function" && labels.length > 0) {
-            console.log("Calling drawKpChart...");
+        if (typeof drawKpChart === "function") {
             drawKpChart(labels, values);
-        } else {
-            console.error("drawKpChart function not found or labels empty!");
         }
-        
+
+        // 予報テキストの表示
         const match = text.match(/NOAA Kp index breakdown[\s\S]*?(?=\n[A-Z]|$)/i);
-        const el = document.getElementById("kpForecast");
-        if (el) el.innerText = match ? match[0].trim() : "Updating...";
+        const elF = document.getElementById("kpForecast");
+        if (elF) elF.innerText = match ? match[0].trim() : "Updating...";
 
     } catch (e) {
         console.error("Forecast Error:", e);
     }
+    // ここでLoadingを消す処理が必要な場合は、必ず最後に実行されるようにします
 }
+
+
+
+
+
+
 
 function drawKpChart(labels, values) {
     const ctx = document.getElementById('kpLineChart').getContext('2d');

@@ -446,7 +446,7 @@ input:checked + .slider:before { transform: translateX(20px); }
         
         
         
-            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t3.3.2-t1.5<span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t4.0.0<span></h1>
             
             
             
@@ -1326,11 +1326,15 @@ async function getKp() {
             
             if (!isNaN(tempVal)) {
                 val = tempVal;
+                
+                // 実測値が変わったとき、バッジ（Gスケール）を更新
+                updateGScaleIndicator(val);
+            
                 break; 
             }
         }
 
-        // --- 修正：テスト用コードをループの外へ ---
+        // テスト用コード ---
 //        console.log("確定した数値(val):", val);
 //        const el = document.getElementById("kp");
 //        
@@ -1481,11 +1485,15 @@ async function fetchKp3DayForecast() {
         if (elKp && !isNaN(currentVal)) {
             const currentText = elKp.textContent; // trim() は不要、中身を確認
             
-            // ★修正ポイント： "Loading" という文字が含まれている、または 0.0 の場合に書き込む
+            // "Loading" という文字が含まれている、または 0.0 の場合に書き込む
             if (currentText.includes("Loading") || currentText === "0.0" || currentText === "") {
                 elKp.innerHTML = ""; // 一旦 ⏳ などを完全に消す
                 elKp.textContent = currentVal.toFixed(1);
                 elKp.className = `badge ${currentVal >= 5 ? 'high' : (currentVal >= 3 ? 'mid' : 'low')}`;
+                
+                // バッジ（Gスケール）の更新を呼ぶ
+                updateGScaleIndicator(currentVal);
+                
                 console.log("予報値で表示を更新しました:", currentVal);
             } else {
                 console.log("実測値が既にあるためスキップしました。現在の表示:", currentText);

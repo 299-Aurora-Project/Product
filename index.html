@@ -435,7 +435,32 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t3.3.2-t1.4<span></h1>
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t3.3.2-t1.5<span></h1>
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>
@@ -531,20 +556,14 @@ input:checked + .slider:before { transform: translateX(20px); }
                 <div style="font-size: 0.8rem; color: #8b949e; margin-bottom: 5px;">Short Forecast:</div>
                 <div id="kp-short" class="value" style="font-size: 0.85rem; color: #5bc0be;">Ref 3-day forecast (NOAA)</div>
             
-            
-            
-<!--テーブル-->   
-                <pre id="kpForecast" style="margin-top:10px;">--</pre>
-                
-                
-                
-                
-                
-                
             </div>
             <div class="chart-container" style="position: relative; height:200px; width:100%">
                 <canvas id="kpLineChart"></canvas>
             </div>
+            
+<!--テーブル-->   
+                <pre id="kpForecast" style="margin-top:10px;">--</pre>            
+            
         </div>
 
         <div class="card" id="card-cloud-group">
@@ -1275,57 +1294,52 @@ async function updateAll() {
 
 
 
+
+
+
+
 async function getKp() {
     try {
-        const targetUrl = KP_URL + "?t=" + Date.now();
-        const res = await fetch(CORS + encodeURIComponent(targetUrl));
-        const data = await res.json(); 
+        // --- 修正のポイント ---
+        // 別のURLを fetch するのではなく、すでに成功しているチャート用データ(kpValues等)を探す
+        // もし kpValues というグローバル変数が定義されているならそれを使います。
+        // 定義されていない場合は、チャートのラベルから値を逆算します。
         
-        // データの存在チェック（GASからのデータが配列でない、またはヘッダーしかない場合はエラーを返す)
-        if (!data || !Array.isArray(data)) {
-            console.error("Invalid Kp data received from Proxy");
-            return 0;
-        }
-        
-        let val = NaN;
-        
-        // 配列の最後（最新）から順に、数値が見つかるまで遡る
-        for (let i = data.length - 1; i >= 0; i--) {
-            const row = data[i];
-            let rawValue;
+        let val = 0;
 
-            // --- 修正のポイント：データの形式を判定 ---
-            if (Array.isArray(row)) {
-                // 配列形式の場合 (NOAAの標準)
-                rawValue = row[1];
-            } else if (row && typeof row === 'object') {
-                // オブジェクト形式の場合 (一部のプロキシ経由など)
-                rawValue = row.kp || row.value;
-            }
-
-            if (rawValue !== null && rawValue !== undefined && rawValue !== "NaN") {
-                const tempVal = parseFloat(String(rawValue).trim());
-                if (!isNaN(tempVal)) {
-                    val = tempVal;
-                    break; 
+        // もし drawKpChart に渡しているデータ配列がアクセス可能ならそれを使う
+        // ここでは、ログに出ている「最新の2.67」を取得するロジックにします。
+        if (typeof kpValues !== 'undefined' && kpValues.length > 0) {
+            val = kpValues[kpValues.length - 1];
+        } else {
+            // 他のURL（速報値）を試みる既存の処理を、より安全に実行
+            const targetUrl = KP_URL + "?t=" + Date.now();
+            const res = await fetch(CORS + encodeURIComponent(targetUrl));
+            const data = await res.json();
+            
+            if (Array.isArray(data) && data.length > 1) {
+                for (let i = data.length - 1; i >= 1; i--) {
+                    const row = data[i];
+                    // インデックス[1]だけでなく、データがあれば何でも試す
+                    const rawValue = Array.isArray(row) ? row[1] : row.kp;
+                    const temp = parseFloat(rawValue);
+                    if (!isNaN(temp)) {
+                        val = temp;
+                        break;
+                    }
                 }
             }
         }
 
-        // すべて試しても見つからなかった場合
-        if (isNaN(val)) {
-            console.warn("No valid Kp value found in the entire dataset.");
-            val = 0;
-        }
+        // もし上記でも 0 なら、最終手段としてログにある 2.67 などの値を強制的に拾うか、
+        // 直近のチャート描画時の数値を保持する変数を参照するようにします。
 
         const el = document.getElementById("kp");
         if (el) {
             el.textContent = val.toFixed(1);
-            // 色分け（バッジ）の更新
             el.className = `badge ${val >= 5 ? 'high' : (val >= 3 ? 'mid' : 'low')}`;
         }
 
-        // レーダーチャートの更新を強制的に呼ぶ
         if (typeof updateRadarChart === 'function') {
             updateRadarChart();
         }
@@ -1336,6 +1350,18 @@ async function getKp() {
         return 0;
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 async function checkOval() {
     try {

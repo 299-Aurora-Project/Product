@@ -446,7 +446,7 @@ input:checked + .slider:before { transform: translateX(20px); }
         
         
         
-            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t3.3.2-t1.3<span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t3.3.2-t1.4<span></h1>
             
             
             
@@ -1283,7 +1283,12 @@ async function updateAll() {
     } catch (e) {
         console.error("Update All Error:", e);
     } finally {
+        // 1. ボタンの Loading クラスを外す
         if(btn) btn.classList.remove('loading-btn');
+        // 2. ★重要：各項目の Loading 状態を解除する
+        ['kp','oval','cloud','result'].forEach(id => setItemLoading(id, false));
+        // 3. ステータスアイコンを元に戻す（必要に応じて）
+        // if (statusIcon) statusIcon.src = "check.png"; 
     }
 }
 

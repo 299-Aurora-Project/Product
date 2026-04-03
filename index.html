@@ -446,7 +446,7 @@ input:checked + .slider:before { transform: translateX(20px); }
         
         
         
-            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t3.3.2-t1.5<span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t3.3.2-t1.6<span></h1>
             
             
             
@@ -1300,39 +1300,8 @@ async function updateAll() {
 
 async function getKp() {
     try {
-        // --- 修正のポイント ---
-        // 別のURLを fetch するのではなく、すでに成功しているチャート用データ(kpValues等)を探す
-        // もし kpValues というグローバル変数が定義されているならそれを使います。
-        // 定義されていない場合は、チャートのラベルから値を逆算します。
-        
-        let val = 0;
-
-        // もし drawKpChart に渡しているデータ配列がアクセス可能ならそれを使う
-        // ここでは、ログに出ている「最新の2.67」を取得するロジックにします。
-        if (typeof kpValues !== 'undefined' && kpValues.length > 0) {
-            val = kpValues[kpValues.length - 1];
-        } else {
-            // 他のURL（速報値）を試みる既存の処理を、より安全に実行
-            const targetUrl = KP_URL + "?t=" + Date.now();
-            const res = await fetch(CORS + encodeURIComponent(targetUrl));
-            const data = await res.json();
-            
-            if (Array.isArray(data) && data.length > 1) {
-                for (let i = data.length - 1; i >= 1; i--) {
-                    const row = data[i];
-                    // インデックス[1]だけでなく、データがあれば何でも試す
-                    const rawValue = Array.isArray(row) ? row[1] : row.kp;
-                    const temp = parseFloat(rawValue);
-                    if (!isNaN(temp)) {
-                        val = temp;
-                        break;
-                    }
-                }
-            }
-        }
-
-        // もし上記でも 0 なら、最終手段としてログにある 2.67 などの値を強制的に拾うか、
-        // 直近のチャート描画時の数値を保持する変数を参照するようにします。
+        // ステップ1で保存した値を取得（まだなければ 0）
+        let val = window.latestKpValueFromForecast || 0;
 
         const el = document.getElementById("kp");
         if (el) {
@@ -1340,13 +1309,14 @@ async function getKp() {
             el.className = `badge ${val >= 5 ? 'high' : (val >= 3 ? 'mid' : 'low')}`;
         }
 
+        // レーダーチャートを更新
         if (typeof updateRadarChart === 'function') {
             updateRadarChart();
         }
 
         return val;
     } catch (e) {
-        console.error("Kp Fetch Error:", e);
+        console.error("Kp Update Error:", e);
         return 0;
     }
 }
@@ -1450,6 +1420,9 @@ async function fetchKp3DayForecast() {
         // --- 🔍 デバッグ用ログ
         console.log("Labels ready:", labels);
         console.log("Values ready:", values);
+        
+        // ★ここに追加：最新のKp値をグローバル変数に保存（他の関数から使えるようにする）
+window.latestKpValueFromForecast = values[0]; // 最初のデータ（現在時刻に一番近いもの）を保存
 
         if (typeof drawKpChart === "function" && labels.length > 0) {
             console.log("Calling drawKpChart...");

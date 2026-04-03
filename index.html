@@ -435,7 +435,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t3.3.2-t1,0</span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t3.3.2-t1.2</span></h1>
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>
@@ -1290,8 +1290,6 @@ async function getKp() {
     try {
         const targetUrl = KP_URL + "?t=" + Date.now();
         const res = await fetch(CORS + encodeURIComponent(targetUrl));
-        
-        // GASプロキシの場合、ここですでにNOAAの純粋なデータ（配列）が返ってきます
         const data = await res.json(); 
         
         // データの存在チェック（GASがエラーを返した場合などの対策）
@@ -1299,9 +1297,22 @@ async function getKp() {
             console.error("Invalid Kp data received from Proxy");
             return 0;
         }
-
+        
         // 最新のKp値を取り出す (配列の最後)
-        const val = parseFloat(data[data.length - 1][1]);
+        // 後ろからループして有効な数値を探す
+        let val = NaN;
+        // i=0はヘッダーなので、i=1まで遡る
+        for (let i = data.length - 1; i >= 1; i--) {
+            const tempVal = parseFloat(data[i][1]);
+            if (!isNaN(tempVal)) {
+                val = tempVal; // 数値が見つかったら代入してループを抜ける
+                break;
+            }
+        }
+
+        // 万が一すべてNaNだった場合の予備
+        if (isNaN(val)) val = 0;
+
         const el = document.getElementById("kp");
         if (el) {
             el.textContent = val.toFixed(1);

@@ -1302,26 +1302,32 @@ async function getKp() {
     try {
         const targetUrl = KP_URL + "?t=" + Date.now();
         const res = await fetch(CORS + encodeURIComponent(targetUrl));
-        
-        // GASプロキシの場合、ここですでにNOAAの純粋なデータ（配列）が返ってきます
         const data = await res.json(); 
-        
-        // データの存在チェック（GASがエラーを返した場合などの対策）
-        if (!data || !Array.isArray(data)) {
-            console.error("Invalid Kp data received from Proxy");
-            return 0;
+
+        if (!data || !Array.isArray(data)) return 0;
+
+        // --- 修正ポイント：配列を逆順にして、最初に見つかった「数値」を探す ---
+        let val = 0;
+        for (let i = data.length - 1; i >= 0; i--) {
+            const entry = data[i];
+            // entryが配列なら2番目[1]、数値ならそのまま、を取り出して数値化
+            const tempVal = parseFloat(Array.isArray(entry) ? entry[1] : entry);
+            
+            if (!isNaN(tempVal)) {
+                val = tempVal;
+                break; // 数値が見つかったらループ終了
+            }
         }
 
-        // 配列の最後にある「数値そのもの」を直接取得します
-        const lastValue = data[data.length - 1]; 
-        const val = parseFloat(lastValue);
-
         const el = document.getElementById("kp");
-        if (el && !isNaN(val)) { // NaNチェックを追加するとより安全
+        if (el) {
             el.textContent = val.toFixed(1);
             el.className = `badge ${val >= 5 ? 'high' : (val >= 3 ? 'mid' : 'low')}`;
         }
+        
+        // もしLoadingを消す処理が他にあるなら、ここで呼ぶか確認してください
         return val;
+
     } catch (e) {
         console.error("Kp Fetch Error:", e);
         return 0;

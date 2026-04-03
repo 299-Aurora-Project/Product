@@ -446,7 +446,7 @@ input:checked + .slider:before { transform: translateX(20px); }
         
         
         
-            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t3.3.2-t1.6<span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t3.3.2-t1.0<span></h1>
             
             
             
@@ -1300,26 +1300,34 @@ async function updateAll() {
 
 async function getKp() {
     try {
-        // ステップ1で保存した値を取得（まだなければ 0）
-        let val = window.latestKpValueFromForecast || 0;
+        const targetUrl = KP_URL + "?t=" + Date.now();
+        const res = await fetch(CORS + encodeURIComponent(targetUrl));
+        
+        // GASプロキシの場合、ここですでにNOAAの純粋なデータ（配列）が返ってきます
+        const data = await res.json(); 
+        
+        // データの存在チェック（GASがエラーを返した場合などの対策）
+        if (!data || !Array.isArray(data)) {
+            console.error("Invalid Kp data received from Proxy");
+            return 0;
+        }
 
+        // 最新のKp値を取り出す (配列の最後)
+        // 安全な取得パターン
+        const lastEntry = data[data.length - 1];
+        const val = Array.isArray(lastEntry) ? parseFloat(lastEntry[1]) : parseFloat(lastEntry);
         const el = document.getElementById("kp");
         if (el) {
             el.textContent = val.toFixed(1);
             el.className = `badge ${val >= 5 ? 'high' : (val >= 3 ? 'mid' : 'low')}`;
         }
-
-        // レーダーチャートを更新
-        if (typeof updateRadarChart === 'function') {
-            updateRadarChart();
-        }
-
         return val;
     } catch (e) {
-        console.error("Kp Update Error:", e);
+        console.error("Kp Fetch Error:", e);
         return 0;
     }
 }
+
 
 
 

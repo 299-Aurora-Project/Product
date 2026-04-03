@@ -124,7 +124,7 @@ button:disabled { opacity: 0.3; cursor: not-allowed; }
 
 /* 2. 入力窓：角丸を8pxに統一し、ネイビー系に */
 #cityInput {
-    width: 220px;           /* ここで横幅を固定*/
+    width: 220px;           /* 横幅を固定*/
     box-sizing: border-box;
     border-radius: 5px !important;     /* 他のボタンと統一 */
     border: 1px solid #3a506b;
@@ -435,7 +435,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t3.3.2-t1.2</span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t3.3.2-t1.3/span></h1>
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>
@@ -467,17 +467,6 @@ input:checked + .slider:before { transform: translateX(20px); }
             <span style="font-size: 1.5rem; margin-right: 5px;">🗺️</span>
             <span style="font-size: 0.9rem;">MAP</span>
         </button>
-        
-
-
-
-
-
-
-
-
-
-    
         </div>
     
         <div style="text-align: left; font-size: 0.9rem; margin-bottom: 5px; font-weight: bold; margin-top: 15px;">Search City:</div>
@@ -1292,32 +1281,48 @@ async function getKp() {
         const res = await fetch(CORS + encodeURIComponent(targetUrl));
         const data = await res.json(); 
         
-        // データの存在チェック（GASがエラーを返した場合などの対策）
+        // データの存在チェック（GASからのデータが配列でない、またはヘッダーしかない場合はエラーを返す)
         if (!data || !Array.isArray(data)) {
             console.error("Invalid Kp data received from Proxy");
             return 0;
         }
         
-        // 最新のKp値を取り出す (配列の最後)
-        // 後ろからループして有効な数値を探す
         let val = NaN;
-        // i=0はヘッダーなので、i=1まで遡る
+        
+        // 配列の最後（最新）から順に、数値が見つかるまで遡る
+        // i=0 は ["time_tag", "kp", ...] というヘッダーなので、i >= 1 まで
         for (let i = data.length - 1; i >= 1; i--) {
-            const tempVal = parseFloat(data[i][1]);
-            if (!isNaN(tempVal)) {
-                val = tempVal; // 数値が見つかったら代入してループを抜ける
-                break;
+            // data[i][1] が Kp 値の入っている場所
+            const rawValue = data[i][1];
+            
+            if (rawValue !== null && rawValue !== undefined) {
+                const tempVal = parseFloat(String(rawValue).trim());
+                // 数値であり、かつ NaN でないことを確認
+                if (!isNaN(tempVal)) {
+                    val = tempVal;
+                    break; 
+                }
             }
         }
 
-        // 万が一すべてNaNだった場合の予備
-        if (isNaN(val)) val = 0;
+        // すべて試しても見つからなかった場合
+        if (isNaN(val)) {
+            console.warn("No valid Kp value found in the entire dataset.");
+            val = 0;
+        }
 
         const el = document.getElementById("kp");
         if (el) {
             el.textContent = val.toFixed(1);
+            // 色分け（バッジ）の更新
             el.className = `badge ${val >= 5 ? 'high' : (val >= 3 ? 'mid' : 'low')}`;
         }
+
+        // レーダーチャートの更新を強制的に呼ぶ
+        if (typeof updateRadarChart === 'function') {
+            updateRadarChart();
+        }
+
         return val;
     } catch (e) {
         console.error("Kp Fetch Error:", e);

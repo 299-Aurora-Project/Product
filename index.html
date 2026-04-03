@@ -446,7 +446,7 @@ input:checked + .slider:before { transform: translateX(20px); }
         
         
         
-            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t3.3.2-t1.1<span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t3.3.2-t1.2<span></h1>
             
             
             
@@ -1297,7 +1297,6 @@ async function updateAll() {
 
 
 
-
 async function getKp() {
     try {
         const targetUrl = KP_URL + "?t=" + Date.now();
@@ -1306,26 +1305,35 @@ async function getKp() {
 
         if (!data || !Array.isArray(data)) return 0;
 
-        // --- 修正ポイント：配列を逆順にして、最初に見つかった「数値」を探す ---
         let val = 0;
         for (let i = data.length - 1; i >= 0; i--) {
             const entry = data[i];
-            // entryが配列なら2番目[1]、数値ならそのまま、を取り出して数値化
             const tempVal = parseFloat(Array.isArray(entry) ? entry[1] : entry);
             
             if (!isNaN(tempVal)) {
                 val = tempVal;
-                break; // 数値が見つかったらループ終了
+                break; 
             }
         }
 
+        // --- 修正：テスト用コードをループの外へ ---
+        console.log("確定した数値(val):", val);
         const el = document.getElementById("kp");
+        
         if (el) {
-            el.textContent = val.toFixed(1);
-            el.className = `badge ${val >= 5 ? 'high' : (val >= 3 ? 'mid' : 'low')}`;
+            console.log("要素 ID 'kp' を発見。赤枠にして TEST と書き込みます。");
+            el.style.border = "5px solid red"; // 目立つように太く
+            el.textContent = "TEST";           // これが表示されるか確認
+            
+            // 1秒後に本来の数値を上書き（一瞬 TEST が見えるか確認）
+            setTimeout(() => {
+                el.textContent = val.toFixed(1);
+                el.className = `badge ${val >= 5 ? 'high' : (val >= 3 ? 'mid' : 'low')}`;
+            }, 1000);
+        } else {
+            console.error("要素 ID 'kp' が見つかりません！HTML側を確認してください。");
         }
         
-        // もしLoadingを消す処理が他にあるなら、ここで呼ぶか確認してください
         return val;
 
     } catch (e) {

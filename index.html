@@ -446,7 +446,7 @@ input:checked + .slider:before { transform: translateX(20px); }
         
         
         
-            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t3.3.2-t1.4<span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t3.3.2-t1.5<span></h1>
             
             
             
@@ -1274,6 +1274,8 @@ async function updateAll() {
         ]);
         
         await shortForecast();
+        calculateTotal(isDaytime); 
+        updateTimestamp('time-update-all');
 
         // 3. 確率計算
         // ここで calculateTotal にフラグを渡し、計算ロジックを昼夜で切り替えさせます
@@ -1283,12 +1285,19 @@ async function updateAll() {
     } catch (e) {
         console.error("Update All Error:", e);
     } finally {
-        // 1. ボタンの Loading クラスを外す
+        // 1. ボタンのぐるぐるを止める
         if(btn) btn.classList.remove('loading-btn');
-        // 2. ★重要：各項目の Loading 状態を解除する
-        ['kp','oval','cloud','result'].forEach(id => setItemLoading(id, false));
-        // 3. ステータスアイコンを元に戻す（必要に応じて）
-        // if (statusIcon) statusIcon.src = "check.png"; 
+
+        // 2. ★重要：各項目の Loading 状態を解除（false）にする
+        // これを呼ばないと、画面上の「Loading...」という表示が消えません
+        ['kp', 'oval', 'cloud', 'result'].forEach(id => {
+            if (typeof setItemLoading === "function") {
+                setItemLoading(id, false);
+            }
+        });
+
+        // 3. アイコンを更新（任意：チェックマーク画像などがあれば）
+        // if (statusIcon) statusIcon.src = "check.png";
     }
 }
 
@@ -1469,12 +1478,17 @@ async function fetchKp3DayForecast() {
 
         // 表示の更新
         const elKp = document.getElementById("kp");
-        if (elKp) {
-            const currentText = elKp.textContent.trim();
-            // Loading中か、0.0か、空の場合のみ上書き
-            if (currentText === "0.0" || currentText === "Loading..." || currentText === "") {
+        if (elKp && !isNaN(currentVal)) {
+            const currentText = elKp.textContent; // trim() は不要、中身を確認
+            
+            // ★修正ポイント： "Loading" という文字が含まれている、または 0.0 の場合に書き込む
+            if (currentText.includes("Loading") || currentText === "0.0" || currentText === "") {
+                elKp.innerHTML = ""; // 一旦 ⏳ などを完全に消す
                 elKp.textContent = currentVal.toFixed(1);
                 elKp.className = `badge ${currentVal >= 5 ? 'high' : (currentVal >= 3 ? 'mid' : 'low')}`;
+                console.log("予報値で表示を更新しました:", currentVal);
+            } else {
+                console.log("実測値が既にあるためスキップしました。現在の表示:", currentText);
             }
         }
 
@@ -2281,10 +2295,13 @@ function hideMapScreen() {
 
 function setItemLoading(id, isLoading) {
     const el = document.getElementById(id);
-    if (el && isLoading) {
-        // 砂時計アイコン ⏳ と 斜体の Loading... をセット
+    if (!el) return;
+
+    if (isLoading) {
+        // Loading開始時だけ文字を上書きする
         el.innerHTML = '⏳ <i>Loading...</i>';
-    }
+    } 
+    // else { el.innerHTML = ''; } ← これがあると数値を消してしまうので削除するかコメントアウト
 }
 
 function closeWelcome() { document.getElementById('welcome-overlay').style.display = 'none'; }

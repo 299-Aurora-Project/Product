@@ -435,7 +435,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t3.3.2-t1.3/span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t3.3.2-t1.4<span></h1>
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>
@@ -1290,14 +1290,21 @@ async function getKp() {
         let val = NaN;
         
         // 配列の最後（最新）から順に、数値が見つかるまで遡る
-        // i=0 は ["time_tag", "kp", ...] というヘッダーなので、i >= 1 まで
-        for (let i = data.length - 1; i >= 1; i--) {
-            // data[i][1] が Kp 値の入っている場所
-            const rawValue = data[i][1];
-            
-            if (rawValue !== null && rawValue !== undefined) {
+        for (let i = data.length - 1; i >= 0; i--) {
+            const row = data[i];
+            let rawValue;
+
+            // --- 修正のポイント：データの形式を判定 ---
+            if (Array.isArray(row)) {
+                // 配列形式の場合 (NOAAの標準)
+                rawValue = row[1];
+            } else if (row && typeof row === 'object') {
+                // オブジェクト形式の場合 (一部のプロキシ経由など)
+                rawValue = row.kp || row.value;
+            }
+
+            if (rawValue !== null && rawValue !== undefined && rawValue !== "NaN") {
                 const tempVal = parseFloat(String(rawValue).trim());
-                // 数値であり、かつ NaN でないことを確認
                 if (!isNaN(tempVal)) {
                     val = tempVal;
                     break; 

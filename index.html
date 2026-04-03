@@ -446,7 +446,7 @@ input:checked + .slider:before { transform: translateX(20px); }
         
         
         
-            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t3.3.2-t1.0<span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t3.3.2-t1.1<span></h1>
             
             
             
@@ -1312,12 +1312,12 @@ async function getKp() {
             return 0;
         }
 
-        // 最新のKp値を取り出す (配列の最後)
-        // 安全な取得パターン
-        const lastEntry = data[data.length - 1];
-        const val = Array.isArray(lastEntry) ? parseFloat(lastEntry[1]) : parseFloat(lastEntry);
+        // 配列の最後にある「数値そのもの」を直接取得します
+        const lastValue = data[data.length - 1]; 
+        const val = parseFloat(lastValue);
+
         const el = document.getElementById("kp");
-        if (el) {
+        if (el && !isNaN(val)) { // NaNチェックを追加するとより安全
             el.textContent = val.toFixed(1);
             el.className = `badge ${val >= 5 ? 'high' : (val >= 3 ? 'mid' : 'low')}`;
         }

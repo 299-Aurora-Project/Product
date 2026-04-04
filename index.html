@@ -411,16 +411,27 @@ input:checked + .slider:before { transform: translateX(20px); }
     color: #ffffff !important; /* 基本の文字色は白 */
 }
 
-/* Status（未設定）の時だけ、文字をグレーにする */
-.badge.status {
-    background-color: #3a506b; /* 落ち着いた紺色 */
-    color: #8b949e !important;  /* Locationデータがない時だけグレー */
-}
 
 /* Low（赤）, Mid（黄）, High（緑）の時は、badge自体の白文字が適用される */
-.badge.low  { background-color: #ff4d4d; }
+/* データがあるLow：グレー背景 + 白文字 */
+.badge.low {
+    background-color: #3a506b; 
+    color: #ffffff !important;
+}
+
+/* データがないStatus：グレー背景 + グレー文字 */
+.badge.status {
+    background-color: #3a506b;
+    color: #8b949e !important;
+}
+
 .badge.mid  { background-color: #ca8a04; }
-.badge.high { background-color: #238636; }
+
+/* High：赤背景（最重要） */
+.badge.high {
+    background-color: #ff4d4d; /* ここを赤に設定 */
+    color: #ffffff !important;
+}
 
 
 </style>
@@ -457,7 +468,7 @@ input:checked + .slider:before { transform: translateX(20px); }
         
         
         
-            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t4.2.2<span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t4.2.3<span></h1>
             
             
             

@@ -375,9 +375,6 @@ input:checked + .slider:before { transform: translateX(20px); }
 }
 
 
-
-
-
 /* オーロラ凡例のスタイル */
 .oval-legend {
     margin-top: 10px;
@@ -409,7 +406,10 @@ input:checked + .slider:before { transform: translateX(20px); }
     color: #8b949e;
 }
 
-
+.badge.status {
+    background-color: #3a506b; /* 落ち着いた紺色 */
+    color: #8b949e;           /* 薄いグレーの文字 */
+}
 
 
 </style>
@@ -446,7 +446,7 @@ input:checked + .slider:before { transform: translateX(20px); }
         
         
         
-            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t4.1.0<span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t4.2.0<span></h1>
             
             
             
@@ -514,7 +514,7 @@ input:checked + .slider:before { transform: translateX(20px); }
                 <img id="status-icon" src="location.png" alt="Status" onclick="openModal()" style="width: 180px; height: auto; cursor: pointer; display: block;">
                 <div onclick="openImageModal(); event.stopPropagation();" style="position: absolute; bottom: 0; right: 0; width: 22px; height: 22px; background: #3a506b; color: #5bc0be; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; font-size: 0.8rem; border: 1px solid #3a506b; box-shadow: 0 2px 4px rgba(0,0,0,0.3); z-index: 10;">?</div>
             </div>
-            <div id="result" class="badge badge-large low" onclick="openModal()" style="margin: 0 auto;">--</div>
+            <div id="result" class="badge badge-large status" onclick="openModal()" style="margin: 0 auto;">Status</div>
             <div id="observation-advice" style="font-size: 0.85rem; color: #5bc0be; font-style: italic; min-height: 1.2em; max-width: 200px; line-height: 1.3;"></div>
             <div class="last-updated" id="time-update-all" style="margin-top: 0px;">Last Update: --:--:--</div>
         </div>
@@ -704,14 +704,6 @@ input:checked + .slider:before { transform: translateX(20px); }
         </div>
      
      
-     
-     
-     
-     
-     
-     
-        
-        
         <div id="oval-legend-container">
             <div class="legend-bar" style="height: 6px; width: 100%; border-radius: 3px; background: linear-gradient(to right, #00ff7f, #00ff00, #ccff00, #ffd700, #ff8c00, #ff0000, #ff00ff); margin-bottom: 4px;"></div>
             <div style="display: flex; justify-content: space-between; font-size: 0.6rem; color: #8b949e;">
@@ -749,6 +741,18 @@ input:checked + .slider:before { transform: translateX(20px); }
         <div class="tap-to-close">Tap to close</div>
     </div>
 </div>
+
+
+
+<div id="kp-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center;" onclick="closeKpInfo()">
+    <div style="background: #1a1a1a; padding: 20px; border-radius: 12px; width: 80%; max-width: 300px; border: 1px solid #30363d; position: relative;" onclick="event.stopPropagation()">
+        <div id="g-scale-detail" style="color: #c9d1d9; font-size: 0.9rem; line-height: 1.6;">
+            </div>
+        <button onclick="closeKpInfo()" style="margin-top: 15px; width: 100%; padding: 8px; border-radius: 6px; border: none; background: #238636; color: white;">Close</button>
+    </div>
+</div>
+
+
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -1032,7 +1036,7 @@ async function setLocation(lat, lon, name) {
     
     // 4. 地図のピンを新しい場所に移動
     if (map) {
-        // ★修正：引数として新しい座標を直接渡す
+        // 引数として新しい座標を直接渡す
         updateMapMarker(newLat, newLon);
         map.setView([lat, lon], map.getZoom()); // 検索した場所に地図を飛ばす
     }
@@ -1067,9 +1071,6 @@ async function getLocation() {
         } catch (e) {
             console.error("Address lookup failed:", e);
         }
-
-        // ※ updateAll は setLocation の中で（非同期で）呼ばれるようになったので、
-        // ここで改めて呼ぶ必要はありません（二重実行を防げます）。
         
     }, err => {
         console.error(err);
@@ -1227,9 +1228,10 @@ async function handleNotifToggleEvent() {
 }
 
 
-// データ取得・予報
+/////////////////////////////////////
+// メイン関数(データ取得・予報)    //
+/////////////////////////////////////
 async function updateAll() {
-    if (myLat === null || myLon === null) return;
     
     const statusIcon = document.getElementById("status-icon");
     const resultBadge = document.getElementById("result");
@@ -1238,34 +1240,32 @@ async function updateAll() {
     if (myLat === null || myLon === null) {
         if (statusIcon) statusIcon.src = "location.png"; // 未設定用画像を表示
         if (resultBadge) {
-            resultBadge.textContent = "---";
-            resultBadge.className = "badge badge-large low"; // グレー系のスタイルがあればそれに変更
+            resultBadge.textContent = "Status";
+            resultBadge.className = "badge badge-large status"; // グレー系のスタイルに変更
         }
         return;
     }
     
-    const btn = document.getElementById('btn-update-all');
     if(btn) btn.classList.add('loading-btn');
-    ['kp','oval','cloud','result'].forEach(id => setItemLoading(id, true));
-    
-    // 画像とバッジを Loading 状態にする
-    if (statusIcon) statusIcon.src = "loading.gif"; // Loading画像を表示
+    if (statusIcon) statusIcon.src = "loading.gif";
 
+    // 各項目をLoading表示にする
+    ['kp','oval','cloud','result'].forEach(id => setItemLoading(id, true));
+
+    // 1. 時刻判定
     try {
-        // 1. 時刻判定
         const now = new Date();
         const hour = now.getHours();
         
-        // 3:00 〜 21:00 は昼間と判定
+        // 昼間を判定(3:00 〜 21:00)
         const isDaytime = (hour >= 3 && hour < 21);
-        const subLabelEl = document.getElementById("total-sub-label");
         
+        const subLabelEl = document.getElementById("total-sub-label");
         if (subLabelEl) {
             subLabelEl.textContent = isDaytime ? "Tonight (21:00): " : "Current: ";
         }
 
         // 2. データ取得 (getCloud に isDaytime を渡す)
-        // 429エラーが出る場合は、ここを Promise.all ではなく一つずつ await するのも手です
         await Promise.all([
             getKp(), 
             fetchKp3DayForecast(), 
@@ -1274,31 +1274,30 @@ async function updateAll() {
         ]);
         
         await shortForecast();
+        
+        // 3. 確率計算(calculateTotalにフラグを渡し計算ロジックを昼夜で切り替え)
         calculateTotal(isDaytime); 
+        
         updateTimestamp('time-update-all');
 
-        // 3. 確率計算
-        // ここで calculateTotal にフラグを渡し、計算ロジックを昼夜で切り替えさせます
-        calculateTotal(isDaytime); 
-
-        updateTimestamp('time-update-all');
     } catch (e) {
         console.error("Update All Error:", e);
     } finally {
-        // 1. ボタンのぐるぐるを止める
+        // 1. ボタンのLoading表示を止める
         if(btn) btn.classList.remove('loading-btn');
-
-        // 2. ★重要：各項目の Loading 状態を解除（false）にする
-        // これを呼ばないと、画面上の「Loading...」という表示が消えません
-        ['kp', 'oval', 'cloud', 'result'].forEach(id => {
-            if (typeof setItemLoading === "function") {
-                setItemLoading(id, false);
-            }
-        });
-
-        // 3. アイコンを更新（任意：チェックマーク画像などがあれば）
-        // if (statusIcon) statusIcon.src = "check.png";
+        
+        // 2. 各項目の Loading 状態を解除（false）
+        ['kp', 'oval', 'cloud', 'result'].forEach(id => setItemLoading(id, false));
     }
+
+//    // --- 🧪 デバッグ用：バッジを強制表示 ---
+//    const indicator = document.getElementById("g-scale-indicator");
+//    if (indicator) {
+//        indicator.style.display = "block";
+//        indicator.textContent = "①";
+//        indicator.dataset.level = 1; 
+//        console.log("【テスト】バッジを強制表示しました。");
+//    }
 }
 
 
@@ -1856,9 +1855,14 @@ function calculateTotal() {
     } else if (targetScore >= 35) {
         statusText = "Possible";
         statusClass = "mid";
-    } else {
+    } else if (targetScore > 0) { 
+    // 0より大きい（＝計算はされたが低い）場合は Low表示
         statusText = "Low";
         statusClass = "low";
+    } else {
+        // スコアが 0 の場合（＝初期状態や場所未設定時）は "Status"表示
+        statusText = "Status";
+        statusClass = "status";
     }
 
     resEl.textContent = statusText;
@@ -1871,14 +1875,7 @@ function updateRadarChart() {
     const kp = parseFloat(document.getElementById("kp").textContent) || 0;
     const cloud = parseInt(document.getElementById("cloud").dataset.value) || 0;
 
-
-
-
-
-
-
-
-// --- 【修正の核心】総合確率から「場所の条件」だけを逆算して取り出す ---
+// --- 総合確率から「場所の条件」だけを逆算して取り出す ---
     // 総合確率は [場所スコア × 雲の影響 × Kpの影響] で算出されているはずです。
     // そのため、雲(cloud)とKpの影響を排除して、純粋な「オーバルの位置関係」を計算します。
     
@@ -2309,7 +2306,6 @@ function setItemLoading(id, isLoading) {
         // Loading開始時だけ文字を上書きする
         el.innerHTML = '⏳ <i>Loading...</i>';
     } 
-    // else { el.innerHTML = ''; } ← これがあると数値を消してしまうので削除するかコメントアウト
 }
 
 function closeWelcome() { document.getElementById('welcome-overlay').style.display = 'none'; }
@@ -2487,6 +2483,7 @@ function closeImageModal() {
 //    }
 //});
 
+// バッジを表示する関数
 function updateGScaleIndicator(kpValue) {
     const indicator = document.getElementById("g-scale-indicator");
     if (!indicator) return;
@@ -2512,22 +2509,38 @@ function updateGScaleIndicator(kpValue) {
 
 
 
-// 説明を表示する関数
+// バッジの説明を表示する関数
 function showKpInfo(event) {
-    event.stopPropagation(); // 親要素のクリックイベント伝播を防止
-    const level = document.getElementById("g-scale-indicator").dataset.level;
+    
+    console.log("バッジがタッチされました。");
+    
+    if (event) event.stopPropagation(); // 親要素（openDetailなど）への連鎖を止める
+    
+    const indicator = document.getElementById("g-scale-indicator");
     const detailEl = document.getElementById("g-scale-detail");
+    const modalEl = document.getElementById("kp-modal");
+
+    if (!indicator || !detailEl || !modalEl) {
+        console.error("モーダルまたはインジケーターが見つかりません。");
+        return;
+    }
+
+    // datasetからレベルを取得（数値に変換）
+    const level = parseInt(indicator.dataset.level);
     
     const descriptions = {
-        1: "<b>G1 (Minor):</b> A small geomagnetic storm. Active auroras may be visible at high latitudes. Minor impacts on power grids are possible.",
-        2: "<b>G2 (Moderate):</b> A moderate geomagnetic storm. The auroral zone expands slightly southward. Power systems at high latitudes may experience warnings.",
-        3: "<b>G3 (Strong):</b> A strong geomagnetic storm. Auroras become very bright and may be visible at lower latitudes than usual.",
-        4: "<b>G4 (Severe):</b> A severe geomagnetic storm. Auroras may be observed over a wide area, and radio communication disruptions are possible.",
-        5: "<b>G5 (Extreme):</b> An extremely strong geomagnetic storm. Historic-level auroras may be seen at low latitudes, and significant impacts on power grids are possible."
+        1: "<b>G1 (Minor):</b> A small geomagnetic storm. Active auroras may be visible at high latitudes.",
+        2: "<b>G2 (Moderate):</b> A moderate geomagnetic storm. The auroral zone expands southward.",
+        3: "<b>G3 (Strong):</b> A strong geomagnetic storm. Auroras become very bright and widespread.",
+        4: "<b>G4 (Severe):</b> A severe geomagnetic storm. Auroras observed over a wide area.",
+        5: "<b>G5 (Extreme):</b> Historic-level auroras may be seen at low latitudes."
     };
 
-    detailEl.innerHTML = descriptions[level] || "The geomagnetic storm level (G-scale) is shown. Higher levels indicate stronger auroras that can be seen over a wider area.";
-    document.getElementById("kp-modal").style.display = "flex";
+    // 説明文をセット（該当がない場合はデフォルト文）
+    detailEl.innerHTML = descriptions[level] || "The G-scale indicates geomagnetic storm strength. G1 is minor, while G5 is extreme.";
+    
+    // モーダルを表示
+    modalEl.style.display = "flex";
 }
 
 function closeKpInfo() {

@@ -1742,6 +1742,8 @@ function calculateTotal() {
     const kp = parseFloat(document.getElementById("kp").textContent) || 0;
     const cloud = parseInt(document.getElementById("cloud").dataset.value) || 0;
     const icon = document.getElementById("status-icon");
+    
+    const resEl = document.getElementById("result");
 
     // 1. 各項目のスコア計算
     let ovalScore = Math.min(lastAuroraProb * 1.5, 45); 

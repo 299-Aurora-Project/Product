@@ -406,10 +406,21 @@ input:checked + .slider:before { transform: translateX(20px); }
     color: #8b949e;
 }
 
+/* 共通のバッジスタイル：基本は白文字 */
+.badge {
+    color: #ffffff !important; /* 基本の文字色は白 */
+}
+
+/* Status（未設定）の時だけ、文字をグレーにする */
 .badge.status {
     background-color: #3a506b; /* 落ち着いた紺色 */
-    color: #8b949e;           /* 薄いグレーの文字 */
+    color: #8b949e !important;  /* Locationデータがない時だけグレー */
 }
+
+/* Low（赤）, Mid（黄）, High（緑）の時は、badge自体の白文字が適用される */
+.badge.low  { background-color: #ff4d4d; }
+.badge.mid  { background-color: #ca8a04; }
+.badge.high { background-color: #238636; }
 
 
 </style>
@@ -446,7 +457,7 @@ input:checked + .slider:before { transform: translateX(20px); }
         
         
         
-            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t4.2.0<span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t4.2.1<span></h1>
             
             
             
@@ -1776,15 +1787,41 @@ function calculateTotal() {
     let finalScore = Math.round(finalValue);
     currentTotalScore = finalScore;
 
+
+
+
+
+
     // --- 表示更新 ---
-    const resEl = document.getElementById("result");
     if (resEl) {
-        resEl.classList.remove("low", "mid", "high");
-        let statusText = (finalScore >= 50) ? "High" : (finalScore >= 35 ? "Possible" : "Low");
-        let statusClass = (finalScore >= 50) ? "high" : (finalScore >= 35 ? "mid" : "low");
+        // 一旦すべてのクラスをリセット
+        resEl.classList.remove("low", "mid", "high", "status");
+
+        let statusText = "";
+        let statusClass = "";
+
+        // 場所が未設定、またはスコアが完全に 0 の場合
+        if (myLat === null || myLon === null || finalScore === 0) {
+            statusText = "Status";
+            statusClass = "status"; // CSSでグレー文字に設定したクラス
+        } else if (finalScore >= 50) {
+            statusText = "High";
+            statusClass = "high";
+        } else if (finalScore >= 35) {
+            statusText = "Possible";
+            statusClass = "mid";
+        } else {
+            // 場所があり、スコアが 1〜34 の場合は Low (白文字)
+            statusText = "Low";
+            statusClass = "low";
+        }
+
         resEl.textContent = statusText;
         resEl.classList.add(statusClass);
     }
+
+
+
 
     
     // --- アイコン更新 ---
@@ -1840,35 +1877,6 @@ function calculateTotal() {
     if (adviceEl) adviceEl.textContent = adviceMessage;
 }
 
-    const resEl = document.getElementById("result");
-    const targetScore = currentTotalScore; // ここで currentTotalScore を使う
-
-    resEl.classList.remove("low", "mid", "high");
-
-    let statusText = "";
-    let statusClass = "";
-    
-
-    // 'score' ではなく 'targetScore' (中身はcurrentTotalScore) で判定
-    if (targetScore >= 50) {
-        statusText = "High";
-        statusClass = "high";
-    } else if (targetScore >= 35) {
-        statusText = "Possible";
-        statusClass = "mid";
-    } else if (targetScore > 0) { 
-    // 0より大きい（＝計算はされたが低い）場合は Low表示
-        statusText = "Low";
-        statusClass = "low";
-    } else {
-        // スコアが 0 の場合（＝初期状態や場所未設定時）は "Status"表示
-        statusText = "Status";
-        statusClass = "status";
-    }
-
-    resEl.textContent = statusText;
-    resEl.classList.add(statusClass);
-    
 
 // レーダーチャートを更新する関数
 function updateRadarChart() {

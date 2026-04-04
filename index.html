@@ -468,7 +468,7 @@ input:checked + .slider:before { transform: translateX(20px); }
         
         
         
-            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t4.3.0<span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t4.4.0<span></h1>
             
             
             
@@ -798,6 +798,8 @@ let cachedAuroraData = null, map = null, auroraLayer = null, userMarker = null, 
 let searchTimer = null, lastScrollPos = 0;
 
 let savedScrollY = 0; // スクロール位置を覚える
+
+let lastUpdateTimestamp = 0; // 最後に updateAll が完了した時刻 (ms)
 
 // --- 2. 初期化処理 (DOMContentLoaded) ---
 document.addEventListener('DOMContentLoaded', async () => {
@@ -1321,6 +1323,9 @@ async function updateAll() {
 //        indicator.dataset.level = 1; 
 //        console.log("【テスト】バッジを強制表示しました。");
 //    }
+
+    // 現在の時刻を記録する処理
+    lastUpdateTimestamp = Date.now();
 }
 
 
@@ -2501,12 +2506,26 @@ function closeImageModal() {
     document.getElementById('imageModal').style.display = 'none';
 }
 
-// 画面が非表示から表示に切り替わった（スマホをロック解除した）瞬間に更新
-// 画面が消えている間は、アプリが勝手にAPI（気象データや磁気データ）を叩きに行かないよう制限がかかる
 document.addEventListener("visibilitychange", function() {
     if (document.visibilityState === 'visible') {
-        console.log("Welcome back! Updating data...");
-        updateAll();
+        const now = new Date();
+        const hour = now.getHours();
+        const currentTimeMs = now.getTime();
+
+        // 昼間 (3:00 - 21:00) は 60分、夜間は 15分
+        const waitMinutes = (hour >= 3 && hour < 21) ? 60 : 15;
+        const waitMs = waitMinutes * 60 * 1000;
+
+        // 経過時間を計算
+        const elapsedMs = currentTimeMs - lastUpdateTimestamp;
+
+        if (elapsedMs >= waitMs) {
+            console.log(`[Visibility] ${waitMinutes}分以上経過したため更新します。`);
+            updateAll();
+        } else {
+            const remainingSec = Math.round((waitMs - elapsedMs) / 1000);
+            console.log(`[Visibility] まだ ${remainingSec}秒 待機期間内のため、自動更新をスキップしました。`);
+        }
     }
 });
 

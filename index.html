@@ -468,7 +468,7 @@ input:checked + .slider:before { transform: translateX(20px); }
         
         
         
-            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t4.4.1-test5<span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t4.4.1-test6<span></h1>
             
             
             
@@ -2014,7 +2014,7 @@ if (typeof closeWelcome !== 'function') {
 }
 
 function initMap() {
-    if (map) return; // 地図が既にあれば何もしない(二重初期化防止)
+    if (map) return; // 二重初期化防止
 
     const southLimit = -70, northLimit = 90;
     map = L.map('map', { 
@@ -2022,20 +2022,15 @@ function initMap() {
         maxZoom: 10, 
         worldCopyJump: true, 
         maxBounds: [[southLimit, -540], [northLimit, 540]], 
-        maxBoundsViscosity: 1.0, 
-        // zoomControl: false // 拡大縮小ボタン（+/-）非表示
+        maxBoundsViscosity: 1.0
     });
     
-    // Set the default cursor for the map container
     map.getContainer().style.cursor = 'default';
-
-    // Update cursor during dragging
     map.on('dragstart', function() { map.getContainer().style.cursor = 'grabbing'; });
     map.on('dragend', function() { map.getContainer().style.cursor = 'default'; });
 
-    // マーカーを最前面に持ってくる設定
     map.createPane('userMarkerPane');
-    map.getPane('userMarkerPane').style.zIndex = 650; // オーロラ(400)より上に
+    map.getPane('userMarkerPane').style.zIndex = 650; 
 
     const startLat = myLat !== null ? myLat : 70;
     const startLon = myLon !== null ? myLon : 0;
@@ -2043,12 +2038,7 @@ function initMap() {
     
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { noWrap: false }).addTo(map);
 
-    
-
-
-
-    
-    // 地図クリック時のイベント
+    // --- 地図クリック時のイベント ---
     map.on('click', async function(e) {
         if (!isSelectionMode) return; 
         
@@ -2063,66 +2053,72 @@ function initMap() {
         cityText.textContent = "Analyzing environment...";
         
         try {
-            // 1. 地名と場所の種類（光害推定用）を取得
+            // 1. 地名取得
             const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10&accept-language=en`);
             const geoData = await geoRes.json();
             
-            const addr = geoData.address;
+            const addr = geoData.address || {};
             const cityName = addr.city || addr.town || addr.village || addr.county || addr.state || "Selected Location";
             const countryName = addr.country || "";
             const displayName = countryName ? `${cityName}, ${countryName}` : cityName;
 
-            // --- 【Enhancement】街の明かり(Bortle Scale)の推定 ---
-            let estimatedBortle = 2; // デフォルトは好条件(村・山)
+            // 2. 光害推定
+            let estimatedBortle = 2; 
             if (addr.city || addr.metropolis) {
-                estimatedBortle = 8; // 大都市
+                estimatedBortle = 8; 
             } else if (addr.town || addr.borough) {
-                estimatedBortle = 5; // 地方都市・郊外
+                estimatedBortle = 5; 
             }
 
-
-
-
-            // --- 【Enhancement】霧(視程)の取得 (Open-Meteo) ---
-            let visibility = 10000; // デフォルト 10km (クリア)
+            // 3. 視程取得 (Open-Meteo)
+            let visibility = 10000; 
             try {
-                // 経度の180度超え対策 (Open-Meteo 400エラー回避)
                 const normalizedLon = lon > 180 ? lon - 360 : (lon < -180 ? lon + 360 : lon);
-                
-                // Open-Meteo API を使用 (キー不要)
                 const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${normalizedLon}&current=visibility&timezone=auto`);
                 
                 if (weatherRes.ok) {
                     const weatherData = await weatherRes.json();
                     if (weatherData.current && weatherData.current.visibility !== undefined) {
-                        visibility = weatherData.current.visibility; // メートル単位
+                        visibility = weatherData.current.visibility;
                         console.log(`Visibility: ${visibility}m (from Open-Meteo)`);
                     }
-                } else {
-                    console.warn("Weather API responded with error, using default.");
                 }
             } catch (wError) {
-                console.warn("Visibility fetch failed, using default.", wError);
+                console.warn("Visibility fetch failed.", wError);
             }
-    });
-        
 
-    
+            // 4. 結果表示と一時保存
+            cityText.textContent = displayName;
+            tempLocation = { 
+                lat, 
+                lon, 
+                name: displayName, 
+                bortle: estimatedBortle, 
+                visibility: visibility 
+            };
+
+        } catch (error) {
+            console.error("Analysis error:", error);
+            const fallbackName = `${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+            cityText.textContent = fallbackName;
+            tempLocation = { lat, lon, name: fallbackName, bortle: 5, visibility: 10000 };
+        }
+    }); // ここでクリックイベントリスナーを閉じる
+
     // 決定ボタンのクリックイベント
     document.getElementById('btn-confirm-location').onclick = async function() {
         if (!tempLocation) return;
         await setLocation(tempLocation.lat, tempLocation.lon, tempLocation.name);
         hideMapScreen();
     };
-        
-   
-    // オーロラ描写部分（オーロラレイヤーを準備）
+       
+    // オーロラ描写準備
     if (!window.auroraLayer) {
         window.auroraLayer = L.layerGroup().addTo(map); 
     } else {
         window.auroraLayer.addTo(map);
     }
-}
+} // ここで initMap 関数を閉じる
 
 
 

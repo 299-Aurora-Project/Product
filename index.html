@@ -468,7 +468,7 @@ input:checked + .slider:before { transform: translateX(20px); }
         
         
         
-            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t4.5.1<span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t4.5.2<span></h1>
             
             
             
@@ -2049,12 +2049,16 @@ function initMap() {
 
             
             // 2. 光害推定
-            let estimatedBortle = 2; 
+            let estimatedBortle = 1; // 海なら1（最高）のはず
+            console.log("Raw Address Data:", addr); // 住所データの中身を表示
+            
             if (addr.city || addr.metropolis) {
                 estimatedBortle = 8; 
             } else if (addr.town || addr.borough) {
                 estimatedBortle = 5; 
             }
+            
+            console.log("Estimated Bortle Scale:", estimatedBortle); // 判定された数値
 
             // --- 【追加】ここで画面上の表示（UI）を更新する ---
             const bortleTextElement = document.getElementById('bortle-level-text'); // IDは実際のHTMLに合わせてください

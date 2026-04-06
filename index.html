@@ -2023,7 +2023,12 @@ function initMap() {
         
         try {
             // 1. 地名取得
-            const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10&accept-language=en`);
+            // --- ここに「経度の正規化」を挿入します ---
+            const normalizedLon = lon > 180 ? lon - 360 : (lon < -180 ? lon + 360 : lon);
+
+            // 1. 地名取得 (Nominatim)
+            // ※Nominatimも180度超えに厳しい場合があるため、ここでも normalizedLon を使うのが安全です
+            const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${normalizedLon}&zoom=10&accept-language=en`);
             const geoData = await geoRes.json();
             
             const addr = geoData.address || {};
@@ -2099,7 +2104,7 @@ function initMap() {
     } else {
         window.auroraLayer.addTo(map);
     }
-} // ここで initMap 関数を閉じる
+}
 
 
 

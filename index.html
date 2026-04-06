@@ -468,7 +468,7 @@ input:checked + .slider:before { transform: translateX(20px); }
         
         
         
-            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t4.4.2<span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t4.4.3<span></h1>
             
             
             
@@ -773,7 +773,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 // --- 1. 定数とグローバル変数 ---
 const PUBLIC_KEY = 'BAp0wnGuvaoZk_Q7Bn4H4DWAR2Zdi9juZECl10m290Ff9sAJqiaXepWYvGgbI7WOb9K3O0MOTG8TVi_hg_ovfEg';
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzl6CkhNFPiAW8gcZOvRr-GhFi5qVenMxkNEsW9Wr8DzzQ1TiyTJVz2NfUeA1Odq1YzlA/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxAJm6sFVJ_fcCqItrrduZUX6g5fzfOAyjkUkkvW03FGrgDYYl3ARYqSCgbbIC0HrHcTw/exec";
 const CORS = GAS_URL + "?url="; // GASプロキシはやめて、安定したAllOriginsに戻します
 
 // 候補B (予備):
@@ -2027,10 +2027,22 @@ function initMap() {
             const geoData = await geoRes.json();
             
             const addr = geoData.address || {};
-            const cityName = addr.city || addr.town || addr.village || addr.county || addr.state || "Selected Location";
+            
+            // 地名がない場合の予備（緯度経度）
+            const fallbackCoord = `${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+            
+            // 市・町・村などが取得できればそれを使い、なければ緯度経度にする
+            const cityName = addr.city || addr.town || addr.village || addr.county || addr.state || fallbackCoord;
             const countryName = addr.country || "";
-            const displayName = countryName ? `${cityName}, ${countryName}` : cityName;
 
+            // displayNameの組み立て
+            // 1. cityNameが緯度経度の場合は、国名は出さずに緯度経度のみ表示
+            // 2. 地名が取得できている場合のみ「地名, 国名」の形式にする
+            const displayName = (cityName === fallbackCoord || !countryName) 
+                ? cityName 
+                : `${cityName}, ${countryName}`;
+
+            
             // 2. 光害推定
             let estimatedBortle = 2; 
             if (addr.city || addr.metropolis) {

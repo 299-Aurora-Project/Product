@@ -2104,7 +2104,7 @@ function initMap() {
             } catch (wError) {
                 console.warn("Visibility fetch failed, using default.", wError);
             }
-
+    });
         
 
     
@@ -2123,6 +2123,10 @@ function initMap() {
         window.auroraLayer.addTo(map);
     }
 }
+
+
+
+
 
 // グローバル変数と初期設定
 let isSelectionMode = false; // 場所選択モードかどうかのフラグ

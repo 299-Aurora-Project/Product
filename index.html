@@ -468,7 +468,7 @@ input:checked + .slider:before { transform: translateX(20px); }
         
         
         
-            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t4.4.1-test4<span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t4.4.1-test5<span></h1>
             
             
             
@@ -493,14 +493,6 @@ input:checked + .slider:before { transform: translateX(20px); }
         
             
         <div style="display: flex; gap: 10px; width: 100%; margin-bottom: 5px; box-sizing: border-box;">
-
-
-
-
-
-
-
-
 
             
         <button id="btn-gps" onclick="getLocation(); event.stopPropagation();" 
@@ -781,7 +773,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 // --- 1. 定数とグローバル変数 ---
 const PUBLIC_KEY = 'BAp0wnGuvaoZk_Q7Bn4H4DWAR2Zdi9juZECl10m290Ff9sAJqiaXepWYvGgbI7WOb9K3O0MOTG8TVi_hg_ovfEg';
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzikEo4XpUQtR-RBvMleq-48D7s7Ifr1DVPF8HqgsYSQiDEMFWHYxGLxase0SLSvRY0uA/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzrI0velRwRPq7zF4bFLJ3TdKSvty8cGOJRydD0DHu3uvXafGp7Kmvzm5oybJRFZNycKA/exec";
 const CORS = GAS_URL + "?url="; // GASプロキシはやめて、安定したAllOriginsに戻します
 
 // 候補B (予備):
@@ -1651,13 +1643,13 @@ async function getCloud(isDaytime = false) {
     if (myLat === null || myLon === null) return;
 
     try {
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${myLat}&longitude=${myLon}&current=cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high&hourly=cloud_cover&timezone=auto`;
+        // &forecast_days=1 を追加して、確実に「今日」のデータを取得するようにします
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${myLat}&longitude=${myLon}&current=cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high&hourly=cloud_cover&timezone=auto&forecast_days=1`;
         const res = await fetch(url);
         const data = await res.json();
         
         if (!data || !data.current) return; 
         
-        // ここで取得した配列をグローバル変数に保存する
         if (data.hourly && data.hourly.cloud_cover) {
             cloudDataHourly = data.hourly.cloud_cover;
         }
@@ -1670,22 +1662,29 @@ async function getCloud(isDaytime = false) {
             data.current.cloud_cover_high || 0
         );
 
-        // 2. 21時の予報（配列があるかチェックしてから取得）
-        let tonightCloud = currentCloudMax; // デフォルトは今の値
-        if (data.hourly && data.hourly.cloud_cover) {
-            const hourIndex = 21; 
-            // 配列に21番目の要素があればそれを採用
-            if (data.hourly.cloud_cover[hourIndex] !== undefined) {
-                tonightCloud = data.hourly.cloud_cover[hourIndex];
+        // 2. 「今日の夜21時」の予報を正確に取得
+        let tonightCloud = currentCloudMax; 
+        if (data.hourly && data.hourly.time && data.hourly.cloud_cover) {
+            // time配列の中から、今日の21:00（T21:00）が含まれるインデックスを探す
+            const targetTimeStr = "T21:00"; 
+            const index21 = data.hourly.time.findIndex(t => t.includes(targetTimeStr));
+
+            if (index21 !== -1 && data.hourly.cloud_cover[index21] !== undefined) {
+                tonightCloud = data.hourly.cloud_cover[index21];
+                console.log(`Found 21:00 forecast: ${tonightCloud}% at index ${index21}`);
+            } else {
+                // 万が一見つからない場合は、予報配列の最後の方（夜）を参照
+                tonightCloud = data.hourly.cloud_cover[21] || currentCloudMax;
             }
         }
 
-        // 昼間なら21時の予報、夜なら今の実況を採用
+        // 判定ロジック：昼間なら21時の予報、夜なら今の実況を採用
         let val = isDaytime ? tonightCloud : currentCloudMax;
 
         const el = document.getElementById("cloud");
         if (el) {
             let displayValue;
+            // 修正：数値が 0 でも "Clear" と表示するように調整
             if (val <= 5) {
                 displayValue = "Clear";
             } else if (val >= 95) {
@@ -1697,6 +1696,9 @@ async function getCloud(isDaytime = false) {
             el.textContent = displayValue; 
             el.dataset.value = val;
             el.className = `badge ${val <= 20 ? 'high' : (val <= 60 ? 'mid' : 'low')}`;
+            
+            // デバッグログ：どちらを採用したか確認
+            console.log(`Adopted value: ${val}% (${isDaytime ? 'Night Forecast' : 'Current'})`);
         }
     } catch (e) {
         console.error("Cloud Fetch Error:", e);

@@ -468,7 +468,7 @@ input:checked + .slider:before { transform: translateX(20px); }
         
         
         
-            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t4.5.test<span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t4.5.4<span></h1>
             
             
             
@@ -1427,7 +1427,9 @@ async function fetchKp3DayForecast() {
         let dates = [];
         let dataPoints = [];
 
-        // --- 日付抽出 ---
+        // =========================
+        // ✅ 日付抽出
+        // =========================
         lines.forEach(line => {
             const dateMatch = line.match(/([A-Z][a-z]{2}\s+\d{2})/g);
             if (dateMatch && dateMatch.length >= 3) {
@@ -1435,9 +1437,11 @@ async function fetchKp3DayForecast() {
             }
         });
 
-        // --- データ抽出（完全対応版） ---
+        // =========================
+        // ✅ データ抽出（最終版）
+        // =========================
         lines.forEach(line => {
-            const timeMatch = line.match(/^(\d{2}-\d{2})UT\s+(.+)/);
+            const timeMatch = line.match(/^\s*(\d{2}-\d{2})UT\s+(.+)/);
 
             if (timeMatch && dates.length >= 3) {
                 const hourRange = timeMatch[1];
@@ -1448,7 +1452,7 @@ async function fetchKp3DayForecast() {
 
                     dataPoints.push({
                         dateStr: dates[i]?.trim() || "",
-                        timeStr: hourRange.trim(),
+                        timeStr: hourRange,
                         value: (!isNaN(rawVal) && rawVal >= 0 && rawVal <= 9) ? rawVal : null,
                         dayIndex: i,
                         hourStart: parseInt(hourRange.split('-')[0])
@@ -1459,17 +1463,21 @@ async function fetchKp3DayForecast() {
 
         if (dataPoints.length === 0) {
             console.error("❌ No valid Kp data parsed");
-            console.log("🔍 Full text:", text);
+            console.log("🔍 Lines preview:", lines.slice(0, 20));
             return;
         }
 
-        // --- ソート ---
+        // =========================
+        // ✅ ソート
+        // =========================
         dataPoints.sort((a, b) => {
             if (a.dayIndex !== b.dayIndex) return a.dayIndex - b.dayIndex;
             return a.hourStart - b.hourStart;
         });
 
-        // --- 現在値 ---
+        // =========================
+        // ✅ 現在値
+        // =========================
         const now = new Date();
         const currentUTCHours = now.getUTCHours();
         const currentUTCDate = now.getUTCDate();
@@ -1498,7 +1506,9 @@ async function fetchKp3DayForecast() {
             }
         }
 
-        // --- 表示 ---
+        // =========================
+        // ✅ 表示
+        // =========================
         const elKp = document.getElementById("kp");
 
         if (elKp && currentVal !== null) {
@@ -1511,7 +1521,9 @@ async function fetchKp3DayForecast() {
             updateGScaleIndicator(currentVal);
         }
 
-        // --- グラフ ---
+        // =========================
+        // ✅ グラフ
+        // =========================
         const values = dataPoints.map(p => p.value);
 
         let lastDate = "";
@@ -1527,7 +1539,9 @@ async function fetchKp3DayForecast() {
             drawKpChart(labels, values);
         }
 
-        // --- NOAAテキスト ---
+        // =========================
+        // ✅ NOAAテキスト
+        // =========================
         const match = text.match(/NOAA Kp index breakdown[\s\S]*?(?=\n[A-Z]|$)/i);
         const elF = document.getElementById("kpForecast");
 
@@ -1535,12 +1549,11 @@ async function fetchKp3DayForecast() {
             elF.innerText = match ? match[0].trim() : "Updating...";
         }
 
-        console.log("✅ Parsed:", dataPoints.length, "points");
+        console.log("✅ SUCCESS:", dataPoints.length, "points parsed");
 
     } catch (e) {
         console.error("Forecast Error:", e);
     }
-    console.log(text);
 }
 
 

@@ -468,7 +468,7 @@ input:checked + .slider:before { transform: translateX(20px); }
         
         
         
-            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t4.5.3<span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t4.5.4<span></h1>
             
             
             
@@ -1733,7 +1733,6 @@ function calculateTotal() {
     const kp = parseFloat(document.getElementById("kp").textContent) || 0;
     const cloud = parseInt(document.getElementById("cloud").dataset.value) || 0;
     const icon = document.getElementById("status-icon");
-    
     const resEl = document.getElementById("result");
 
     // 1. 各項目のスコア計算
@@ -1751,14 +1750,15 @@ function calculateTotal() {
     let calculatedScore = (ovalScore + magneticScore + skyScore) * visibilityMultiplier;
     
     // ---------------------------------------------------------
-    // 【Enhancement】街の明かり（Bortle）と霧（Visibility）による調整
+    // 【修正】Bortle 4以上（市街地）かつ Kp不足の場合のみ減衰させる
     // ---------------------------------------------------------
     const bortle = window.myBortle || 5;
     let minKpRequired = 0;
     if (bortle >= 7) minKpRequired = 4.5;
     else if (bortle >= 4) minKpRequired = 2.0;
 
-    if (kp < minKpRequired) {
+    // 修正ポイント：bortleが4未満（海上など）なら、この減衰は無視される
+    if (bortle >= 4 && kp < minKpRequired) {
         calculatedScore = calculatedScore * 0.1;
     }
 
@@ -1780,46 +1780,30 @@ function calculateTotal() {
     let finalScore = Math.round(finalValue);
     currentTotalScore = finalScore;
 
-
-
-
-
-
-    // --- 表示更新 ---
+    // --- 表示更新 (Status/High/Possible/Low) ---
     if (resEl) {
-        // クラスをリセット
         resEl.classList.remove("low", "mid", "high", "status");
-
         let statusText = "";
         let statusClass = "";
 
         if (myLat === null || myLon === null) {
-            // 1. 場所が未設定：グレー背景 ＋ グレー文字
             statusText = "Status";
             statusClass = "status"; 
         } else if (finalScore >= 50) {
-            // 2. 高確率：赤背景 ＋ 白文字（目立つ）
             statusText = "High";
             statusClass = "high"; 
         } else if (finalScore >= 35) {
-            // 3. 中確率：黄色背景 ＋ 白文字
             statusText = "Possible";
             statusClass = "mid";
         } else {
-            // 4. 低確率（データあり）：グレー背景 ＋ 白文字（他のフォントに合わせる）
             statusText = "Low";
-            statusClass = "low"; // CSSで .badge.low { background: #3a506b; color: #fff; } 等になっている想定
+            statusClass = "low";
         }
-
         resEl.textContent = statusText;
         resEl.classList.add(statusClass);
     }
-
-
-
-
     
-    // --- アイコン更新 ---
+    // --- アイコン更新 (Bortle条件をここにも反映) ---
     if (icon) {
         if (finalScore >= 50) {
             icon.src = "high.png";
@@ -1827,15 +1811,17 @@ function calculateTotal() {
             icon.src = "possible.png";
         } else {
             let potentialScore = (ovalScore + magneticScore + skyScore) * visibilityMultiplier;
-            // Low判定（35%未満）の場合、原因に応じてアイコンを切り替え
+            
             if (vis < 2000) {
-                icon.src = "fog.png";    // 霧が原因
-            } else if (lastAuroraProb >= 5 && kp < minKpRequired) {
-                icon.src = "bright.png"; // 街の明かりが原因
-            } else if (cloud > 70 && potentialScore >= 35) { //ポテンシャルが35以上（本来なら見えるはず）なのに、雲のせいでダメな場合
+                icon.src = "fog.png";
+            } 
+            // 修正ポイント：Bortle 4以上かつ活動不足のときだけ bright.png にする
+            else if (lastAuroraProb >= 5 && bortle >= 4 && kp < minKpRequired) {
+                icon.src = "bright.png"; 
+            } else if (cloud > 70 && potentialScore >= 35) {
                 icon.src = "cloud.png";
             } else {
-                icon.src = "low.png"; // そもそもオーロラが来ていない
+                icon.src = "low.png";
             }
         }
     }
@@ -1846,30 +1832,9 @@ function calculateTotal() {
         pctEl.textContent = (finalScore < 1 ? "< 1%" : (finalScore > 99 ? "> 99%" : finalScore + "%"));
     }
 
-    // --- アドバイス表示 ---
-    let adviceMessage = "";
-    if (finalScore < 35) {
-        if (vis < 2000) {
-            // adviceMessage = "Fog is possibly blocking the view.";
-        } 
-        // そもそもオーロラオーバルが遠い場合
-        else if (lastAuroraProb < 5) { 
-            // adviceMessage = "Aurora activity is currently low."; 
-        }
-        // オーロラオーバルは近くにいる可能性があるが、街が明るすぎる場合
-        else if (kp < minKpRequired) {
-            adviceMessage = "Move to a darker area.";
-        } 
-        else if (cloud > 70) {
-            // adviceMessage = "Clouds are covering the sky.";
-        } 
-        else {
-            // adviceMessage = "Aurora activity is currently low.";
-        }
-    }
-    
+    // --- アドバイス表示 (メッセージ不要のため削除) ---
     const adviceEl = document.getElementById("observation-advice");
-    if (adviceEl) adviceEl.textContent = adviceMessage;
+    if (adviceEl) adviceEl.textContent = ""; 
 }
 
 

@@ -468,7 +468,7 @@ input:checked + .slider:before { transform: translateX(20px); }
         
         
         
-            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t4.4.1-test5<span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t4.4.1-test6<span></h1>
             
             
             
@@ -773,7 +773,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 // --- 1. 定数とグローバル変数 ---
 const PUBLIC_KEY = 'BAp0wnGuvaoZk_Q7Bn4H4DWAR2Zdi9juZECl10m290Ff9sAJqiaXepWYvGgbI7WOb9K3O0MOTG8TVi_hg_ovfEg';
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzrI0velRwRPq7zF4bFLJ3TdKSvty8cGOJRydD0DHu3uvXafGp7Kmvzm5oybJRFZNycKA/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyQJMHicBDxivuVCVJqVJfjEqxZaLscDmtV-UcoJSkdBgIUqHW2vSDV0J70_HC2bnrGjA/exec";
 const CORS = GAS_URL + "?url="; // GASプロキシはやめて、安定したAllOriginsに戻します
 
 // 候補B (予備):
@@ -1322,14 +1322,6 @@ async function updateAll() {
 
 
 
-
-
-
-
-
-
-
-
 async function getKp() {
     try {
         const targetUrl = KP_URL + "?t=" + Date.now();
@@ -1352,24 +1344,6 @@ async function getKp() {
                 break; 
             }
         }
-
-        // テスト用コード ---
-//        console.log("確定した数値(val):", val);
-//        const el = document.getElementById("kp");
-//        
-//        if (el) {
-//            console.log("要素 ID 'kp' を発見。赤枠にして TEST と書き込みます。");
-//            el.style.border = "5px solid red"; // 目立つように太く
-//            el.textContent = "TEST";           // これが表示されるか確認
-//            
-//            // 1秒後に本来の数値を上書き（一瞬 TEST が見えるか確認）
-//            setTimeout(() => {
-//                el.textContent = val.toFixed(1);
-//                el.className = `badge ${val >= 5 ? 'high' : (val >= 3 ? 'mid' : 'l//ow')}`;
-//            }, 1000);
-//        } else {
-//            console.error("要素 ID 'kp' が見つかりません！HTML側を確認してください//。");
-//        }
         
         return val;
 
@@ -1930,13 +1904,6 @@ function updateRadarChart() {
         Math.min(kp * 12.5, 100), // Magnetic
         Math.max(100 - cloud, 0)   // Sky
     ];
-
-
-
-
-
-
-
 
 
 

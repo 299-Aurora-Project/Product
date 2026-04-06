@@ -468,7 +468,7 @@ input:checked + .slider:before { transform: translateX(20px); }
         
         
         
-            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t4.5.4<span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t4.5.test<span></h1>
             
             
             
@@ -1435,22 +1435,21 @@ async function fetchKp3DayForecast() {
             }
         });
 
-        // --- データ抽出（安定版） ---
+        // --- データ抽出（完全対応版） ---
         lines.forEach(line => {
-            const timeMatch = line.match(
-                /^(\d{2}-\d{2})UT\s+([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)/
-            );
+            const timeMatch = line.match(/^(\d{2}-\d{2})UT\s+(.+)/);
 
             if (timeMatch && dates.length >= 3) {
                 const hourRange = timeMatch[1];
+                const rawValues = timeMatch[2].trim().split(/\s+/);
 
                 for (let i = 0; i < 3; i++) {
-                    const rawVal = parseFloat(timeMatch[i + 2]);
+                    const rawVal = parseFloat(rawValues[i]);
 
                     dataPoints.push({
-                        dateStr: dates[i].trim(),
+                        dateStr: dates[i]?.trim() || "",
                         timeStr: hourRange.trim(),
-                        value: isNaN(rawVal) ? null : rawVal,
+                        value: (!isNaN(rawVal) && rawVal >= 0 && rawVal <= 9) ? rawVal : null,
                         dayIndex: i,
                         hourStart: parseInt(hourRange.split('-')[0])
                     });
@@ -1460,7 +1459,7 @@ async function fetchKp3DayForecast() {
 
         if (dataPoints.length === 0) {
             console.error("❌ No valid Kp data parsed");
-            console.log("🔍 Raw text preview:", text.slice(0, 500));
+            console.log("🔍 Full text:", text);
             return;
         }
 

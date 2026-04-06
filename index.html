@@ -1427,9 +1427,7 @@ async function fetchKp3DayForecast() {
         let dates = [];
         let dataPoints = [];
 
-        // =========================
-        // ✅ 日付抽出
-        // =========================
+        // --- 日付抽出 ---
         lines.forEach(line => {
             const dateMatch = line.match(/([A-Z][a-z]{2}\s+\d{2})/g);
             if (dateMatch && dateMatch.length >= 3) {
@@ -1437,12 +1435,10 @@ async function fetchKp3DayForecast() {
             }
         });
 
-        // =========================
-        // ✅ データ抽出（厳密版）
-        // =========================
+        // --- データ抽出（安定版） ---
         lines.forEach(line => {
             const timeMatch = line.match(
-                /^(\d{2}-\d{2})UT\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)/
+                /^(\d{2}-\d{2})UT\s+([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)/
             );
 
             if (timeMatch && dates.length >= 3) {
@@ -1451,13 +1447,10 @@ async function fetchKp3DayForecast() {
                 for (let i = 0; i < 3; i++) {
                     const rawVal = parseFloat(timeMatch[i + 2]);
 
-                    // Kpは0〜9のみ有効
-                    const safeVal = (rawVal >= 0 && rawVal <= 9) ? rawVal : null;
-
                     dataPoints.push({
                         dateStr: dates[i].trim(),
                         timeStr: hourRange.trim(),
-                        value: safeVal,
+                        value: isNaN(rawVal) ? null : rawVal,
                         dayIndex: i,
                         hourStart: parseInt(hourRange.split('-')[0])
                     });
@@ -1466,21 +1459,18 @@ async function fetchKp3DayForecast() {
         });
 
         if (dataPoints.length === 0) {
-            console.warn("No valid Kp data parsed");
+            console.error("❌ No valid Kp data parsed");
+            console.log("🔍 Raw text preview:", text.slice(0, 500));
             return;
         }
 
-        // =========================
-        // ✅ ソート
-        // =========================
+        // --- ソート ---
         dataPoints.sort((a, b) => {
             if (a.dayIndex !== b.dayIndex) return a.dayIndex - b.dayIndex;
             return a.hourStart - b.hourStart;
         });
 
-        // =========================
-        // ✅ 現在値の取得（安全）
-        // =========================
+        // --- 現在値 ---
         const now = new Date();
         const currentUTCHours = now.getUTCHours();
         const currentUTCDate = now.getUTCDate();
@@ -1503,16 +1493,13 @@ async function fetchKp3DayForecast() {
         if (target) {
             currentVal = target.value;
         } else {
-            // fallback（直近の有効値）
             const valid = dataPoints.filter(p => p.value !== null);
             if (valid.length > 0) {
                 currentVal = valid[valid.length - 1].value;
             }
         }
 
-        // =========================
-        // ✅ 現在値の表示
-        // =========================
+        // --- 表示 ---
         const elKp = document.getElementById("kp");
 
         if (elKp && currentVal !== null) {
@@ -1525,11 +1512,7 @@ async function fetchKp3DayForecast() {
             updateGScaleIndicator(currentVal);
         }
 
-        window.latestKpValueFromForecast = currentVal;
-
-        // =========================
-        // ✅ グラフ用データ
-        // =========================
+        // --- グラフ ---
         const values = dataPoints.map(p => p.value);
 
         let lastDate = "";
@@ -1545,9 +1528,7 @@ async function fetchKp3DayForecast() {
             drawKpChart(labels, values);
         }
 
-        // =========================
-        // ✅ NOAAテキスト表示
-        // =========================
+        // --- NOAAテキスト ---
         const match = text.match(/NOAA Kp index breakdown[\s\S]*?(?=\n[A-Z]|$)/i);
         const elF = document.getElementById("kpForecast");
 
@@ -1555,15 +1536,12 @@ async function fetchKp3DayForecast() {
             elF.innerText = match ? match[0].trim() : "Updating...";
         }
 
-        // =========================
-        // 🔍 デバッグ（必要なら有効化）
-        // =========================
-        console.log("Parsed dataPoints:", dataPoints);
-        console.log("Current Kp:", currentVal);
+        console.log("✅ Parsed:", dataPoints.length, "points");
 
     } catch (e) {
         console.error("Forecast Error:", e);
     }
+    console.log(text);
 }
 
 

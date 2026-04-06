@@ -2049,34 +2049,38 @@ function initMap() {
 
             
             // 2. 光害推定
-            let estimatedBortle = 1; // 海なら1（最高）のはず
-            console.log("Raw Address Data:", addr); // 住所データの中身を表示
-            
-            if (addr.city || addr.metropolis) {
-                estimatedBortle = 8; 
-            } else if (addr.town || addr.borough) {
-                estimatedBortle = 5; 
-            }
-            
-            console.log("Estimated Bortle Scale:", estimatedBortle); // 判定された数値
+            // --- 【修正】時間帯と光害レベルによる出し分け ---
+            const currentHour = new Date().getHours();
+            const isDaytime = currentHour >= 3 && currentHour < 21; // 昼間の定義
 
-// --- 【修正】既存のアイコン画像名に合わせて出し分ける ---
             const bortleTextElement = document.getElementById('bortle-level-text');
             const bortleIconElement = document.getElementById('bortle-icon');
+            const bortleMessageElement = document.getElementById('bortle-message');
 
             if (bortleTextElement && bortleIconElement) {
-                if (estimatedBortle >= 7) {
-                    // High判定
+                // 1. 昼間の場合
+                if (isDaytime) {
+                    bortleTextElement.textContent = "Low Light Pollution (Daytime)";
+                    bortleIconElement.src = "images/low.png"; 
+                    if (bortleMessageElement) bortleMessageElement.textContent = ""; // メッセージを空にする
+                } 
+                // 2. 夜間：光害が強い場合 (Bortle 7以上)
+                else if (estimatedBortle >= 7) {
                     bortleTextElement.textContent = "High Light Pollution";
-                    bortleIconElement.src = "high.png"; // 実際のファイル名に合わせてください
-                } else if (estimatedBortle >= 4) {
-                    // Possible (Moderate) 判定
+                    bortleIconElement.src = "images/high.png"; 
+                    if (bortleMessageElement) bortleMessageElement.textContent = "Move to a darker area.";
+                } 
+                // 3. 夜間：光害が中程度の場合 (Bortle 4-6)
+                else if (estimatedBortle >= 4) {
                     bortleTextElement.textContent = "Moderate Light Pollution";
-                    bortleIconElement.src = "possible.png"; // 実際のファイル名に合わせてください
-                } else {
-                    // Low判定 (海や山、田舎)
+                    bortleIconElement.src = "images/possible.png"; 
+                    if (bortleMessageElement) bortleMessageElement.textContent = "Better to find a darker spot.";
+                } 
+                // 4. 夜間：光害が少ない場合 (Bortle 1-3)
+                else {
                     bortleTextElement.textContent = "Low Light Pollution";
-                    bortleIconElement.src = "low.png"; // 実際のファイル名に合わせてください
+                    bortleIconElement.src = "images/low.png"; 
+                    if (bortleMessageElement) bortleMessageElement.textContent = ""; // メッセージを空にする
                 }
             }
 

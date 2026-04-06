@@ -1042,6 +1042,12 @@ async function setLocation(lat, lon, name) {
     myLat = newLat; 
     myLon = newLon;
     
+    // --- 【重要】地図クリック時に一時保存した環境データをグローバルに反映 ---
+    if (typeof tempLocation !== 'undefined' && tempLocation) {
+        window.myBortle = tempLocation.bortle;
+        window.myVisibility = tempLocation.visibility;
+    }
+    
     // 2. UI表示を更新
     document.getElementById("loc").textContent = name;
     
@@ -2013,41 +2019,44 @@ function initMap() {
                 : `${cityName}, ${countryName}`;
 
             
-            // 2. 光害推定
-            // --- 【修正】時間帯と光害レベルによる出し分け ---
+// 2. 光害推定（データの取得のみ）
+            let estimatedBortle = 1; 
+            if (addr.city || addr.metropolis) {
+                estimatedBortle = 8; 
+            } else if (addr.town || addr.borough) {
+                estimatedBortle = 5; 
+            }
+
             const currentHour = new Date().getHours();
-            const isDaytime = currentHour >= 3 && currentHour < 21; // 昼間の定義
+            const isDaytime = currentHour >= 3 && currentHour < 21; 
 
             const bortleTextElement = document.getElementById('bortle-level-text');
             const bortleIconElement = document.getElementById('bortle-icon');
             const bortleMessageElement = document.getElementById('bortle-message');
 
             if (bortleTextElement && bortleIconElement) {
-                // 1. 昼間の場合
-                if (isDaytime) {
-                    bortleTextElement.textContent = "Low Light Pollution (Daytime)";
-                    bortleIconElement.src = "images/low.png"; 
-                    if (bortleMessageElement) bortleMessageElement.textContent = ""; // メッセージを空にする
+                // 昼間、または光害がない(Bortle < 4)場合は何も表示しない
+                if (isDaytime || estimatedBortle < 4) {
+                    bortleTextElement.textContent = "";
+                    bortleIconElement.src = ""; 
+                    if (bortleMessageElement) bortleMessageElement.textContent = "";
                 } 
-                // 2. 夜間：光害が強い場合 (Bortle 7以上)
-                else if (estimatedBortle >= 7) {
-                    bortleTextElement.textContent = "High Light Pollution";
-                    bortleIconElement.src = "images/high.png"; 
-                    if (bortleMessageElement) bortleMessageElement.textContent = "Move to a darker area.";
-                } 
-                // 3. 夜間：光害が中程度の場合 (Bortle 4-6)
-                else if (estimatedBortle >= 4) {
-                    bortleTextElement.textContent = "Moderate Light Pollution";
-                    bortleIconElement.src = "images/possible.png"; 
-                    if (bortleMessageElement) bortleMessageElement.textContent = "Better to find a darker spot.";
-                } 
-                // 4. 夜間：光害が少ない場合 (Bortle 1-3)
+                // 夜間で光害がある(Bortle >= 4)場合のみ、環境情報を表示
                 else {
-                    bortleTextElement.textContent = "Low Light Pollution";
-                    bortleIconElement.src = "images/low.png"; 
-                    if (bortleMessageElement) bortleMessageElement.textContent = ""; // メッセージを空にする
+                    bortleTextElement.textContent = "Light Polluted Area";
+                    bortleIconElement.src = "bright.png"; // ここでは「光害あり」の警告として使用
+                    if (bortleMessageElement) bortleMessageElement.textContent = "Move to a darker area.";
                 }
             }
+
+            // 保存（calculateTotalがこの値を使って最終判定を行う）
+            tempLocation = { 
+                lat, 
+                lon, 
+                name: displayName, 
+                bortle: estimatedBortle, 
+                visibility: visibility 
+            };
 
             // 3. 視程取得 (Open-Meteo)
             let visibility = 10000; 

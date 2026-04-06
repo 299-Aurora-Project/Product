@@ -468,7 +468,7 @@ input:checked + .slider:before { transform: translateX(20px); }
         
         
         
-            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t4.5.2<span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t4.5.3<span></h1>
             
             
             
@@ -2060,24 +2060,24 @@ function initMap() {
             
             console.log("Estimated Bortle Scale:", estimatedBortle); // 判定された数値
 
-            // --- 【追加】ここで画面上の表示（UI）を更新する ---
-            const bortleTextElement = document.getElementById('bortle-level-text'); // IDは実際のHTMLに合わせてください
-            const bortleIconElement = document.getElementById('bortle-icon');      // IDは実際のHTMLに合わせてください
+// --- 【修正】既存のアイコン画像名に合わせて出し分ける ---
+            const bortleTextElement = document.getElementById('bortle-level-text');
+            const bortleIconElement = document.getElementById('bortle-icon');
 
-            if (bortleTextElement) {
-                // Bortle指数によって表示テキストを変える
+            if (bortleTextElement && bortleIconElement) {
                 if (estimatedBortle >= 7) {
+                    // High判定
                     bortleTextElement.textContent = "High Light Pollution";
+                    bortleIconElement.src = "images/high.png"; // 実際のファイル名に合わせてください
                 } else if (estimatedBortle >= 4) {
+                    // Possible (Moderate) 判定
                     bortleTextElement.textContent = "Moderate Light Pollution";
+                    bortleIconElement.src = "images/possible.png"; // 実際のファイル名に合わせてください
                 } else {
+                    // Low判定 (海や山、田舎)
                     bortleTextElement.textContent = "Low Light Pollution";
+                    bortleIconElement.src = "images/low.png"; // 実際のファイル名に合わせてください
                 }
-            }
-
-            if (bortleIconElement) {
-                // 数値に合わせてアイコン画像も差し替える（例）
-                bortleIconElement.src = `images/bortle_${estimatedBortle}.png`;
             }
 
             // 3. 視程取得 (Open-Meteo)

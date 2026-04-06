@@ -468,7 +468,7 @@ input:checked + .slider:before { transform: translateX(20px); }
         
         
         
-            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t4.4.1-test3<span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t4.4.1-test4<span></h1>
             
             
             
@@ -2080,39 +2080,30 @@ function initMap() {
                 estimatedBortle = 5; // 地方都市・郊外
             }
 
-            // --- 【Enhancement】霧(視程)の取得 ---
-            // ※あなたのシステムで使用している気象APIのKeyがあれば差し替えてください
+
+
+
+            // --- 【Enhancement】霧(視程)の取得 (Open-Meteo) ---
             let visibility = 10000; // デフォルト 10km (クリア)
             try {
-                const weatherRes = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=YOUR_API_KEY`);
-                const weatherData = await weatherRes.json();
-                if (weatherData.visibility) {
-                    visibility = weatherData.visibility; // メートル単位
+                // 経度の180度超え対策 (Open-Meteo 400エラー回避)
+                const normalizedLon = lon > 180 ? lon - 360 : (lon < -180 ? lon + 360 : lon);
+                
+                // Open-Meteo API を使用 (キー不要)
+                const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${normalizedLon}&current=visibility&timezone=auto`);
+                
+                if (weatherRes.ok) {
+                    const weatherData = await weatherRes.json();
+                    if (weatherData.current && weatherData.current.visibility !== undefined) {
+                        visibility = weatherData.current.visibility; // メートル単位
+                        console.log(`Visibility: ${visibility}m (from Open-Meteo)`);
+                    }
+                } else {
+                    console.warn("Weather API responded with error, using default.");
                 }
             } catch (wError) {
-                console.warn("Visibility fetch failed, using default.");
+                console.warn("Visibility fetch failed, using default.", wError);
             }
-
-            cityText.textContent = displayName;
-
-            // 一時保存オブジェクトに光害と視程を追加
-            tempLocation = { 
-                lat, 
-                lon, 
-                name: displayName,
-                bortle: estimatedBortle,
-                visibility: visibility 
-            };
-
-        } catch (error) {
-            console.error("Analysis error:", error);
-            const fallbackName = `${lat.toFixed(2)}, ${lon.toFixed(2)}`;
-            cityText.textContent = fallbackName;
-            tempLocation = { lat, lon, name: fallbackName, bortle: 5, visibility: 10000 };
-        }
-    });
-
-
 
         
 

@@ -2056,6 +2056,26 @@ function initMap() {
                 estimatedBortle = 5; 
             }
 
+            // --- 【追加】ここで画面上の表示（UI）を更新する ---
+            const bortleTextElement = document.getElementById('bortle-level-text'); // IDは実際のHTMLに合わせてください
+            const bortleIconElement = document.getElementById('bortle-icon');      // IDは実際のHTMLに合わせてください
+
+            if (bortleTextElement) {
+                // Bortle指数によって表示テキストを変える
+                if (estimatedBortle >= 7) {
+                    bortleTextElement.textContent = "High Light Pollution";
+                } else if (estimatedBortle >= 4) {
+                    bortleTextElement.textContent = "Moderate Light Pollution";
+                } else {
+                    bortleTextElement.textContent = "Low Light Pollution";
+                }
+            }
+
+            if (bortleIconElement) {
+                // 数値に合わせてアイコン画像も差し替える（例）
+                bortleIconElement.src = `images/bortle_${estimatedBortle}.png`;
+            }
+
             // 3. 視程取得 (Open-Meteo)
             let visibility = 10000; 
             try {

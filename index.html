@@ -124,7 +124,7 @@ button:disabled { opacity: 0.3; cursor: not-allowed; }
 
 /* 2. 入力窓：角丸を8pxに統一し、ネイビー系に */
 #cityInput {
-    width: 220px;           /* 横幅を固定*/
+    width: 220px;           /* ここで横幅を固定*/
     box-sizing: border-box;
     border-radius: 5px !important;     /* 他のボタンと統一 */
     border: 1px solid #3a506b;
@@ -412,6 +412,10 @@ input:checked + .slider:before { transform: translateX(20px); }
 
 
 
+
+
+
+
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -432,110 +436,104 @@ input:checked + .slider:before { transform: translateX(20px); }
 </div>
     
 
+<!-- 
+    <div class="welcome-box" style="padding: 30px; min-width: 280px;">
+        <img src="location.png" alt="Location Required" 
+             style="width: 200px; height: auto; margin-bottom: 20px; display: block; margin-left: auto; margin-right: auto;">
+        
+        <div style="font-size: 1.1rem; font-weight: bold;">
+            ↑  Please set a location first  ↑
+        </div>
+    </div>
+</div>
+-->
+
 <div id="home-screen" class="container">
     <div class="header-area">
         <div class="title-row">
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t3.3.2-t1.5<span></h1>
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
+            <h1>Easy Aurora Forecast<span class="beta-suffix">(beta)</span> <span class="version">v. t3.0.3</span></h1>
         </div>
         <div class="produced-by">Produced by Shin</div>
     </div>
 
-    <div class="card" id="card-loc" style="height: auto !important; padding-bottom: 20px; box-sizing: border-box;">
+    <div class="card" id="card-loc">
         <div class="label-main" onclick="openDetail('location')">📍Location</div>
-        <div id="loc" class="value" style="word-break: break-all; margin-bottom: 25px;">Not Set</div>
+        <div id="loc" class="value">Not Set</div>
         
-            
-        <div style="display: flex; gap: 10px; width: 100%; margin-bottom: 5px; box-sizing: border-box;">
+        <br>
+        <button id="btn-gps" onclick="getLocation(); event.stopPropagation();">Get Current Location via GPS</button><br>
 
-
-
-
-
-
-
-
-
-            
-        <button id="btn-gps" onclick="getLocation(); event.stopPropagation();" 
-            style="width: calc(50% - 5px) !important; min-width: 0 !important; max-width: 50% !important; height: 50px; background: #3a506b; color: white; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: normal; padding: 0 !important; flex: none !important;">
-            <span style="font-size: 1.5rem; margin-right: 5px;">🛰️</span>
-            <span style="font-size: 0.9rem;">GPS</span>
-        </button>
-        
         <button id="btn-map-select" onclick="openMapForSelection()" 
-            style="width: calc(50% - 5px) !important; min-width: 0 !important; max-width: 50% !important; height: 50px; background: #3a506b; color: white; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: normal; padding: 0 !important; flex: none !important;">
-            <span style="font-size: 1.5rem; margin-right: 5px;">🗺️</span>
-            <span style="font-size: 0.9rem;">MAP</span>
+            style="display: block; clear: both; width: auto; min-width: 220px; margin: 10px 0; padding: 12px 20px; background: #5bc0be; color: #0b132b; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">
+            <i class="fas fa-map-marked-alt"></i> Select from a Map
         </button>
-        </div>
-    
-        <div style="text-align: left; font-size: 0.9rem; margin-bottom: 5px; font-weight: bold; margin-top: 15px;">Search City:</div>
+
+        Search City:
         <div class="search-container">
-            <input id="cityInput" placeholder="e.g. Yellowknife, Canada" oninput="handleCityInput(this)" onfocus="handleCityInput(this)" onclick="event.stopPropagation()">
+            <input id="cityInput" 
+                   placeholder="e.g. Yellowknife, Canada" 
+                   oninput="handleCityInput(this)" 
+                   onfocus="handleCityInput(this)" 
+                   onclick="event.stopPropagation()">
             <button id="btn-search" onclick="searchCity()">Set</button>
             <div id="autocomplete-list" class="autocomplete-items"></div>
         </div>
-
         
-        <div id="search-error" class="error-msg" style="min-height: 0; margin-top: 5px;">City not found. Please check your input.</div>
-    </div> 
+        <div id="search-error" class="error-msg" style="min-height: 0; margin-top: 2px;">City not found. Please check your input.</div>
+    </div>
+
 
     <div class="card" id="card-main-result">
-        <div id="total-label" class="label-main" onclick="openDetail('probability')">🌌Overall Probability</div>
-        <div id="total-sub-label" class="label-sub-current">Current:</div>
+    <div id="total-label" class="label-main" onclick="openDetail('probability')">🌌Overall Probability</div>
+    <div id="total-sub-label" class="label-sub-current">Current:</div>
 
-        <div id="possibility-area" style="text-align: center; margin: 10px 0 0; display: flex; flex-direction: column; align-items: center; gap: 10px;">
-            <div style="position: relative; display: inline-block;">
-                <img id="status-icon" src="location.png" alt="Status" onclick="openModal()" style="width: 180px; height: auto; cursor: pointer; display: block;">
-                <div onclick="openImageModal(); event.stopPropagation();" style="position: absolute; bottom: 0; right: 0; width: 22px; height: 22px; background: #3a506b; color: #5bc0be; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; font-size: 0.8rem; border: 1px solid #3a506b; box-shadow: 0 2px 4px rgba(0,0,0,0.3); z-index: 10;">?</div>
+    <div id="possibility-area" style="text-align: center; margin: 10px 0 0; display: flex; flex-direction: column; align-items: center; gap: 10px;">
+    
+        <div style="position: relative; display: inline-block;">
+            <img id="status-icon" src="location.png" alt="Status" onclick="openModal()" 
+                 style="width: 180px; height: auto; cursor: pointer; display: block; -webkit-tap-highlight-color: transparent;">
+        
+            <div onclick="openImageModal(); event.stopPropagation();" 
+                 style="position: absolute; bottom: 0; right: 0; width: 22px; height: 22px; 
+                        background: #3a506b; color: #5bc0be; border-radius: 50%; 
+                        display: flex; align-items: center; justify-content: center; 
+                        font-weight: bold; cursor: pointer; font-size: 0.8rem; border: 1px solid #3a506b;
+                        box-shadow: 0 2px 4px rgba(0,0,0,0.3); z-index: 10;">
+                ?
             </div>
-            <div id="result" class="badge badge-large low" onclick="openModal()" style="margin: 0 auto;">--</div>
-            <div id="observation-advice" style="font-size: 0.85rem; color: #5bc0be; font-style: italic; min-height: 1.2em; max-width: 200px; line-height: 1.3;"></div>
-            <div class="last-updated" id="time-update-all" style="margin-top: 0px;">Last Update: --:--:--</div>
         </div>
 
-        <div class="switch-container" style="position: absolute; top: 15px; right: 22px; display: flex; flex-direction: column; align-items: flex-end;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <span class="switch-label">🔔</span>
-                <label class="switch">
-                    <input type="checkbox" id="notif-toggle">
-                    <span class="slider"></span>
-                </label>
-            </div>
-            <div id="target-area-display" style="font-size: 0.65rem; color: #5bc0be; margin-top: 5px; text-align: right; line-height: 1.2; display: none;">Target area:<br><span id="target-area-name" style="color: #8b949e;"></span></div>
-        </div>
+        <div id="result" class="badge badge-large low" onclick="openModal()" style="margin: 0 auto;">--</div>
+        
+        <div id="observation-advice" style="font-size: 0.85rem; color: #5bc0be; font-style: italic; min-height: 1.2em; max-width: 200px; line-height: 1.3;"></div>
+    
+        <div class="last-updated" id="time-update-all" style="margin-top: 0px;">Last Update: --:--:--</div>
+    </div>
 
-        <div style="margin-top: 5px; display: flex; justify-content: flex-end;">
-            <button id="btn-update-all" style="width: auto; min-width: 100px; white-space: nowrap; font-size: 0.85em; background: #3a506b; padding: 8px 12px;" onclick="updateAll(); event.stopPropagation();">Update Data</button>
+    <div class="switch-container" style="position: absolute; top: 15px; right: 22px; margin-top: 0; display: flex; flex-direction: column; align-items: flex-end;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span class="switch-label">🔔</span>
+            <label class="switch">
+                <input type="checkbox" id="notif-toggle">
+                <span class="slider"></span>
+            </label>
+        </div>
+        <div id="target-area-display" style="font-size: 0.65rem; color: #5bc0be; margin-top: 5px; text-align: right; line-height: 1.2; display: none;">
+            Target area:<br>
+            <span id="target-area-name" style="color: #8b949e;"></span>
         </div>
     </div>
 
-    <button id="toggle-data-btn" class="toggle-btn" style="margin: 20px auto; display: block;" onclick="toggleData(); event.stopPropagation();">Show All Information</button>
+    <div style="margin-top: 5px; display: flex; justify-content: flex-end;">
+        <button id="btn-update-all" 
+                style="width: auto; min-width: 100px; white-space: nowrap; font-size: 0.85em; background: #3a506b; padding: 8px 12px;" 
+                onclick="updateAll(); event.stopPropagation();">
+            Update Data
+        </button>
+    </div>
+</div>
+
+    <button id="toggle-data-btn" class="toggle-btn" onclick="toggleData(); event.stopPropagation();">Show All Information</button>
 
     <div id="hidden-data">
         <div class="card" id="card-oval">
@@ -545,26 +543,44 @@ input:checked + .slider:before { transform: translateX(20px); }
             <div id="oval-prob" style="font-size: 0.9rem; color: #8b949e; margin: 10px 0;"></div>
         </div>
 
+
         <div class="card" id="card-kp-group">
             <div class="label-main" onclick="openDetail('kp')">☀Kp Index</div>
             <div class="label-sub-current">Current:</div>
+        
             <div class="kp-wrapper" style="position: relative; display: inline-block;">
                 <div id="kp" class="badge low">--</div>
-                <div id="g-scale-indicator" onclick="showKpInfo(event)" style="display: none; position: absolute; top: -8px; right: -8px; background: #ff4d4d; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 11px; line-height: 18px; text-align: center; font-weight: bold; border: 1.5px solid #1a1a1a; cursor: pointer; z-index: 10;">①</div>
+                
+                <div id="g-scale-indicator" onclick="showKpInfo(event)" 
+                     style="display: none; position: absolute; top: -8px; right: -8px; 
+                            background: #ff4d4d; color: white; border-radius: 50%; 
+                            width: 18px; height: 18px; font-size: 11px; line-height: 18px; 
+                            text-align: center; font-weight: bold; border: 1.5px solid #1a1a1a; 
+                            cursor: pointer; box-shadow: 0 0 5px rgba(255,77,77,0.5); z-index: 10;">
+                    ①
+                </div>
             </div>
+        
+            <div id="kp-modal" onclick="closeKpInfo()" 
+                 style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                        background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center;">
+                <div style="background: #1a1a1a; color: white; padding: 20px; border-radius: 12px; 
+                            max-width: 85%; border: 1px solid #ff4d4d; font-size: 14px;">
+                    <h3 style="margin-top: 0; color: #ff4d4d;">Geomagnetic Storm (G-Scale)</h3>
+                    <p id="g-scale-detail"></p>
+                    <p style="font-size: 11px; color: #888; margin-top: 15px; text-align: center;">タップで閉じる</p>
+                </div>
+            </div>
+        
             <div class="sub-section" id="card-kp3">
                 <div style="font-size: 0.8rem; color: #8b949e; margin-bottom: 5px;">Short Forecast:</div>
                 <div id="kp-short" class="value" style="font-size: 0.85rem; color: #5bc0be;">Ref 3-day forecast (NOAA)</div>
-            
             </div>
             <div class="chart-container" style="position: relative; height:200px; width:100%">
                 <canvas id="kpLineChart"></canvas>
             </div>
-            
-<!--テーブル-->   
-                <pre id="kpForecast" style="margin-top:10px;">--</pre>            
-            
         </div>
+
 
         <div class="card" id="card-cloud-group">
             <div class="label-main" onclick="openDetail('cloud')">☁Cloud Cover</div>
@@ -575,8 +591,7 @@ input:checked + .slider:before { transform: translateX(20px); }
                 <div id="forecast" class="value" style="font-size: 1rem;">--</div>
             </div>
         </div>
-    </div>
-</div>
+    </div> </div>
 
 <div id="detailModal" class="modal-overlay" onclick="closeModal()">
     <div class="modal-content">
@@ -755,7 +770,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 // --- 1. 定数とグローバル変数 ---
 const PUBLIC_KEY = 'BAp0wnGuvaoZk_Q7Bn4H4DWAR2Zdi9juZECl10m290Ff9sAJqiaXepWYvGgbI7WOb9K3O0MOTG8TVi_hg_ovfEg';
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwy7qIaQz1NRwRDAqqVOlMbJjzfp0NG-ctJh27IEaENWFAXWwaBd8SPjwNLWQiGZQDdzw/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbylqFCFLAQhFgkR170D7SFLGHPRhk0kIwC6aYlI9q-wAhJQvVKrRynnjBSUHYgurH_E3A/exec";
 const CORS = GAS_URL + "?url="; // GASプロキシはやめて、安定したAllOriginsに戻します
 
 // 候補B (予備):
@@ -1056,7 +1071,7 @@ async function getLocation() {
         // 2. 「爆速版 setLocation」を即座に実行！
         // これにより、住所検索を待たずに地図とピンが新しい場所に飛びます。
         // とりあえず地名は "Loading address..." などにしておきます。
-        await setLocation(lat, lon, "⌛Locating...");
+        await setLocation(lat, lon, "Locating...");
 
         // 3. その後、バックグラウンドで住所を調べて表示を上書き
         try {
@@ -1274,8 +1289,6 @@ async function updateAll() {
         ]);
         
         await shortForecast();
-        calculateTotal(isDaytime); 
-        updateTimestamp('time-update-all');
 
         // 3. 確率計算
         // ここで calculateTotal にフラグを渡し、計算ロジックを昼夜で切り替えさせます
@@ -1285,24 +1298,9 @@ async function updateAll() {
     } catch (e) {
         console.error("Update All Error:", e);
     } finally {
-        // 1. ボタンのぐるぐるを止める
         if(btn) btn.classList.remove('loading-btn');
-
-        // 2. ★重要：各項目の Loading 状態を解除（false）にする
-        // これを呼ばないと、画面上の「Loading...」という表示が消えません
-        ['kp', 'oval', 'cloud', 'result'].forEach(id => {
-            if (typeof setItemLoading === "function") {
-                setItemLoading(id, false);
-            }
-        });
-
-        // 3. アイコンを更新（任意：チェックマーク画像などがあれば）
-        // if (statusIcon) statusIcon.src = "check.png";
     }
 }
-
-
-
 
 
 
@@ -1315,59 +1313,29 @@ async function getKp() {
     try {
         const targetUrl = KP_URL + "?t=" + Date.now();
         const res = await fetch(CORS + encodeURIComponent(targetUrl));
+        
+        // GASプロキシの場合、ここですでにNOAAの純粋なデータ（配列）が返ってきます
         const data = await res.json(); 
-
-        if (!data || !Array.isArray(data)) return 0;
-
-        let val = 0;
-        for (let i = data.length - 1; i >= 0; i--) {
-            const entry = data[i];
-            const tempVal = parseFloat(Array.isArray(entry) ? entry[1] : entry);
-            
-            if (!isNaN(tempVal)) {
-                val = tempVal;
-                break; 
-            }
+        
+        // データの存在チェック（GASがエラーを返した場合などの対策）
+        if (!data || !Array.isArray(data)) {
+            console.error("Invalid Kp data received from Proxy");
+            return 0;
         }
 
-        // --- 修正：テスト用コードをループの外へ ---
-//        console.log("確定した数値(val):", val);
-//        const el = document.getElementById("kp");
-//        
-//        if (el) {
-//            console.log("要素 ID 'kp' を発見。赤枠にして TEST と書き込みます。");
-//            el.style.border = "5px solid red"; // 目立つように太く
-//            el.textContent = "TEST";           // これが表示されるか確認
-//            
-//            // 1秒後に本来の数値を上書き（一瞬 TEST が見えるか確認）
-//            setTimeout(() => {
-//                el.textContent = val.toFixed(1);
-//                el.className = `badge ${val >= 5 ? 'high' : (val >= 3 ? 'mid' : 'l//ow')}`;
-//            }, 1000);
-//        } else {
-//            console.error("要素 ID 'kp' が見つかりません！HTML側を確認してください//。");
-//        }
-        
+        // 最新のKp値を取り出す (配列の最後)
+        const val = parseFloat(data[data.length - 1][1]);
+        const el = document.getElementById("kp");
+        if (el) {
+            el.textContent = val.toFixed(1);
+            el.className = `badge ${val >= 5 ? 'high' : (val >= 3 ? 'mid' : 'low')}`;
+        }
         return val;
-
     } catch (e) {
         console.error("Kp Fetch Error:", e);
         return 0;
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 async function checkOval() {
     try {
@@ -1406,13 +1374,6 @@ async function checkOval() {
 
 let myLineChart = null; // グラフを保持する変数
 
-
-
-
-
-
-
-
 async function fetchKp3DayForecast() {
     try {
         const res = await fetch(CORS + encodeURIComponent(FORECAST_URL));
@@ -1422,107 +1383,63 @@ async function fetchKp3DayForecast() {
         let dates = [];
         let dataPoints = [];
 
-        // 日付の抽出
         lines.forEach(line => {
             const dateMatch = line.match(/([A-Z][a-z]{2}\s+\d{2})/g);
             if (dateMatch && dateMatch.length >= 3) { dates = dateMatch; }
         });
 
-        // データの抽出
         lines.forEach(line => {
             const timeMatch = line.match(/(\d{2}-\d{2})UT\s+([\d.]+).*?\s+([\d.]+).*?\s+([\d.]+)/);
             if (timeMatch && dates.length >= 3) {
                 const hourRange = timeMatch[1];
                 for (let i = 0; i < 3; i++) {
-                    const val = parseFloat(timeMatch[i + 2]);
-                    if (!isNaN(val)) {
-                        dataPoints.push({
-                            dateStr: dates[i].trim(),
-                            timeStr: hourRange.trim(),
-                            value: val,
-                            dayIndex: i,
-                            hourStart: parseInt(hourRange.split('-')[0])
-                        });
-                    }
+                    dataPoints.push({
+                        dateStr: dates[i].trim(),
+                        timeStr: hourRange.trim(),
+                        value: parseFloat(timeMatch[i + 2]),
+                        dayIndex: i
+                    });
                 }
             }
         });
-
-        if (dataPoints.length === 0) {
-            console.warn("No data points parsed.");
-            return;
-        }
 
         dataPoints.sort((a, b) => {
             if (a.dayIndex !== b.dayIndex) return a.dayIndex - b.dayIndex;
             return a.timeStr.localeCompare(b.timeStr);
         });
 
-        // --- 現在の時刻に最適なデータを探す（安全策付き） ---
-        const now = new Date();
-        const currentUTCHours = now.getUTCHours();
-        const currentUTCDate = now.getUTCDate();
-        
-        let currentVal = dataPoints[0].value; // デフォルトは最初の値
-
-        const target = dataPoints.find(p => {
-            const dMatch = p.dateStr.match(/\d+/);
-            const pDay = dMatch ? parseInt(dMatch[0]) : -1;
-            return pDay === currentUTCDate && (currentUTCHours >= p.hourStart && currentUTCHours < p.hourStart + 3);
-        });
-
-        if (target) {
-            currentVal = target.value;
-            console.log("Current UTCHour matched:", currentUTCHours, "Value:", currentVal);
-        }
-
-        // 表示の更新
-        const elKp = document.getElementById("kp");
-        if (elKp && !isNaN(currentVal)) {
-            const currentText = elKp.textContent; // trim() は不要、中身を確認
-            
-            // ★修正ポイント： "Loading" という文字が含まれている、または 0.0 の場合に書き込む
-            if (currentText.includes("Loading") || currentText === "0.0" || currentText === "") {
-                elKp.innerHTML = ""; // 一旦 ⏳ などを完全に消す
-                elKp.textContent = currentVal.toFixed(1);
-                elKp.className = `badge ${currentVal >= 5 ? 'high' : (currentVal >= 3 ? 'mid' : 'low')}`;
-                console.log("予報値で表示を更新しました:", currentVal);
-            } else {
-                console.log("実測値が既にあるためスキップしました。現在の表示:", currentText);
-            }
-        }
-
-        window.latestKpValueFromForecast = currentVal;
-
-        // チャートの描画
-        const values = dataPoints.map(p => p.value);
+        let lastDate = "";
         const labels = dataPoints.map((p, index) => {
-            if (index === 0 || p.dateStr !== dataPoints[index-1].dateStr) {
-                return p.dateStr + " " + p.timeStr;
-            }
+            if (index === 0 || p.dateStr !== lastDate) {
+                lastDate = p.dateStr;
+                // ★検証のため、まずは2行表示[ ]をやめて1行の文字列にします
+                return p.dateStr + " " + p.timeStr; 
+            } 
+//            if (p.timeStr === "12-15") return "12:00";
             return "";
         });
 
-        if (typeof drawKpChart === "function") {
-            drawKpChart(labels, values);
-        }
+        const values = dataPoints.map(p => p.value);
 
-        // 予報テキストの表示
+        // --- 🔍 デバッグ用ログ
+        console.log("Labels ready:", labels);
+        console.log("Values ready:", values);
+
+        if (typeof drawKpChart === "function" && labels.length > 0) {
+            console.log("Calling drawKpChart...");
+            drawKpChart(labels, values);
+        } else {
+            console.error("drawKpChart function not found or labels empty!");
+        }
+        
         const match = text.match(/NOAA Kp index breakdown[\s\S]*?(?=\n[A-Z]|$)/i);
-        const elF = document.getElementById("kpForecast");
-        if (elF) elF.innerText = match ? match[0].trim() : "Updating...";
+        const el = document.getElementById("kpForecast");
+        if (el) el.innerText = match ? match[0].trim() : "Updating...";
 
     } catch (e) {
         console.error("Forecast Error:", e);
     }
-    // ここでLoadingを消す処理が必要な場合は、必ず最後に実行されるようにします
 }
-
-
-
-
-
-
 
 function drawKpChart(labels, values) {
     const ctx = document.getElementById('kpLineChart').getContext('2d');
@@ -1863,52 +1780,12 @@ function updateRadarChart() {
     const kp = parseFloat(document.getElementById("kp").textContent) || 0;
     const cloud = parseInt(document.getElementById("cloud").dataset.value) || 0;
 
-
-
-
-
-
-
-
-// --- 【修正の核心】総合確率から「場所の条件」だけを逆算して取り出す ---
-    // 総合確率は [場所スコア × 雲の影響 × Kpの影響] で算出されているはずです。
-    // そのため、雲(cloud)とKpの影響を排除して、純粋な「オーバルの位置関係」を計算します。
-    
-    let rawProb = lastAuroraProb || 0;
-    
-    // 雲の影響を打ち消す (例: 雲80%なら確率は0.2倍になっているので、5倍して元に戻す)
-    let cloudImpact = (100 - cloud) / 100;
-    if (cloudImpact < 0.1) cloudImpact = 0.1; // 0除算防止
-    
-    // Kpの影響を打ち消す (低Kpで確率が抑えられている分を戻す)
-    let kpImpact = (kp + 1) / 5; 
-    if (kpImpact < 0.2) kpImpact = 0.2;
-
-    // これが「雲も磁気嵐も関係ない、その場所自体のオーバル接近度」になります
-    let pureOvalPositionScore = rawProb / (cloudImpact * kpImpact);
-
+    // 3軸のデータを 0-100 に正規化
     const dataValues = [
-        // この pureOvalPositionScore を使えば、マップで色が濃い（位置が良い）だけで
-        // 他の要素に関わらず 100 に到達します。
-        Math.min(pureOvalPositionScore * 1.5, 100), 
-        
-        Math.min(kp * 12.5, 100), // Magnetic
-        Math.max(100 - cloud, 0)   // Sky
+        Math.min(lastAuroraProb * 2, 100), // Oval/Horizon (50%以上で満点)
+        Math.min(kp * 12.5, 100),         // Magnetic (Kp 8以上で満点)
+        Math.max(100 - cloud, 0)          // Sky (快晴で満点)
     ];
-
-
-
-
-
-
-
-
-
-
-//        Math.min(lastAuroraProb * 2, 100), // Oval/Horizon (50%以上で満点)
-//        Math.min(kp * 12.5, 100),         // Magnetic (Kp 8以上で満点)
-//        Math.max(100 - cloud, 0)          // Sky (快晴で満点)
-//    ];
 
     // 中央の％表示を更新
     const pctText = currentTotalScore < 1 ? "<1%" : (currentTotalScore > 99 ? "99%+" : Math.round(currentTotalScore) + "%");
@@ -2295,13 +2172,10 @@ function hideMapScreen() {
 
 function setItemLoading(id, isLoading) {
     const el = document.getElementById(id);
-    if (!el) return;
-
-    if (isLoading) {
-        // Loading開始時だけ文字を上書きする
+    if (el && isLoading) {
+        // 砂時計アイコン ⏳ と 斜体の Loading... をセット
         el.innerHTML = '⏳ <i>Loading...</i>';
-    } 
-    // else { el.innerHTML = ''; } ← これがあると数値を消してしまうので削除するかコメントアウト
+    }
 }
 
 function closeWelcome() { document.getElementById('welcome-overlay').style.display = 'none'; }

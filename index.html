@@ -1287,14 +1287,23 @@ async function updateAll() {
         console.log(`モード: ${isDaytime ? "昼間(21:00予報)" : "夜間(リアルタイム)"}`);
 
         const kpValue = await getKp();
+        // console.log("-> Kp Index取得完了");
+        
         await fetchKp3DayForecast();
+        console.log("-> Kp3DayForecast取得完了");
+        
         await checkOval();
+        console.log("-> Aurora Oval取得完了");
+        
         await getCloud(isDaytime); // 昼夜フラグを渡す
+        console.log("-> Cloud Cover取得完了");
         
         try {
             await shortForecast();
         } catch (e) { console.error("shortForecastエラー:", e); }
-
+        
+        console.log("-> shortForecast取得完了");
+        
         // --- 3. 最終判定と表示 ---
         calculateTotal(isDaytime, kpValue); // フラグと値を渡す
 
@@ -1311,6 +1320,7 @@ async function updateAll() {
         
         // 時刻表示の更新
         updateTimestamp('time-update-all');
+        console.log("-> タイムスタンプ更新完了");
     }
 }
 

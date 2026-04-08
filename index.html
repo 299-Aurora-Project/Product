@@ -470,7 +470,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.6.13</span>
+  <span class="version">v. t4.6.13d</span>
 </h1>
             
             
@@ -1256,71 +1256,62 @@ async function handleNotifToggleEvent() {
 // メイン関数(データ取得・予報)    //
 /////////////////////////////////////
 async function updateAll() {
+    console.log("--- UpdateAll 開始 ---");
     const btn = document.getElementById("btn-update-all");
     const statusIcon = document.getElementById("status-icon");
-    const resultBadge = document.getElementById("result");
 
     if (myLat === null || myLon === null) {
-        if (statusIcon) statusIcon.src = "location.png";
-        if (resultBadge) {
-            resultBadge.textContent = "Status";
-            resultBadge.className = "badge badge-large status";
-        }
+        console.warn("座標がありません");
         return;
     }
     
-    // Loading開始
     if(btn) btn.classList.add('loading-btn');
-    if (statusIcon) statusIcon.src = "loading.gif";
     ['kp','oval','cloud','result'].forEach(id => setItemLoading(id, true));
 
     try {
+        console.log("1. データ取得を開始します...");
+        
+        // Promise.allを一時的にやめ、一つずつ実行してどこで止まるか特定します
+        console.log("-> getKp 実行中...");
+        const kpValue = await getKp();
+        
+        console.log("-> fetchKp3DayForecast 実行中...");
+        await fetchKp3DayForecast();
+        
+        console.log("-> checkOval 実行中...");
+        await checkOval();
+        
+        console.log("-> getCloud 実行中...");
         const now = new Date();
         const hour = now.getHours();
         const isDaytime = (hour >= 3 && hour < 21);
-        
-        const subLabelEl = document.getElementById("total-sub-label");
-        if (subLabelEl) {
-            subLabelEl.textContent = isDaytime ? "Tonight (21:00): " : "Current: ";
-        }
+        await getCloud(isDaytime);
 
-        // 1. データ取得（Promise.allSettled を使うと、どれか一つが壊れていても他が動くようになります）
-        const results = await Promise.allSettled([
-            getKp(), 
-            fetchKp3DayForecast(), 
-            checkOval(), 
-            getCloud(isDaytime)
-        ]);
-
-        // getKpの結果（results[0]）を安全に取り出す
-        const kpValue = (results[0].status === 'fulfilled') ? results[0].value : 0;
-
-        // 2. サブ表示（エラーが起きやすいので try-catch で囲む）
+        console.log("2. shortForecast 実行中...");
         try {
             await shortForecast();
-        } catch (e) {
-            console.warn("shortForecast failed, but continuing...", e);
-        }
+        } catch(e) { console.error("shortForecastでエラー:", e); }
 
-        // 3. 判定ロジックとチャート更新
+        console.log("3. 最終判定(calculateTotal) 実行中...");
         calculateTotal(isDaytime, kpValue);
-        if (typeof updateRadarChart === 'function') updateRadarChart(kpValue);
         
-        updateTimestamp('time-update-all');
+        if (typeof updateRadarChart === 'function') {
+            updateRadarChart(kpValue);
+        }
 
     } catch (e) {
-        console.error("Critical Update All Error:", e);
+        console.error("【重大なエラー】:", e);
     } finally {
-        // ✅ 何があっても、絶対に Loading を終了させる
+        console.log("--- UpdateAll 終了処理 (Loadingを解除します) ---");
         if(btn) btn.classList.remove('loading-btn');
-        if(statusIcon) {
-            // ステータスアイコンを元に戻す（例として設定、アイコン名は適宜変えてください）
-            statusIcon.src = "status-ok.png"; 
-        }
-        ['kp', 'oval', 'cloud', 'result'].forEach(id => setItemLoading(id, false));
-    }
+        
+        // statusIcon を元の画像（location.pngなど）に戻す
+        if (statusIcon) statusIcon.src = "location.png"; 
 
-    lastUpdateTimestamp = Date.now();
+        ['kp', 'oval', 'cloud', 'result'].forEach(id => {
+            setItemLoading(id, false);
+        });
+    }
 }
 
 

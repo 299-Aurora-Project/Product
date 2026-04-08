@@ -1310,9 +1310,6 @@ async function updateAll() {
         console.log("--- UpdateAll 終了処理 (Loadingを解除します) ---");
         if(btn) btn.classList.remove('loading-btn');
         
-        // statusIcon を元の画像（location.pngなど）に戻す
-        if (statusIcon) statusIcon.src = "location.png"; 
-
         ['kp', 'oval', 'cloud', 'result'].forEach(id => {
             setItemLoading(id, false);
         });
@@ -1580,28 +1577,6 @@ async function fetchKp3DayForecast() {
         return []; // エラー時も空配列を返す
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 function drawKpChart(labels, values) {
@@ -1903,6 +1878,7 @@ function calculateTotal(isDaytime, kpFromApi) {
             } else {
                 icon.src = "low.png";
             }
+            console.log("--- ステータスアイコンを更新しました。 ---");
         }
     }
 

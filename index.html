@@ -467,9 +467,11 @@ input:checked + .slider:before { transform: translateX(20px); }
         
         
         
-        
-            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t4.6.6<span></h1>
-            
+<h1>
+  Easy Aurora Forecast
+  <span class="beta-suffix"></span>
+  <span class="version">v. t4.6.7</span>
+</h1>
             
             
             
@@ -1289,18 +1291,19 @@ async function updateAll() {
         }
 
         // 2. データ取得 (getCloud に isDaytime を渡す)
-        await Promise.all([
+        try {
+        // Promise.all の戻り値を配列で受け取る
+        const [kpValue, _forecast, ovalData, cloudData] = await Promise.all([
             getKp(), 
             fetchKp3DayForecast(), 
-            checkOval(), 
-            getCloud(isDaytime) // 引数を追加
+            checkOval(), // checkOvalも return するよう修正を推奨
+            getCloud(isDaytime)
         ]);
-        
+
         await shortForecast();
-        
-        // 3. 確率計算(calculateTotalにフラグを渡し計算ロジックを昼夜で切り替え)
-        calculateTotal(isDaytime); 
-        
+
+        // 画面の書き換えを待たず、今取得したばかりの「生データ」を渡す
+        calculateTotal(isDaytime, kpValue);
         updateTimestamp('time-update-all');
 
     } catch (e) {
@@ -1790,7 +1793,7 @@ let myRadarChart = null;
 
 // Overall Possibility判定ロジック
 function calculateTotal() {
-    const kp = parseFloat(document.getElementById("kp").textContent) || 0;
+    const kp = (kpFromApi !== undefined) ? kpFromApi : (parseFloat(document.getElementById("kp").textContent) || 0);
     const cloud = parseInt(document.getElementById("cloud").dataset.value) || 0;
     const icon = document.getElementById("status-icon");
     const resEl = document.getElementById("result");

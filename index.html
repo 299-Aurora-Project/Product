@@ -470,7 +470,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.6.12</span>
+  <span class="version">v. t4.6.13</span>
 </h1>
             
             
@@ -1269,9 +1269,9 @@ async function updateAll() {
         return;
     }
     
+    // Loading開始
     if(btn) btn.classList.add('loading-btn');
     if (statusIcon) statusIcon.src = "loading.gif";
-
     ['kp','oval','cloud','result'].forEach(id => setItemLoading(id, true));
 
     try {
@@ -1284,34 +1284,44 @@ async function updateAll() {
             subLabelEl.textContent = isDaytime ? "Tonight (21:00): " : "Current: ";
         }
 
-        // 2. データ取得（戻り値を配列で受け取る）
-        const [kpValue, _forecast, _ovalData, _cloudData] = await Promise.all([
+        // 1. データ取得（Promise.allSettled を使うと、どれか一つが壊れていても他が動くようになります）
+        const results = await Promise.allSettled([
             getKp(), 
             fetchKp3DayForecast(), 
             checkOval(), 
             getCloud(isDaytime)
         ]);
 
-        await shortForecast();
+        // getKpの結果（results[0]）を安全に取り出す
+        const kpValue = (results[0].status === 'fulfilled') ? results[0].value : 0;
 
-        // 3. 判定ロジックに取得した値を渡す
+        // 2. サブ表示（エラーが起きやすいので try-catch で囲む）
+        try {
+            await shortForecast();
+        } catch (e) {
+            console.warn("shortForecast failed, but continuing...", e);
+        }
+
+        // 3. 判定ロジックとチャート更新
         calculateTotal(isDaytime, kpValue);
-        // レーダーチャートにも値を渡す
         if (typeof updateRadarChart === 'function') updateRadarChart(kpValue);
         
         updateTimestamp('time-update-all');
 
     } catch (e) {
-        console.error("Update All Error:", e);
+        console.error("Critical Update All Error:", e);
     } finally {
+        // ✅ 何があっても、絶対に Loading を終了させる
         if(btn) btn.classList.remove('loading-btn');
+        if(statusIcon) {
+            // ステータスアイコンを元に戻す（例として設定、アイコン名は適宜変えてください）
+            statusIcon.src = "status-ok.png"; 
+        }
         ['kp', 'oval', 'cloud', 'result'].forEach(id => setItemLoading(id, false));
     }
 
     lastUpdateTimestamp = Date.now();
-    
 }
-
 
 
 async function getKp() {
@@ -1757,7 +1767,7 @@ async function shortForecast() {
     }
 
     // 明日の予報 (24時間後) は共通
-    const val2 = cloudDataHourly[utcHr + 24] || 0;
+    const val2 = cloudDataHourly[utcHr + 23] || 0;
 
     // 0%と100%を避けるフォーマット関数
     const formatCloud = (val) => {

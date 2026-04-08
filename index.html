@@ -470,7 +470,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.6.5</span>
+  <span class="version">v. t4.7.0</span>
 </h1>
             
             
@@ -1322,6 +1322,9 @@ async function updateAll() {
         lastUpdateTimestamp = new Date().getTime();
         console.log("-> タイムスタンプ更新完了");
         console.log("--- UpdateAll 完了 ---");
+        
+        // 次の自動アップデートスケジュールを開始
+        scheduleNextUpdate();
     }
 }
 

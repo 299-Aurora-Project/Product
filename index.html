@@ -470,7 +470,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.7.0</span>
+  <span class="version">v. t4.7.1</span>
 </h1>
             
             
@@ -2407,7 +2407,7 @@ function toggleData() {
 
 
 
-// 次回の更新スケジュールを管理する関数
+// 更新スケジュールを管理する関数
 function scheduleNextUpdate() {
     const now = new Date();
     const hour = now.getHours();
@@ -2439,7 +2439,7 @@ function scheduleNextUpdate() {
 }
 
 // 最初のスケジュールを開始(初回実行のトリガー（ページ読み込み時など）)
-scheduleNextUpdate();
+//scheduleNextUpdate();
 
 
 // 詳細データ（説明文）の定義

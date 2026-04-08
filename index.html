@@ -470,7 +470,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.6.4</span>
+  <span class="version">v. t4.6.5</span>
 </h1>
             
             
@@ -1314,13 +1314,14 @@ async function updateAll() {
     } catch (e) {
         console.error("【重大なエラー】:", e);
     } finally {
-        console.log("--- UpdateAll 終了処理 ---");
         if (btn) btn.classList.remove('loading-btn');
         ['kp', 'oval', 'cloud', 'result'].forEach(id => setItemLoading(id, false));
         
         // 時刻表示の更新
         updateTimestamp('time-update-all');
+        lastUpdateTimestamp = new Date().getTime();
         console.log("-> タイムスタンプ更新完了");
+        console.log("--- UpdateAll 完了 ---");
     }
 }
 
@@ -1356,7 +1357,7 @@ async function getKp() {
             if (!isNaN(tempVal)) {
                 val = tempVal;
                 found = true;
-                console.log(`✅ Kp取得成功: ${val}`);
+                console.log(`✅ -> Kp Index取得完了: ${val}`);
                 break; 
             }
         }

@@ -470,7 +470,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.6.1d</span>
+  <span class="version">v. t4.6.2d</span>
 </h1>
             
             
@@ -1329,40 +1329,35 @@ async function getKp() {
         let val = 0;
         let found = false;
 
-        // 配列の最後（最新）から順にスキャン
-        for (let i = data.length - 1; i >= 0; i--) {
+        // 配列の最後（最新データ）から順にスキャン
+        for (let i = data.length - 1; i >= 1; i--) { // index 0はヘッダーなので飛ばす
             const entry = data[i];
-            let tempVal = NaN;
-
-            // 形式1: [時刻, 数値, ...] の配列形式
-            if (Array.isArray(entry)) {
-                // 文字列の数値（"3.00"など）や、数値そのものを探す
-                // 1番目(index 1)が数値であることが多い
-                tempVal = parseFloat(entry[1]);
-            } 
-            // 形式2: 単なる数値の配列
-            else {
-                tempVal = parseFloat(entry);
-            }
             
-            // 有効な数値が見つかったら採用（ヘッダー文字列などは NaN になるので弾かれる）
-            if (!isNaN(tempVal)) {
-                val = tempVal;
-                found = true;
-                console.log("✅ 決定されたKp実測値:", val);
-                break; 
+            if (Array.isArray(entry)) {
+                // entry[1] を念入りに掃除してから解析
+                // 文字列の中の数字、ドット以外の文字を消して純粋な数値にする
+                let rawValue = String(entry[1]).trim();
+                let tempVal = parseFloat(rawValue);
+
+                if (!isNaN(tempVal)) {
+                    val = tempVal;
+                    found = true;
+                    console.log(`✅ 成功！最新のKpを取得: ${val} (元の文字: "${entry[1]}")`);
+                    break; 
+                }
             }
         }
 
         if (!found) {
-            console.warn("有効な数値データが見つかりませんでした");
+            console.warn("❌ 全データを確認しましたが、有効な数値がありませんでした。");
+            // デバッグ用に、解析に失敗した1行を表示してみる
+            console.log("失敗したデータの例:", data[1]);
         }
 
         // --- UI更新 ---
         const el = document.getElementById("kp");
         if (el) {
             el.textContent = val.toFixed(1);
-            // 文字が入った時点でLoadingクラスを強制解除
             el.classList.remove('loading');
         }
         

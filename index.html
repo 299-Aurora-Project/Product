@@ -470,7 +470,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.6.7</span>
+  <span class="version">v. t4.6.8</span>
 </h1>
             
             
@@ -1256,17 +1256,15 @@ async function handleNotifToggleEvent() {
 // メイン関数(データ取得・予報)    //
 /////////////////////////////////////
 async function updateAll() {
-    
     const btn = document.getElementById("btn-update-all");
     const statusIcon = document.getElementById("status-icon");
     const resultBadge = document.getElementById("result");
 
-    // 1. ロケーションがセットされていない場合の処理
     if (myLat === null || myLon === null) {
-        if (statusIcon) statusIcon.src = "location.png"; // 未設定用画像を表示
+        if (statusIcon) statusIcon.src = "location.png";
         if (resultBadge) {
             resultBadge.textContent = "Status";
-            resultBadge.className = "badge badge-large status"; // グレー系のスタイルに変更
+            resultBadge.className = "badge badge-large status";
         }
         return;
     }
@@ -1274,15 +1272,11 @@ async function updateAll() {
     if(btn) btn.classList.add('loading-btn');
     if (statusIcon) statusIcon.src = "loading.gif";
 
-    // 各項目をLoading表示にする
     ['kp','oval','cloud','result'].forEach(id => setItemLoading(id, true));
 
-    // 1. 時刻判定
     try {
         const now = new Date();
         const hour = now.getHours();
-        
-        // 昼間を判定(3:00 〜 21:00)
         const isDaytime = (hour >= 3 && hour < 21);
         
         const subLabelEl = document.getElementById("total-sub-label");
@@ -1290,42 +1284,28 @@ async function updateAll() {
             subLabelEl.textContent = isDaytime ? "Tonight (21:00): " : "Current: ";
         }
 
-        // 2. データ取得 (getCloud に isDaytime を渡す)
-        try {
-        // Promise.all の戻り値を配列で受け取る
-        const [kpValue, _forecast, ovalData, cloudData] = await Promise.all([
+        // 2. データ取得（戻り値を配列で受け取る）
+        const [kpValue, _forecast, _ovalData, _cloudData] = await Promise.all([
             getKp(), 
             fetchKp3DayForecast(), 
-            checkOval(), // checkOvalも return するよう修正を推奨
+            checkOval(), 
             getCloud(isDaytime)
         ]);
 
         await shortForecast();
 
-        // 画面の書き換えを待たず、今取得したばかりの「生データ」を渡す
+        // 3. 判定ロジックに取得した値を渡す
         calculateTotal(isDaytime, kpValue);
+        
         updateTimestamp('time-update-all');
 
     } catch (e) {
         console.error("Update All Error:", e);
     } finally {
-        // 1. ボタンのLoading表示を止める
         if(btn) btn.classList.remove('loading-btn');
-        
-        // 2. 各項目の Loading 状態を解除（false）
         ['kp', 'oval', 'cloud', 'result'].forEach(id => setItemLoading(id, false));
     }
 
-//    // --- 🧪 デバッグ用：バッジを強制表示 ---
-//    const indicator = document.getElementById("g-scale-indicator");
-//    if (indicator) {
-//        indicator.style.display = "block";
-//        indicator.textContent = "①";
-//        indicator.dataset.level = 1; 
-//        console.log("【テスト】バッジを強制表示しました。");
-//    }
-
-    // 現在の時刻を記録する処理
     lastUpdateTimestamp = Date.now();
 }
 
@@ -1557,7 +1537,7 @@ async function fetchKp3DayForecast() {
             elF.innerText = m ? m[0] : "";
         }
 
-        console.log("✅ 安定描画成功");
+        // console.log("✅ 安定描画成功");
 
     } catch (e) {
         console.error("Forecast Error:", e);
@@ -1792,7 +1772,7 @@ let myRadarChart = null;
 
 
 // Overall Possibility判定ロジック
-function calculateTotal() {
+function calculateTotal(isDaytime, kpFromApi) {
     const kp = (kpFromApi !== undefined) ? kpFromApi : (parseFloat(document.getElementById("kp").textContent) || 0);
     const cloud = parseInt(document.getElementById("cloud").dataset.value) || 0;
     const icon = document.getElementById("status-icon");
@@ -1935,10 +1915,6 @@ function updateRadarChart() {
 
 
 
-//        Math.min(lastAuroraProb * 2, 100), // Oval/Horizon (50%以上で満点)
-//        Math.min(kp * 12.5, 100),         // Magnetic (Kp 8以上で満点)
-//        Math.max(100 - cloud, 0)          // Sky (快晴で満点)
-//    ];
 
     // 中央の％表示を更新
     const pctText = currentTotalScore < 1 ? "<1%" : (currentTotalScore > 99 ? "99%+" : Math.round(currentTotalScore) + "%");
@@ -2433,36 +2409,7 @@ function toggleData() {
 
 
 
-//// 次回の更新スケジュールを管理する関数
-//function scheduleNextUpdate() {
-//    const now = new Date();
-//    const hour = now.getHours();
-//
-//    // 昼間 (3:00 - 21:00) は 60分、夜間は 15分
-//    const intervalMinutes = (hour >= 3 && hour < 21) ? 60 : 15;
-//    const intervalMs = intervalMinutes * 60 * 1000;
-//
-//    console.log(`[Timer] 次回の自動更新は ${intervalMinutes} 分後です。`);
-//
-//    // 重複動作を防ぐために既存のタイマーをクリア
-//    if (window.autoUpdateTimeout) {
-//        clearTimeout(window.autoUpdateTimeout);
-//    }
-//
-//    // 指定時間後に実行
-//    window.autoUpdateTimeout = setTimeout(async () => {
-//        console.log("Auto-update execution started.");
-//        
-//        try {
-//            await updateAll(); // ここで既存の updateAll を呼び出す
-//        } catch (e) {
-//            console.error("Auto-update error:", e);
-//        }
-//
-//        // 実行が終わったら、また次のスケジュールを立てる（再帰呼び出し）
-//        scheduleNextUpdate();
-//    }, intervalMs);
-//}
+
 
 
 

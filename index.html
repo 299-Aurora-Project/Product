@@ -470,7 +470,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.6.11</span>
+  <span class="version">v. t4.6.12</span>
 </h1>
             
             
@@ -1320,7 +1320,10 @@ async function getKp() {
         const res = await fetch(CORS + encodeURIComponent(targetUrl));
         const data = await res.json(); 
 
-        if (!data || !Array.isArray(data)) return 0;
+        if (!data || !Array.isArray(data) || data.length === 0) {
+            console.warn("Kp data is empty");
+            return 0; // データがない場合は0を返す
+        }
 
         let val = 0;
         for (let i = data.length - 1; i >= 0; i--) {
@@ -1438,7 +1441,7 @@ async function fetchKp3DayForecast() {
 
         if (dates.length < 3) {
             console.error("❌ 日付取得失敗");
-            return;
+            return []; // 値を返して終了させる
         }
 
         // =========================
@@ -1480,7 +1483,7 @@ async function fetchKp3DayForecast() {
         // =========================
         if (dataPoints.length < 24) {
             console.error("❌ データ不足 → 描画スキップ");
-            return;
+            return []; // 値を返して終了させる
         }
 
         // =========================
@@ -1545,6 +1548,7 @@ async function fetchKp3DayForecast() {
 
     } catch (e) {
         console.error("Forecast Error:", e);
+        return []; // エラー時も空配列を返す
     }
 }
 

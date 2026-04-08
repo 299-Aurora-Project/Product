@@ -468,7 +468,7 @@ input:checked + .slider:before { transform: translateX(20px); }
         
         
         
-            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t4.6.2latest<span></h1>
+            <h1>Easy Aurora Forecast<span class="beta-suffix"></span> <span class="version">v. t4.6.3<span></h1>
             
             
             
@@ -2102,15 +2102,6 @@ function initMap() {
                     if (bortleMessageElement) bortleMessageElement.textContent = "Move to a darker area.";
                 }
             }
-
-            // 保存（calculateTotalがこの値を使って最終判定を行う）
-            tempLocation = { 
-                lat, 
-                lon, 
-                name: displayName, 
-                bortle: estimatedBortle, 
-                visibility: visibility 
-            };
 
             // 3. 視程取得 (Open-Meteo)
             let visibility = 10000; 

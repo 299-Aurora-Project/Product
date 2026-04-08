@@ -470,7 +470,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.6.2d</span>
+  <span class="version">v. t4.6.3d</span>
 </h1>
             
             
@@ -1321,8 +1321,8 @@ async function getKp() {
         const res = await fetch(CORS + encodeURIComponent(targetUrl));
         const data = await res.json(); 
 
-        if (!data || !Array.isArray(data) || data.length < 2) {
-            console.warn("Kp data is empty or header only");
+        if (!data || !Array.isArray(data) || data.length === 0) {
+            console.warn("Kp data is empty");
             return 0; 
         }
 
@@ -1330,28 +1330,29 @@ async function getKp() {
         let found = false;
 
         // 配列の最後（最新データ）から順にスキャン
-        for (let i = data.length - 1; i >= 1; i--) { // index 0はヘッダーなので飛ばす
+        for (let i = data.length - 1; i >= 0; i--) {
             const entry = data[i];
-            
-            if (Array.isArray(entry)) {
-                // entry[1] を念入りに掃除してから解析
-                // 文字列の中の数字、ドット以外の文字を消して純粋な数値にする
-                let rawValue = String(entry[1]).trim();
-                let tempVal = parseFloat(rawValue);
+            let tempVal = NaN;
 
-                if (!isNaN(tempVal)) {
-                    val = tempVal;
-                    found = true;
-                    console.log(`✅ 成功！最新のKpを取得: ${val} (元の文字: "${entry[1]}")`);
-                    break; 
-                }
+            // ログから判明した形式: オブジェクト { Kp: 1.33 } の場合
+            if (entry && typeof entry === 'object' && 'Kp' in entry) {
+                tempVal = parseFloat(entry.Kp);
+            } 
+            // 以前の形式: 配列 [ "時刻", "1.33" ] の場合
+            else if (Array.isArray(entry)) {
+                tempVal = parseFloat(entry[1]);
+            }
+
+            if (!isNaN(tempVal)) {
+                val = tempVal;
+                found = true;
+                console.log(`✅ Kp取得成功: ${val}`);
+                break; 
             }
         }
 
         if (!found) {
-            console.warn("❌ 全データを確認しましたが、有効な数値がありませんでした。");
-            // デバッグ用に、解析に失敗した1行を表示してみる
-            console.log("失敗したデータの例:", data[1]);
+            console.warn("有効なKp値が見つかりませんでした。データ構造を確認してください。");
         }
 
         // --- UI更新 ---

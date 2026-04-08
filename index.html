@@ -470,7 +470,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.7.0</span>
+  <span class="version">v. t4.7.1</span>
 </h1>
             
             
@@ -775,7 +775,306 @@ input:checked + .slider:before { transform: translateX(20px); }
 // --- 1. 定数とグローバル変数 ---
 const PUBLIC_KEY = 'BAp0wnGuvaoZk_Q7Bn4H4DWAR2Zdi9juZECl10m290Ff9sAJqiaXepWYvGgbI7WOb9K3O0MOTG8TVi_hg_ovfEg';
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzQX9nVECMvZg2zKcGHub2U14BpbxF8evSJNprZpEPyQwb5aTwnaJPdNB8eeAfaKAxrYw/exec";
+const GAS_URL = "// ---------------------------------------------------------
+// オーロラ通知システム - GAS バックエンド (Java完全同期版)
+// ---------------------------------------------------------
+
+const NODE_SERVER_URL = "https://notification-00mz.onrender.com/send-push";
+const NOTIFICATION_THRESHOLD = 35; // 通知基準値
+
+/**
+ * 1. 定期実行用メイン関数 (詳細ログ & API節約版)
+ */
+function checkAuroraAndNotify() {
+  const now = new Date();
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  const data = sheet.getDataRange().getValues();
+  const latestKp = getLatestKpFromNOAA();
+  const ovationData = getOvationDataRaw();
+
+  for (let i = 1; i < data.length; i++) {
+    const [date, endpoint, p256dh, auth, lat, lon, enabled, lastAVal, lastBVal, locationName] = data[i];
+    if (String(enabled).toLowerCase() !== "true") continue;
+
+    const prob = findProbFromData(ovationData, lat, lon);
+    const localDate = new Date(now.getTime() + (parseFloat(lon) / 15 * 60 * 60 * 1000));
+    const userTodayStr = Utilities.formatDate(localDate, "GMT", "yyyy-MM-dd");
+    const lastADateStr = lastAVal ? Utilities.formatDate(new Date(lastAVal), "GMT", "yyyy-MM-dd") : "";
+
+    if (lastADateStr !== userTodayStr) {
+      const location = locationName || `${lat}, ${lon}`;
+
+      // --- STEP 1: APIを叩く前に「快晴」と仮定して期待値を計算 ---
+      const mockWeather = { cloud: 0, visibility: 10000 };
+      const preCheck = calculateScoreStrict(lat, lon, latestKp, prob, mockWeather);
+
+      if (preCheck.score < NOTIFICATION_THRESHOLD) {
+        // 期待値不足ならスキップ（Open-Meteoは叩かない）
+        const debugDetail = `(Kp:${latestKp}, Prob:${prob}% | 観測条件が完璧でも基準値未満のためスキップ)`;
+        writeLiveLog(`[スキップ] ${location}: ${preCheck.score}% (期待値不足) -> ${debugDetail}`);
+        continue;
+      }
+
+      // --- STEP 2: 期待値がある場合のみ、Open-Meteoへリクエスト ---
+      const weatherData = getCloudAndVisibility(lat, lon); 
+      const res = calculateScoreStrict(lat, lon, latestKp, prob, weatherData);
+      const finalScore = res.score;
+      const debugDetail = `(Kp:${latestKp}, Prob:${prob}%, Cloud:${weatherData.cloud}%, Vis:${res.vis}m | Oval:${res.oval.toFixed(1)}, Mag:${res.mag.toFixed(1)}, Sky:${res.sky.toFixed(1)}, Multi:${res.multi.toFixed(2)})`;
+
+      if (finalScore >= NOTIFICATION_THRESHOLD) {
+        writeLiveLog(`[判定] ${location}: ${finalScore}% (基準値以上) -> 通知に進みます。 ${debugDetail}`);
+        
+        const success = sendToNodeServer(endpoint, p256dh, auth, `[Score: ${finalScore}%] Aurora visible now!`);
+        if (success) {
+          writeLiveLog(`[完了] ${location}: 通知を実施しました。`);
+          sheet.getRange(i + 1, 8).setValue(userTodayStr);
+        }
+      } else {
+        writeLiveLog(`[スキップ] ${location}: ${finalScore}% (天候不良等により基準値未満) -> ${debugDetail}`);
+      }
+    }
+  }
+}
+
+/**
+ * 2. 単一ユーザー判定 (ここも修正しないと [object Object] が出続けます)
+ */
+function evaluateAndNotifySingleUser(userData, rowIndex) {
+  const rIdx = parseInt(rowIndex, 10);
+  const [date, endpoint, p256dh, auth, lat, lon, enabled, lastAVal, lastBVal, locationName] = userData;
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+  const displayName = locationName || `${lat}, ${lon}`;
+
+  try {
+    const latestKp = getLatestKpFromNOAA();
+    const ovationData = getOvationDataRaw();
+    const prob = findProbFromData(ovationData, lat, lon);
+    const cloud = getCloudCover(lat, lon);
+    
+    const res = calculateScoreStrict(lat, lon, latestKp, prob, cloud);
+    const score = res.score;
+    const debugDetail = `(Kp:${latestKp}, Prob:${prob}%, Cloud:${cloud}% | Oval:${res.oval.toFixed(1)}, Mag:${res.mag.toFixed(1)}, Sky:${res.sky.toFixed(1)}, Multi:${res.multi.toFixed(2)})`;
+
+    if (score >= NOTIFICATION_THRESHOLD) {
+      writeLiveLog(`[判定] ${displayName}: ${score}% (基準値${NOTIFICATION_THRESHOLD}%以上) -> 通知に進みます。 ${debugDetail}`);
+      sendToNodeServer(endpoint, p256dh, auth, `[Score: ${score}%] High chance in ${displayName}`);
+      writeLiveLog(`[完了] ${displayName}: 通知を実施しました。`);
+      
+      const now = new Date();
+      const localDate = new Date(now.getTime() + (parseFloat(lon) / 15 * 60 * 60 * 1000));
+      const userTodayStr = Utilities.formatDate(localDate, "GMT", "yyyy-MM-dd");
+      if (rIdx > 1) sheet.getRange(rIdx, 8).setValue(userTodayStr);
+    } else {
+      writeLiveLog(`[スキップ] ${displayName}: ${score}% (基準値未満) -> 通知をしません。 ${debugDetail}`);
+    }
+  } catch (e) {
+    writeLiveLog(`Error: ${e.toString()}`);
+  }
+}
+
+
+/**
+ * 緯度経度からBortle指数を推定する
+ */
+function estimateBortleFromLocation(lat, lon) {
+  try {
+    const response = Maps.newGeocoder().reverseGeocode(lat, lon);
+    if (response.status !== "OK") return 1; // 取得失敗（海など）は暗い場所とみなす
+
+    const addressComponents = response.results[0].address_components;
+    let hasCity = false;
+    let hasTown = false;
+
+    // Google Maps APIの住所種別判定
+    // locality = 市, sublocality = 区/町, administrative_area_level_2 = 郡/町
+    addressComponents.forEach(component => {
+      const types = component.types;
+      if (types.includes("locality") || types.includes("administrative_area_level_1")) {
+        hasCity = true;
+      }
+      if (types.includes("sublocality") || types.includes("neighborhood") || types.includes("administrative_area_level_2")) {
+        hasTown = true;
+      }
+    });
+
+    if (hasCity) return 8; // Javaの addr.city / metropolis 相当
+    if (hasTown) return 5; // Javaの addr.town / borough 相当
+    
+    return 1; // それ以外（田舎・極地）
+  } catch (e) {
+    return 1; // エラー時は安全側に倒して「暗い場所」とする
+  }
+}
+
+
+
+
+
+/**
+ * 3. スコア計算 (住所によるBortle判定版)
+ */
+function calculateScoreStrict(lat, lon, kp, prob, weatherData) {
+  const _kp = parseFloat(kp) || 0;
+  const _prob = parseFloat(prob) || 0;
+
+  // --- JavaのロジックでBortleを推定 ---
+  const estimatedBortle = estimateBortleFromLocation(lat, lon);
+  
+  // 各項目の基礎点
+  let ovalScore = Math.min(_prob * 1.5, 45);
+  let magneticScore = Math.min(_kp * 5, 40);
+  let skyScore = Math.max(0, 15 * (1 - weatherData.cloud / 100));
+  
+  let visibilityMultiplier = (_prob < 20) ? Math.max(0, (_prob - 2) / 18) : 1.0;
+  let calculatedScore = (ovalScore + magneticScore + skyScore) * visibilityMultiplier;
+
+  // --- Java完全同期判定 ---
+  let minKpRequired = 0;
+  if (estimatedBortle >= 7) minKpRequired = 4.5;
+  else if (estimatedBortle >= 4) minKpRequired = 2.0;
+
+  if (estimatedBortle >= 4 && _kp < minKpRequired) {
+    calculatedScore *= 0.1;
+  }
+
+  // (以下、視程・雲量による最終抑制は変更なし)
+  let finalValue = calculatedScore;
+  if (weatherData.visibility < 1000) finalValue *= 0.1;
+  else if (weatherData.visibility < 3000) finalValue *= 0.5;
+  if (weatherData.cloud > 85) finalValue = Math.min(finalValue, 20);
+
+  return {
+    score: Math.round(finalValue),
+    oval: ovalScore,
+    mag: magneticScore,
+    sky: skyScore,
+    multi: visibilityMultiplier,
+    vis: weatherData.visibility,
+    bortle: estimatedBortle // ログ確認用
+  };
+}
+
+/**
+ * 4. Kp取得
+ */
+function getLatestKpFromNOAA() {
+  try {
+    const res = UrlFetchApp.fetch("https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json");
+    const d = JSON.parse(res.getContentText());
+    let observedKp = 0;
+    for (let i = d.length - 1; i >= 1; i--) {
+      if (d[i][1] && !isNaN(d[i][1])) { observedKp = parseFloat(d[i][1]); break; }
+    }
+    
+    const forecastRes = UrlFetchApp.fetch("https://services.swpc.noaa.gov/text/3-day-forecast.txt");
+    const lines = forecastRes.getContentText().split('\n');
+    let forecastKp = 0;
+    const now = new Date();
+    const hourStart = Math.floor(now.getUTCHours() / 3) * 3;
+    const hourRangeStr = ("0" + hourStart).slice(-2) + "-" + ("0" + (hourStart + 3)).slice(-2) + "UT";
+    
+    for (let line of lines) {
+      if (line.includes(hourRangeStr)) {
+        const parts = line.trim().split(/\s+/);
+        if (parts.length >= 2) { forecastKp = parseFloat(parts[1]); break; }
+      }
+    }
+    return Math.max(observedKp, forecastKp);
+  } catch (e) { return 0; }
+}
+
+// --- 共通補助関数 ---
+
+// ① Java側ロジック：緯度±2、経度±2の範囲内の最大値を抽出
+function findProbFromData(coords, tLat, tLon) {
+  let maxProb = 0;
+  const targetLat = parseFloat(tLat);
+  const targetLon = parseFloat(tLon);
+
+  coords.forEach(p => {
+    let lon = p[0] > 180 ? p[0] - 360 : p[0];
+    let lat = p[1];
+    let prob = p[2];
+
+    if (Math.abs(lat - targetLat) <= 2 && Math.abs(lon - targetLon) <= 2) {
+      if (prob > maxProb) maxProb = prob;
+    }
+  });
+  return maxProb;
+}
+
+/**
+ * 気象データ取得 (雲量 + 視程)
+ */
+function getCloudAndVisibility(lat, lon) {
+  try {
+    // currentにvisibilityを追加
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,visibility&timezone=auto&forecast_days=1`;
+    const res = UrlFetchApp.fetch(url);
+    const data = JSON.parse(res.getContentText());
+    
+    const currentCloudMax = Math.max(
+      data.current.cloud_cover || 0, 
+      data.current.cloud_cover_low || 0, 
+      data.current.cloud_cover_mid || 0, 
+      data.current.cloud_cover_high || 0
+    );
+
+    return {
+      cloud: currentCloudMax,
+      visibility: data.current.visibility || 10000
+    };
+  } catch (e) { 
+    return { cloud: 50, visibility: 10000 }; 
+  }
+}
+
+function sendToNodeServer(e, p, a, m) {
+  try {
+    const res = UrlFetchApp.fetch(NODE_SERVER_URL, { 
+      method: "post", 
+      contentType: "application/json", 
+      payload: JSON.stringify({ subscription: { endpoint: e, keys: { p256dh: p, auth: a } }, message: m }), 
+      muteHttpExceptions: true 
+    });
+    return res.getResponseCode() === 200;
+  } catch (e) { return false; }
+}
+
+function writeLiveLog(m) {
+  const s = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Log") || SpreadsheetApp.getActiveSpreadsheet().insertSheet("Log");
+  s.appendRow([Utilities.formatDate(new Date(), "JST", "yyyy-MM-dd HH:mm:ss"), m]);
+}
+
+function getOvationDataRaw() { 
+  return JSON.parse(UrlFetchApp.fetch("https://services.swpc.noaa.gov/json/ovation_aurora_latest.json").getContentText()).coordinates; 
+}
+
+function doPost(e) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  const params = JSON.parse(e.postData.contents);
+  const data = sheet.getDataRange().getValues();
+  let rowIdx = -1;
+  for (let i = 1; i < data.length; i++) { if (data[i][1] === params.endpoint) { rowIdx = i + 1; break; } }
+  const rowData = [new Date(), params.endpoint, params.keys.p256dh, params.keys.auth, params.lat, params.lon, params.enabled, "", "", params.name];
+  if (rowIdx !== -1) {
+    sheet.getRange(rowIdx, 5).setValue(params.lat);
+    sheet.getRange(rowIdx, 6).setValue(params.lon);
+    sheet.getRange(rowIdx, 7).setValue(params.enabled);
+    sheet.getRange(rowIdx, 10).setValue(params.name);
+  } else {
+    sheet.appendRow(rowData);
+    rowIdx = sheet.getLastRow();
+  }
+  if (String(params.enabled).toLowerCase() === "true") evaluateAndNotifySingleUser(rowData, rowIdx);
+  return ContentService.createTextOutput("Success");
+}
+
+function doGet(e) {
+  if (e.parameter.url) return ContentService.createTextOutput(UrlFetchApp.fetch(e.parameter.url).getContentText()).setMimeType(ContentService.MimeType.JSON);
+  return ContentService.createTextOutput("GAS Backend Operational");
+}
+";
 const CORS = GAS_URL + "?url="; // GASプロキシはやめて、安定したAllOriginsに戻します
 
 // 候補B (予備):

@@ -1259,6 +1259,10 @@ async function updateAll() {
     console.log("--- UpdateAll 開始 ---");
     const btn = document.getElementById("btn-update-all");
     const statusIcon = document.getElementById("status-icon");
+    
+
+    if(btn) btn.classList.add('loading-btn');
+    if(statusIcon) statusIcon.src = "loading.gif"; 
 
     if (myLat === null || myLon === null) {
         if (statusIcon) statusIcon.src = "location.png"; // 未設定用画像を表示

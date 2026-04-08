@@ -470,7 +470,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.6.13d</span>
+  <span class="version">v. t4.6.1d</span>
 </h1>
             
             
@@ -1321,28 +1321,55 @@ async function getKp() {
         const res = await fetch(CORS + encodeURIComponent(targetUrl));
         const data = await res.json(); 
 
-        if (!data || !Array.isArray(data) || data.length === 0) {
-            console.warn("Kp data is empty");
-            return 0; // データがない場合は0を返す
+        if (!data || !Array.isArray(data) || data.length < 2) {
+            console.warn("Kp data is empty or header only");
+            return 0; 
         }
 
         let val = 0;
+        let found = false;
+
+        // 配列の最後（最新）から順にスキャン
         for (let i = data.length - 1; i >= 0; i--) {
             const entry = data[i];
-            const tempVal = parseFloat(Array.isArray(entry) ? entry[1] : entry);
+            let tempVal = NaN;
+
+            // 形式1: [時刻, 数値, ...] の配列形式
+            if (Array.isArray(entry)) {
+                // 文字列の数値（"3.00"など）や、数値そのものを探す
+                // 1番目(index 1)が数値であることが多い
+                tempVal = parseFloat(entry[1]);
+            } 
+            // 形式2: 単なる数値の配列
+            else {
+                tempVal = parseFloat(entry);
+            }
             
+            // 有効な数値が見つかったら採用（ヘッダー文字列などは NaN になるので弾かれる）
             if (!isNaN(tempVal)) {
                 val = tempVal;
-                
-                // --- 追加：画面のメイン数値を実測値で更新 ---
-                const el = document.getElementById("kp");
-                if (el) el.textContent = val.toFixed(1);
-                
-                // 実測値が変わったとき、バッジ（Gスケール）を更新
-                updateGScaleIndicator(val);
+                found = true;
+                console.log("✅ 決定されたKp実測値:", val);
                 break; 
             }
         }
+
+        if (!found) {
+            console.warn("有効な数値データが見つかりませんでした");
+        }
+
+        // --- UI更新 ---
+        const el = document.getElementById("kp");
+        if (el) {
+            el.textContent = val.toFixed(1);
+            // 文字が入った時点でLoadingクラスを強制解除
+            el.classList.remove('loading');
+        }
+        
+        if (typeof updateGScaleIndicator === 'function') {
+            updateGScaleIndicator(val);
+        }
+
         return val;
     } catch (e) {
         console.error("Kp Fetch Error:", e);

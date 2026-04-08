@@ -470,7 +470,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.6.10</span>
+  <span class="version">v. t4.6.11</span>
 </h1>
             
             
@@ -1885,44 +1885,41 @@ function calculateTotal(isDaytime, kpFromApi) {
 }
 
 
-// レーダーチャートを更新する関数
-function updateRadarChart() {
+// ✅ 引数 kpValue を受け取れるように変更
+function updateRadarChart(kpValue) {
     const ctx = document.getElementById('radarChart').getContext('2d');
-    const kp = (kpFromApi !== undefined) ? kpFromApi : (parseFloat(document.getElementById("kp").textContent) || 0);
+    
+    // ✅ kpFromApi を削除し、引数の kpValue を使うように修正
+    // もし kpValue が空なら、HTMLの表示から取得するフォールバックを残します
+    const kp = (kpValue !== undefined) ? kpValue : (parseFloat(document.getElementById("kp").textContent) || 0);
+    
     const cloud = parseInt(document.getElementById("cloud").dataset.value) || 0;
 
-// --- 総合確率から「場所の条件」だけを逆算して取り出す ---
-    // 総合確率は [場所スコア × 雲の影響 × Kpの影響] で算出されているはずです。
-    // そのため、雲(cloud)とKpの影響を排除して、純粋な「オーバルの位置関係」を計算します。
-    
+    // --- 総合確率から「場所の条件」だけを逆算して取り出す ---
     let rawProb = lastAuroraProb || 0;
     
-    // 雲の影響を打ち消す (例: 雲80%なら確率は0.2倍になっているので、5倍して元に戻す)
+    // 雲の影響を打ち消す
     let cloudImpact = (100 - cloud) / 100;
-    if (cloudImpact < 0.1) cloudImpact = 0.1; // 0除算防止
+    if (cloudImpact < 0.1) cloudImpact = 0.1; 
     
-    // Kpの影響を打ち消す (低Kpで確率が抑えられている分を戻す)
+    // Kpの影響を打ち消す
     let kpImpact = (kp + 1) / 5; 
     if (kpImpact < 0.2) kpImpact = 0.2;
 
-    // これが「雲も磁気嵐も関係ない、その場所自体のオーバル接近度」になります
+    // その場所自体のオーバル接近度
     let pureOvalPositionScore = rawProb / (cloudImpact * kpImpact);
 
     const dataValues = [
-        // この pureOvalPositionScore を使えば、マップで色が濃い（位置が良い）だけで
-        // 他の要素に関わらず 100 に到達します。
         Math.min(pureOvalPositionScore * 1.5, 100), 
-        
         Math.min(kp * 12.5, 100), // Magnetic
         Math.max(100 - cloud, 0)   // Sky
     ];
 
-
-
-
     // 中央の％表示を更新
+    // ※ currentTotalScore がグローバル変数として存在している前提です
     const pctText = currentTotalScore < 1 ? "<1%" : (currentTotalScore > 99 ? "99%+" : Math.round(currentTotalScore) + "%");
-    document.getElementById('chart-center-pct').textContent = pctText;
+    const centerEl = document.getElementById('chart-center-pct');
+    if (centerEl) centerEl.textContent = pctText;
 
     if (myRadarChart) {
         myRadarChart.data.datasets[0].data = dataValues;
@@ -1934,30 +1931,22 @@ function updateRadarChart() {
                 labels: ['Oval / Horizon', 'Magnetic (Kp)', 'Sky (Clear)'],
                 datasets: [{
                     data: dataValues,
-                    backgroundColor: 'rgba(91, 192, 190, 0.3)', // #5bc0be
+                    backgroundColor: 'rgba(91, 192, 190, 0.3)',
                     borderColor: 'rgba(91, 192, 190, 1)',
                     borderWidth: 2,
                     pointBackgroundColor: '#fff'
                 }]
             },
             options: {
-               responsive: true,
-               maintainAspectRatio: false,
-               // ★ 1. 余白（レイアウト）をゼロに設定
-               layout: {
-                  padding: {
-                     top: 0,
-                     bottom: 0,
-                     left: 0,
-                     right: 0,
-                  }
-               },
-
-                plugins: { legend: { display: false } 
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: {
+                    padding: { top: 0, bottom: 0, left: 0, right: 0 }
                 },
+                plugins: { legend: { display: false } },
                 scales: {
                     r: {
-                        startAngle: 0, // グラフの開始角度を0度に固定
+                        startAngle: 0,
                         min: 0,
                         max: 100,
                         beginAtZero: true,

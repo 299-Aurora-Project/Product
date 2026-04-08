@@ -470,7 +470,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.8.0</span>
+  <span class="version">v. t4.8.1</span>
 </h1>
             
             
@@ -1272,10 +1272,14 @@ async function updateAll() {
     ['kp', 'oval', 'cloud', 'result'].forEach(id => setItemLoading(id, true));
 
     try {
-        // --- 1. 時刻判定 ---
+       // --- 1. 現地時刻の計算 (経度 myLon に基づく) ---
         const now = new Date();
-        const hour = now.getHours();
-        const isDaytime = (hour >= 3 && hour < 21);
+        const utcHr = now.getUTCHours();
+        // 経度15度につき1時間の時差として計算 (24時間を超えたり負になったりしないよう調整)
+        const localHr = (utcHr + Math.round(myLon / 15) + 24) % 24; 
+        
+        // 現地時間に基づいて昼夜を判定
+        const isDaytime = (localHr >= 3 && localHr < 21);
 
         // ラベルの更新
         if (subLabelEl) {

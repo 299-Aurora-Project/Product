@@ -470,7 +470,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.6.9</span>
+  <span class="version">v. t4.6.10</span>
 </h1>
             
             
@@ -1296,6 +1296,8 @@ async function updateAll() {
 
         // 3. 判定ロジックに取得した値を渡す
         calculateTotal(isDaytime, kpValue);
+        // レーダーチャートにも値を渡す
+        if (typeof updateRadarChart === 'function') updateRadarChart(kpValue);
         
         updateTimestamp('time-update-all');
 
@@ -1308,8 +1310,6 @@ async function updateAll() {
 
     lastUpdateTimestamp = Date.now();
     
-    calculateTotal(isDaytime, kpValue);
-    updateRadarChart(kpValue); // ← kpValueを渡すように変更
 }
 
 

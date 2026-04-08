@@ -1261,6 +1261,11 @@ async function updateAll() {
     const statusIcon = document.getElementById("status-icon");
 
     if (myLat === null || myLon === null) {
+        if (statusIcon) statusIcon.src = "location.png"; // 未設定用画像を表示
+        if (resultBadge) {
+            resultBadge.textContent = "---";
+            resultBadge.className = "badge badge-large low"; // グレー系のスタイルがあればそれに変更
+        }
         console.warn("座標がありません");
         return;
     }

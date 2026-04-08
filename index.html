@@ -470,7 +470,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.6.3</span>
+  <span class="version">v. t4.6.4</span>
 </h1>
             
             
@@ -1259,51 +1259,45 @@ async function updateAll() {
     console.log("--- UpdateAll 開始 ---");
     const btn = document.getElementById("btn-update-all");
     const statusIcon = document.getElementById("status-icon");
-    
-
-    if(btn) btn.classList.add('loading-btn');
-    if(statusIcon) statusIcon.src = "loading.gif"; 
+    const subLabelEl = document.getElementById("total-sub-label"); // 宣言を追加
 
     if (myLat === null || myLon === null) {
-        if (statusIcon) statusIcon.src = "location.png"; // 未設定用画像を表示
-        if (resultBadge) {
-            resultBadge.textContent = "---";
-            resultBadge.className = "badge badge-large low"; // グレー系のスタイルがあればそれに変更
-        }
+        if (statusIcon) statusIcon.src = "location.png";
         console.warn("座標がありません");
         return;
     }
-    
-    if(btn) btn.classList.add('loading-btn');
-    ['kp','oval','cloud','result'].forEach(id => setItemLoading(id, true));
+
+    if (btn) btn.classList.add('loading-btn');
+    if (statusIcon) statusIcon.src = "loading.gif";
+    ['kp', 'oval', 'cloud', 'result'].forEach(id => setItemLoading(id, true));
 
     try {
-        console.log("1. データ取得を開始します...");
-        
-        // Promise.allを一時的にやめ、一つずつ実行してどこで止まるか特定します
-        console.log("-> getKp 実行中...");
-        const kpValue = await getKp();
-        
-        console.log("-> fetchKp3DayForecast 実行中...");
-        await fetchKp3DayForecast();
-        
-        console.log("-> checkOval 実行中...");
-        await checkOval();
-        
-        console.log("-> getCloud 実行中...");
+        // --- 1. 時刻判定 ---
         const now = new Date();
         const hour = now.getHours();
         const isDaytime = (hour >= 3 && hour < 21);
-        await getCloud(isDaytime);
 
-        console.log("2. shortForecast 実行中...");
+        // ラベルの更新
+        if (subLabelEl) {
+            subLabelEl.textContent = isDaytime ? "Tonight (21:00): " : "Current: ";
+        }
+
+        // --- 2. データ取得 ---
+        // 通信エラーを避けるため、一つずつ確実に await します
+        console.log(`モード: ${isDaytime ? "昼間(21:00予報)" : "夜間(リアルタイム)"}`);
+
+        const kpValue = await getKp();
+        await fetchKp3DayForecast();
+        await checkOval();
+        await getCloud(isDaytime); // 昼夜フラグを渡す
+        
         try {
             await shortForecast();
-        } catch(e) { console.error("shortForecastでエラー:", e); }
+        } catch (e) { console.error("shortForecastエラー:", e); }
 
-        console.log("3. 最終判定(calculateTotal) 実行中...");
-        calculateTotal(isDaytime, kpValue);
-        
+        // --- 3. 最終判定と表示 ---
+        calculateTotal(isDaytime, kpValue); // フラグと値を渡す
+
         if (typeof updateRadarChart === 'function') {
             updateRadarChart(kpValue);
         }
@@ -1311,12 +1305,12 @@ async function updateAll() {
     } catch (e) {
         console.error("【重大なエラー】:", e);
     } finally {
-        console.log("--- UpdateAll 終了処理 (Loadingを解除します) ---");
-        if(btn) btn.classList.remove('loading-btn');
+        console.log("--- UpdateAll 終了処理 ---");
+        if (btn) btn.classList.remove('loading-btn');
+        ['kp', 'oval', 'cloud', 'result'].forEach(id => setItemLoading(id, false));
         
-        ['kp', 'oval', 'cloud', 'result'].forEach(id => {
-            setItemLoading(id, false);
-        });
+        // 時刻表示の更新
+        updateTimestamp('time-update-all');
     }
 }
 
@@ -1880,12 +1874,10 @@ function calculateTotal(isDaytime, kpFromApi) {
 
 // ✅ 引数 kpValue を受け取れるように変更
 function updateRadarChart(kpValue) {
-    const ctx = document.getElementById('radarChart').getContext('2d');
+    const currentCtx = document.getElementById('radarChart').getContext('2d');
     
     // ✅ kpFromApi を削除し、引数の kpValue を使うように修正
-    // もし kpValue が空なら、HTMLの表示から取得するフォールバックを残します
     const kp = (kpValue !== undefined) ? kpValue : (parseFloat(document.getElementById("kp").textContent) || 0);
-    
     const cloud = parseInt(document.getElementById("cloud").dataset.value) || 0;
 
     // --- 総合確率から「場所の条件」だけを逆算して取り出す ---
@@ -1909,51 +1901,54 @@ function updateRadarChart(kpValue) {
     ];
 
     // 中央の％表示を更新
-    // ※ currentTotalScore がグローバル変数として存在している前提です
     const pctText = currentTotalScore < 1 ? "<1%" : (currentTotalScore > 99 ? "99%+" : Math.round(currentTotalScore) + "%");
     const centerEl = document.getElementById('chart-center-pct');
     if (centerEl) centerEl.textContent = pctText;
 
     if (myRadarChart) {
-        myRadarChart.data.datasets[0].data = dataValues;
-        myRadarChart.update();
-    } else {
-        myRadarChart = new Chart(ctx, {
-            type: 'radar',
-            data: {
-                labels: ['Oval / Horizon', 'Magnetic (Kp)', 'Sky (Clear)'],
-                datasets: [{
-                    data: dataValues,
-                    backgroundColor: 'rgba(91, 192, 190, 0.3)',
-                    borderColor: 'rgba(91, 192, 190, 1)',
-                    borderWidth: 2,
-                    pointBackgroundColor: '#fff'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                layout: {
-                    padding: { top: 0, bottom: 0, left: 0, right: 0 }
-                },
-                plugins: { legend: { display: false } },
-                scales: {
-                    r: {
-                        startAngle: 0,
-                        min: 0,
-                        max: 100,
-                        beginAtZero: true,
-                        ticks: { display: false, stepSize: 25 },
-                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                        angleLines: { color: 'rgba(255, 255, 255, 0.2)' },
-                        pointLabels: { color: '#8b949e', font: { size: 10 } }
-                    }
-                },
-                animation: { duration: 800 }
-            }
-        });
+        // 既存のチャートを一度完全に削除する
+        myRadarChart.destroy();
     }
-}
+    
+    const canvas = document.getElementById('radarChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    
+    // 常に新規作成（ctxの再宣言 const は削除しました）
+    myRadarChart = new Chart(currentCtx, {
+        type: 'radar',
+        data: {
+            labels: ['Oval / Horizon', 'Magnetic (Kp)', 'Sky (Clear)'],
+            datasets: [{
+                data: dataValues,
+                backgroundColor: 'rgba(91, 192, 190, 0.3)',
+                borderColor: 'rgba(91, 192, 190, 1)',
+                borderWidth: 2,
+                pointBackgroundColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                r: {
+                    min: 0,
+                    max: 100,
+                    beginAtZero: true,
+                    ticks: { display: false, stepSize: 25 },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                    angleLines: { color: 'rgba(255, 255, 255, 0.2)' },
+                    pointLabels: { color: '#8b949e', font: { size: 10 } }
+                }
+            },
+            animation: {
+                duration: 1500,
+                easing: 'easeOutQuart'
+            }
+        }
+    });
+} 
 
 // --- 6. 地図・UI・ヘルパー ---
 // エラー対策：もし関数がなくてもエラーで止まらないように空の関数を定義しておく

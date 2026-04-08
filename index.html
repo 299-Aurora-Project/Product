@@ -470,7 +470,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.6.8</span>
+  <span class="version">v. t4.6.9</span>
 </h1>
             
             
@@ -1307,6 +1307,9 @@ async function updateAll() {
     }
 
     lastUpdateTimestamp = Date.now();
+    
+    calculateTotal(isDaytime, kpValue);
+    updateRadarChart(kpValue); // ← kpValueを渡すように変更
 }
 
 
@@ -1327,15 +1330,16 @@ async function getKp() {
             if (!isNaN(tempVal)) {
                 val = tempVal;
                 
+                // --- 追加：画面のメイン数値を実測値で更新 ---
+                const el = document.getElementById("kp");
+                if (el) el.textContent = val.toFixed(1);
+                
                 // 実測値が変わったとき、バッジ（Gスケール）を更新
                 updateGScaleIndicator(val);
-            
                 break; 
             }
         }
-        
         return val;
-
     } catch (e) {
         console.error("Kp Fetch Error:", e);
         return 0;
@@ -1505,12 +1509,12 @@ async function fetchKp3DayForecast() {
         else currentVal = dataPoints[dataPoints.length - 1].value;
 
         // =========================
-        // ✅ 表示
+        // ✅ 表示(brightになってしまう問題のため削除)
         // =========================
-        const el = document.getElementById("kp");
-        if (el && currentVal !== null) {
-            el.textContent = currentVal.toFixed(1);
-        }
+//        const el = document.getElementById("kp");
+//        if (el && currentVal !== null) {
+//            el.textContent = currentVal.toFixed(1);
+//        }
 
         // =========================
         // ✅ グラフ（絶対崩れない）
@@ -1884,7 +1888,7 @@ function calculateTotal(isDaytime, kpFromApi) {
 // レーダーチャートを更新する関数
 function updateRadarChart() {
     const ctx = document.getElementById('radarChart').getContext('2d');
-    const kp = parseFloat(document.getElementById("kp").textContent) || 0;
+    const kp = (kpFromApi !== undefined) ? kpFromApi : (parseFloat(document.getElementById("kp").textContent) || 0);
     const cloud = parseInt(document.getElementById("cloud").dataset.value) || 0;
 
 // --- 総合確率から「場所の条件」だけを逆算して取り出す ---

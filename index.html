@@ -529,7 +529,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.9.14</span>
+  <span class="version">v. t4.9.15</span>
 </h1>
             
             
@@ -1401,6 +1401,28 @@ async function updateAll() {
         
         console.log("-> ✅shortForecast取得完了");
         
+        
+        // --- 視程(Visibility)の取得 (Added at v. t4.9.15 Apl 8）
+        try {
+            const nLon = normalizeLongitude(myLon);
+            const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${myLat}&longitude=${nLon}&current=visibility&timezone=auto`);
+            if (weatherRes.ok) {
+                const weatherData = await weatherRes.json();
+                if (weatherData.current && weatherData.current.visibility !== undefined) {
+                    window.myVisibility = weatherData.current.visibility;
+                    console.log(`-> ✅Visibility取得完了: ${window.myVisibility}m`);
+                }
+            }
+        } catch (vError) {
+            console.warn("☒Visibility取得失敗:", vError);
+            // 失敗しても既存の値（または10000）が calculateTotal で使われるので止まりません
+        }
+
+        try {
+            await shortForecast();
+        } catch (e) { console.error("☒shortForecastエラー:", e); }
+        
+        
         // --- 3. 最終判定と表示 ---
         calculateTotal(isDaytime, kpValue); // フラグと値を渡す
 
@@ -2205,23 +2227,6 @@ function initMap() {
         // const originalText = btn.textContent;
         // btn.disabled = true;
         // btn.textContent = "Loading...";
-
-        try {
-            // ここで初めて視程を取得 (Open-Meteo)
-            const nLon = normalizeLongitude(tempLocation.lon);
-            const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${tempLocation.lat}&longitude=${nLon}&current=visibility&timezone=auto`);
-            
-            if (weatherRes.ok) {
-                const weatherData = await weatherRes.json();
-                if (weatherData.current && weatherData.current.visibility !== undefined) {
-                    tempLocation.visibility = weatherData.current.visibility;
-                    console.log(`Visibility fetched on confirm: ${tempLocation.visibility}m`);
-                }
-            }
-        } catch (wError) {
-            console.warn("Visibility fetch failed on confirm.", wError);
-            // 失敗してもデフォルト値(10000)で続行
-        }
 
         // 最終的な設定を反映
         await setLocation(tempLocation.lat, tempLocation.lon, tempLocation.name);

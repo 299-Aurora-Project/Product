@@ -1747,7 +1747,7 @@ async function getCloud(isDaytime = false) {
             data.current.cloud_cover_mid || 0,
             data.current.cloud_cover_high || 0
         );
-        console.log("-> Current Cloud Cover取得完了: ${currentCloudMax}%");
+        console.log(`   -> Current Cloud Cover取得完了: ${currentCloudMax}%`);
 
         // 2. 「今日の夜21時」の予報を正確に取得
         let tonightCloud = currentCloudMax; 
@@ -1764,7 +1764,7 @@ async function getCloud(isDaytime = false) {
                 tonightCloud = data.hourly.cloud_cover[21] || currentCloudMax;
                 console.log(`21:00 forecast was NOT found, use around night index`);
             }
-            console.log("-> Tonight Cloud Cover取得完了: ${tonightCloud}%");
+            console.log(`   -> Tonight Cloud Cover取得完了: ${tonightCloud}%`);
         }
 
         // 判定ロジック：昼間なら21時の予報、夜なら今の実況を採用
@@ -1787,7 +1787,7 @@ async function getCloud(isDaytime = false) {
             el.className = `badge ${val <= 20 ? 'high' : (val <= 60 ? 'mid' : 'low')}`;
             
             // デバッグログ：どちらを採用したか確認
-            console.log(`Adopted cloud value was ${isDaytime ? 'Night Forecast' : 'Current'}`);
+            console.log(`   -> Adopted cloud value was ${isDaytime ? 'Night Forecast' : 'Current'}`);
             console.log("-> ✅Cloud Cover取得完了: ${val}%");
         }
     } catch (e) {
@@ -1939,7 +1939,7 @@ function calculateTotal(isDaytime, kpFromApi) {
             } else {
                 icon.src = "low.png";
             }
-            console.log("--- ✅ ステータスアイコンを更新完了 ---");
+            console.log("-> ✅ステータスアイコン更新完了 ---");
         }
     }
 

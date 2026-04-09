@@ -529,7 +529,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.10.3</span>
+  <span class="version">v. t4.10.3-testing1</span>
 </h1>
             
             
@@ -1660,9 +1660,14 @@ async function fetchKp3DayForecast() {
             }
 
                 for (let i = 0; i < 3; i++) {
-                // 数字とドット以外（修正マークの * や記号など）を徹底的に排除してからパース
-                const cleanVal = nums[i].replace(/[^0-9.]/g, '');
-                const val = parseFloat(cleanVal);
+                    const rawValue = nums[i]; // パース前の生データ
+                    const cleanVal = rawValue ? rawValue.replace(/[^0-9.]/g, '') : "";
+                    const val = parseFloat(cleanVal);
+                
+                    // ★ 特定の時間帯（03-06）だけ詳細にログを出す
+                    if (hour === "03-06") {
+                        console.log(`Debug 03-06: DayIndex=${i}, Raw='${rawValue}', Parsed=${val}`);
+                    }
 
                 dataPoints.push({
                     dateStr: dates[i],
@@ -1708,13 +1713,6 @@ async function fetchKp3DayForecast() {
         if (target) currentVal = target.value;
         else currentVal = dataPoints[dataPoints.length - 1].value;
 
-        // =========================
-        // ✅ 表示(brightになってしまう問題のため削除)
-        // =========================
-//        const el = document.getElementById("kp");
-//        if (el && currentVal !== null) {
-//            el.textContent = currentVal.toFixed(1);
-//        }
 
         // =========================
         // ✅ グラフ（絶対崩れない）

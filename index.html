@@ -455,7 +455,7 @@ input:checked + .slider:before { transform: translateX(20px); }
     transition: all 0.2s;
 }
 
-/* 基本スタイル(Added at v. t4.9.3 Apl 8） */
+/* 基本スタイル (Added at v. t4.9.4 Apl 8） */
 .map-scroll-btn {
     position: absolute;
     top: 50%;
@@ -473,17 +473,25 @@ input:checked + .slider:before { transform: translateX(20px); }
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.15s ease; /* 戻る時のスピード */
+    transition: all 0.15s ease;
     -webkit-tap-highlight-color: transparent;
     outline: none;
 }
 
-/* JavaScriptで一時的に付与する「光る」クラス (Added at v. t4.9.3 Apl 8）*/
+/* 左右の個別配置を追加 */
+#map-scroll-left {
+    left: 10px;
+}
+#map-scroll-right {
+    right: 10px;
+}
+
+/* 光るクラス */
 .map-scroll-btn.active-flash {
     background: rgba(91, 192, 190, 0.9) !important;
     color: #0b132b !important;
-    transform: translateY(-50%) scale(0.9); /* 押し込まれた感 */
-    transition: none; /* 光る時は一瞬で */
+    transform: translateY(-50%) scale(0.9);
+    transition: none;
 }
 </style>
 
@@ -521,7 +529,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.9.3</span>
+  <span class="version">v. t4.9.4</span>
 </h1>
             
             
@@ -1934,7 +1942,7 @@ function calculateTotal(isDaytime, kpFromApi) {
             } else {
                 icon.src = "low.png";
             }
-            console.log("--- ステータスアイコンを更新しました。 ---");
+            console.log("--- ✅ ステータスアイコンを更新完了 ---");
         }
     }
 
@@ -2654,7 +2662,7 @@ function closeKpInfo() {
 }
 
 // 地図を左右にスクロールさせる関数(Added at v. t4.9.0 Apl 8th)
-function scrollMap(degrees) {
+function scrollMap(degrees, btnId) {
     if (!map) return;
 
     // 1. 押されたボタンを光らせる(Added at v. t4.9.3 Apl 8）

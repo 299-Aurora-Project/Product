@@ -529,7 +529,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.9.8</span>
+  <span class="version">v. t4.9.9</span>
 </h1>
             
             
@@ -1102,12 +1102,18 @@ function closeAllLists() {
     }
 }
 
+// 経度を -180 〜 180 の範囲に変換する関数(Open-meteoエラー対策)(Added at v. t4.9.9 Apl 8）
+function normalizeLongitude(lon) {
+    while (lon > 180) lon -= 360;
+    while (lon < -180) lon += 360;
+    return lon;
+}
 // --- 4. 位置設定・GAS同期 ---
 async function setLocation(lat, lon, name) {
     // 1. グローバル変数を最新に更新
     // 数値として確実に扱うために parseFloat を通す
-    const newLat = parseFloat(lat);
-    const newLon = parseFloat(lon);
+    const normalizedLon = normalizeLongitude(parseFloat(lon));
+    const normalizedLat = parseFloat(lat); // 緯度は通常±90に収まるが念のため
     
     myLat = newLat; 
     myLon = newLon;

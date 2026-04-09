@@ -1659,12 +1659,16 @@ async function fetchKp3DayForecast() {
                 continue;
             }
 
-            for (let i = 0; i < 3; i++) {
-                const val = parseFloat(nums[i]);
+                for (let i = 0; i < 3; i++) {
+                // 数字とドット以外（修正マークの * や記号など）を徹底的に排除してからパース
+                const cleanVal = nums[i].replace(/[^0-9.]/g, '');
+                const val = parseFloat(cleanVal);
+
                 dataPoints.push({
                     dateStr: dates[i],
                     timeStr: hour,
-                    value: (val >= 0 && val <= 9) ? val : null,
+                    // NaN（解析不能）になった場合も null として扱い、spanGapsで繋ぐ
+                    value: (!isNaN(val) && val >= 0 && val <= 9) ? val : null,
                     dayIndex: i,
                     hourStart: parseInt(hour.split('-')[0])
                 });

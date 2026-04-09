@@ -529,7 +529,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.9.21</span>
+  <span class="version">v. t4.10.0</span>
 </h1>
             
             
@@ -1907,10 +1907,12 @@ async function shortForecast() {
         // ラベル: Tonight (21:00) / 今夜 (21:00)
         label1 = "Tonight (21:00)";
         val1 = cloudDataHourly[21] || 0; 
+        icon1 = "🌠"; // 21:00予報のアイコン
     } else {
         // --- 夜間 (21:00 - 翌3:00) ---
         // ラベル: In 3 Hours / 3時間後
         label1 = "In 3 hours";
+        icon1 = "⏱️"; // ★ 3時間後のアイコン
         // 現在のUTC時間インデックスから3つ先を取得
         val1 = cloudDataHourly[utcHr + 3] || 0; 
     }
@@ -1928,7 +1930,7 @@ async function shortForecast() {
     const el = document.getElementById("forecast");
     if (el) {
         el.innerHTML = `
-            <div>🌃 ${label1} : ${formatCloud(val1)}</div>
+            <div>${icon1} ${label1} : ${formatCloud(val1)}</div>
             <div>📅 Tomorrow : ${formatCloud(val2)}</div>
         `;
     }
@@ -2591,7 +2593,7 @@ const detailContent = {
         body: "In aurora observation, your location is the most important factor. The closer you are to the Arctic or Antarctic region (higher latitude), the higher your chances of seeing auroras — even during weak geomagnetic activity. By setting your precise location via GPS or search, the probability is calculated specifically for your position."
     },
     "probability": {
-        title: "Aurora Probability",
+        title: "Overall Probability",
         body: "This is the visibility probability based on overall conditions, including geomagnetic activity (Kp), proximity to the auroral oval (Oval), and cloud cover There is a chance of seeing auroras at 35% or higher, and when it exceeds 50%, the likelihood of seeing them with the naked eye becomes very high."
     },
     "oval": {

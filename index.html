@@ -1342,9 +1342,6 @@ async function updateAll() {
     try {
        // --- 1. 時刻判定 ---
         const isDaytime = getIsDaytime();
-        
-        // 現地時間に基づいて昼夜を判定
-        const isDaytime = (localHr >= 3 && localHr < 21);
 
         // ラベルの更新
         if (subLabelEl) {

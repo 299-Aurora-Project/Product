@@ -529,7 +529,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.10.0-testing2</span>
+  <span class="version">v. t4.10.1</span>
 </h1>
             
             
@@ -1687,7 +1687,45 @@ async function fetchKp3DayForecast() {
         console.log("First Point:", dataPoints[0]);
         console.log("Last Point:", dataPoints[dataPoints.length - 1]);
 
-        // ...（以下、描画処理へ）
+        // =========================
+        // ✅ 現在値
+        // =========================
+        const now = new Date();
+        const h = now.getUTCHours();
+        const d = now.getUTCDate();
+
+        let currentVal = null;
+
+        const target = dataPoints.find(p => {
+            const day = parseInt(p.dateStr.match(/\d+/)[0]);
+            return day === d && h >= p.hourStart && h < p.hourStart + 3;
+        });
+
+        if (target) currentVal = target.value;
+        else currentVal = dataPoints[dataPoints.length - 1].value;
+
+        // =========================
+        // ✅ 表示(brightになってしまう問題のため削除)
+        // =========================
+//        const el = document.getElementById("kp");
+//        if (el && currentVal !== null) {
+//            el.textContent = currentVal.toFixed(1);
+//        }
+
+        // =========================
+        // ✅ グラフ（絶対崩れない）
+        // =========================
+        const values = dataPoints.map(p => p.value);
+
+        let last = "";
+        const labels = dataPoints.map((p, i) => {
+            if (i === 0 || p.dateStr !== last) {
+                last = p.dateStr;
+                return p.dateStr + " " + p.timeStr;
+            }
+            return "";
+            
+            
         const values = dataPoints.map(p => p.value);
         const labels = dataPoints.map((p, i) => {
             // ラベル生成ロジック

@@ -2559,23 +2559,31 @@ function closeImageModal() {
 // 画面を閉じて再度開いた時の即時更新用
 document.addEventListener("visibilitychange", function() {
     if (document.visibilityState === 'visible') {
-        const now = new Date();
-        const hour = now.getHours();
-        const currentTimeMs = now.getTime();
-
-        // 昼間 (3:00 - 21:00) は 60分、夜間は 15分
-        const waitMinutes = (hour >= 3 && hour < 21) ? 60 : 15;
+        const now = Date.now();
+        const isDaytime = getIsDaytime(); // 共通関数で昼夜判定
+        
+        // 待機基準（昼: 60分、夜: 15分）
+        const waitMinutes = isDaytime ? 60 : 15;
         const waitMs = waitMinutes * 60 * 1000;
 
         // 経過時間を計算
-        const elapsedMs = currentTimeMs - lastUpdateTimestamp;
+        const elapsedMs = now - lastUpdateTimestamp;
 
         if (elapsedMs >= waitMs) {
-            console.log(`[Visibility] ${waitMinutes}分以上経過したため更新します。`);
+            console.log(`前回の更新から${waitMinutes}分以上経過したため自動更新を開始`);
+            
+            // 背後で待機中のタイマーがあればリセット
+            if (window.autoUpdateTimeout) {
+                clearTimeout(window.autoUpdateTimeout);
+            }
             updateAll();
         } else {
-            const remainingSec = Math.round((waitMs - elapsedMs) / 1000);
-            console.log(`[Visibility] まだ ${remainingSec}秒 待機期間内のため、自動更新をスキップしました。`);
+            // --- 残り時間の計算 ---
+            const remainingMs = waitMs - elapsedMs;
+            const remMin = Math.floor(remainingMs / 1000 / 60); // 分
+            const remSec = Math.round((remainingMs / 1000) % 60); // 秒
+            
+            console.log(`待機期間内のためスキップ。次回の自動更新まであと約 ${remMin}分 ${remSec}秒`);
         }
     }
 });

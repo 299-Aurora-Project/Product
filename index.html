@@ -529,7 +529,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.9.18</span>
+  <span class="version">v. t4.9.19</span>
 </h1>
             
             
@@ -1391,7 +1391,7 @@ async function updateAll() {
         console.log("-> ✅Kp3DayForecast取得完了");
         
         await checkOval();
-        console.log("-> ✅Aurora Oval取得完了");
+        console.log(`-> ✅Aurora Oval取得完了: ${lastAuroraProb}%`);
         
         await getCloud(isDaytime); // 昼夜フラグを渡す
         
@@ -1402,12 +1402,7 @@ async function updateAll() {
         console.log("-> ✅shortForecast取得完了");
         
         
-        
-        
-        
-        
         // --- 視程(Visibility)の取得判定 (リクエスト節約：仮スコア判定) ---
-        
         // 1. 視程を10000m（減衰なし）と仮定して計算
         const tempVis = 10000;
         let ovalScore = Math.min(lastAuroraProb * 1.5, 45); 
@@ -1423,12 +1418,6 @@ async function updateAll() {
         // 仮スコアを算出
         let potentialScore = (ovalScore + magneticScore + skyScore) * visibilityMultiplier;
         // 2. 仮スコアが Possible (35点) 以上の場合のみ、実際の視程を取得
-        
-        
-        
-
-        
-        
         
         // --- 視程(Visibility)の取得 (Added at v. t4.9.15 Apl 8）
         if (potentialScore >= 35) {

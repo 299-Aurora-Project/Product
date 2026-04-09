@@ -529,7 +529,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.9.6</span>
+  <span class="version">v. t4.9.7</span>
 </h1>
             
             
@@ -1758,11 +1758,11 @@ async function getCloud(isDaytime = false) {
 
             if (index21 !== -1 && data.hourly.cloud_cover[index21] !== undefined) {
                 tonightCloud = data.hourly.cloud_cover[index21];
-                console.log(`21:00 forecast was found at index ${index21}`);
+                console.log(`   -> 21:00 forecast was found at index ${index21}`);
             } else {
                 // 万が一見つからない場合は、予報配列の最後の方（夜）を参照
                 tonightCloud = data.hourly.cloud_cover[21] || currentCloudMax;
-                console.log(`21:00 forecast was NOT found, use around night index`);
+                console.log(`   -> 21:00 forecast was NOT found, use around night index`);
             }
             console.log(`   -> Tonight Cloud Cover取得完了: ${tonightCloud}%`);
         }
@@ -1788,7 +1788,7 @@ async function getCloud(isDaytime = false) {
             
             // デバッグログ：どちらを採用したか確認
             console.log(`   -> Adopted cloud value was ${isDaytime ? 'Night Forecast' : 'Current'}`);
-            console.log("-> ✅Cloud Cover取得完了: ${val}%");
+            console.log(`-> ✅Cloud Cover取得完了: ${val}%`);
         }
     } catch (e) {
         console.error("Cloud Fetch Error:", e);
@@ -1939,7 +1939,7 @@ function calculateTotal(isDaytime, kpFromApi) {
             } else {
                 icon.src = "low.png";
             }
-            console.log("-> ✅ステータスアイコン更新完了 ---");
+            console.log("-> ✅ステータスアイコン更新完了");
         }
     }
 

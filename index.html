@@ -529,7 +529,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.10.4</span>
+  <span class="version">v. t4.11.0</span>
 </h1>
             
             
@@ -2514,6 +2514,7 @@ function hideMapScreen() {
     }
 }
 
+// Loadingのときの処理
 function setItemLoading(id, isLoading) {
     const el = document.getElementById(id);
     if (!el) return;
@@ -2521,7 +2522,14 @@ function setItemLoading(id, isLoading) {
     if (isLoading) {
         // Loading開始時だけ文字を上書きする
         el.innerHTML = '⏳ <i>Loading...</i>';
+
+        // --- 背景色をグレーにリセットする処理を追加 ---
+        // 前回の色（mid, high, low）を消して、初期のstatusクラス（グレー）にする
+        el.classList.remove('mid', 'high', 'low');
+        el.classList.add('status');
     } 
+    // isLoadingがfalseの時は、各データ取得関数が
+    // 自分でクラスを付け直すので、ここではリセットだけでOKです
 }
 
 function closeWelcome() { document.getElementById('welcome-overlay').style.display = 'none'; }

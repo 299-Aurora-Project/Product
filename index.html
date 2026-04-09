@@ -529,7 +529,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.9.10</span>
+  <span class="version">v. t4.9.12</span>
 </h1>
             
             
@@ -1122,9 +1122,6 @@ async function setLocation(lat, lon, name) {
     const isDay = getIsDaytime();
     const timeString = `${String(localHr).padStart(2, '0')}:${String(new Date().getUTCMinutes()).padStart(2, '0')}`;
     
-    console.log(`-> ✅ Location is set: ${name}`);
-    console.log(`   ${timeString} (${isDay ? "Daytime mode" : "Nighttime mode"})`);
-    
     // --- 【重要】地図クリック時に一時保存した環境データをグローバルに反映 ---
     if (typeof tempLocation !== 'undefined' && tempLocation) {
         window.myBortle = tempLocation.bortle;
@@ -1172,6 +1169,8 @@ async function getLocation() {
             await reverseGeocode(lat, lon); 
             // 取得した住所をストレージに保存
             const finalName = document.getElementById("loc").textContent;
+            logLocationSet(finalName); // ログ用関数呼び出し
+            
             localStorage.setItem('aurora_myName', finalName);
         } catch (e) {
             console.error("Address lookup failed:", e);
@@ -1183,6 +1182,24 @@ async function getLocation() {
         setItemLoading('loc', false);
     });
 }
+
+
+// ログ出力専用の関数(Added at v. t4.9.12 Apl 8）
+function logLocationSet(name) {
+    const localHr = getLocalHour();
+    const isDay = getIsDaytime();
+    const timeString = `${String(localHr).padStart(2, '0')}:${String(new Date().getUTCMinutes()).padStart(2, '0')}`;
+    
+    console.log(`-> ✅ Location is set: ${name}`);
+    console.log(`   ${timeString} (${isDay ? "Daytime mode" : "Nighttime mode"})`);
+}
+
+
+
+
+
+
+
 
 // 通知の購読（subscribe)
 async function subscribeUser(forcedLat = null, forcedLon = null) {
@@ -2104,8 +2121,8 @@ function initMap() {
         
         try {
             // 1. 地名取得
-            // --- ここに「経度の正規化」を挿入します ---
-            const normalizedLon = lon > 180 ? lon - 360 : (lon < -180 ? lon + 360 : lon);
+            // --- ここに「経度の正規化」 ---
+            const normalizedLon = normalizeLongitude(lon);
 
             // 1. 地名取得 (Nominatim)
             // ※Nominatimも180度超えに厳しい場合があるため、ここでも normalizedLon を使うのが安全です
@@ -2129,7 +2146,7 @@ function initMap() {
                 : `${cityName}, ${countryName}`;
 
             
-// 2. 光害推定（データの取得のみ）
+            // 2. 光害推定（データの取得のみ）
             let estimatedBortle = 1; 
             if (addr.city || addr.metropolis) {
                 estimatedBortle = 8; 
@@ -2162,7 +2179,7 @@ function initMap() {
             // 3. 視程取得 (Open-Meteo)
             let visibility = 10000; 
             try {
-                const normalizedLon = lon > 180 ? lon - 360 : (lon < -180 ? lon + 360 : lon);
+                const normalizedLon = normalizeLongitude(lon);
                 const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${normalizedLon}&current=visibility&timezone=auto`);
                 
                 if (weatherRes.ok) {
@@ -2198,6 +2215,7 @@ function initMap() {
     document.getElementById('btn-confirm-location').onclick = async function() {
         if (!tempLocation) return;
         await setLocation(tempLocation.lat, tempLocation.lon, tempLocation.name);
+        logLocationSet(tempLocation.name); // ログ出力用関数
         hideMapScreen();
     };
        

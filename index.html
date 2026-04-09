@@ -529,7 +529,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.10.0</span>
+  <span class="version">v. t4.10.0-testing1</span>
 </h1>
             
             
@@ -1585,50 +1585,60 @@ async function checkOval() {
 let myLineChart = null; // グラフを保持する変数
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 async function fetchKp3DayForecast() {
     try {
         const res = await fetch(CORS + encodeURIComponent(FORECAST_URL));
         let text = await res.text();
+        console.log("--- Kp Forecast Debug 開始 ---");
+        // console.log("Raw Text Sample:", text.substring(0, 200)); // 最初の200文字を確認
 
-        // =========================
-        // ✅ 入力の正規化（どんな形式でもOK）
-        // =========================
         try {
             text = JSON.parse(text);
+            console.log("Parsed as JSON");
         } catch {
             text = text.replace(/^"|"$/g, '');
             text = text.replace(/\\n/g, '\n');
+            console.log("Parsed as Text (Manual normalization)");
         }
 
         const lines = text.split('\n').map(l => l.trim());
+        console.log(`Total lines: ${lines.length}`);
 
-        // =========================
-        // ✅ 日付取得（確実）
-        // =========================
+        // --- 日付取得ログ ---
         let dates = [];
         for (let line of lines) {
             if (line.includes("NOAA Kp index breakdown")) continue;
-
             const match = line.match(/([A-Z][a-z]{2}\s+\d{2})/g);
             if (match && match.length >= 3) {
                 dates = match;
+                console.log("Found Dates:", dates);
                 break;
             }
         }
 
         if (dates.length < 3) {
-            console.error("❌ 日付取得失敗");
-            return []; // 値を返して終了させる
+            console.error("❌ 日付取得失敗: 適切な日付行が見つかりません。");
+            return [];
         }
 
-        // =========================
-        // ✅ Kpデータだけ抽出（超厳格）
-        // =========================
-        const validHours = [
-            "00-03","03-06","06-09","09-12",
-            "12-15","15-18","18-21","21-00"
-        ];
-
+        // --- Kp抽出ログ ---
+        const validHours = ["00-03","03-06","06-09","09-12","12-15","15-18","18-21","21-00"];
         let dataPoints = [];
 
         for (let line of lines) {
@@ -1636,15 +1646,21 @@ async function fetchKp3DayForecast() {
             if (!match) continue;
 
             const hour = match[1];
-            if (!validHours.includes(hour)) continue;
+            if (!validHours.includes(hour)) {
+                console.warn(`Unexpected hour format: ${hour}`);
+                continue;
+            }
 
             const nums = match[2].trim().split(/\s+/);
+            // console.log(`Processing line: ${hour}UT | Values:`, nums);
 
-            if (nums.length < 3) continue; // 不完全データは捨てる
+            if (nums.length < 3) {
+                console.error(`Line too short: ${line}`);
+                continue;
+            }
 
             for (let i = 0; i < 3; i++) {
                 const val = parseFloat(nums[i]);
-
                 dataPoints.push({
                     dateStr: dates[i],
                     timeStr: hour,
@@ -1655,79 +1671,55 @@ async function fetchKp3DayForecast() {
             }
         }
 
-        // =========================
-        // ❌ データ不足なら描画しない（崩れ防止）
-        // =========================
+        console.log(`Extracted DataPoints: ${dataPoints.length} (Expected: 24)`);
+
         if (dataPoints.length < 24) {
-            console.error("❌ データ不足 → 描画スキップ");
-            return []; // 値を返して終了させる
+            console.error("❌ データ不足のため描画スキップ。dataPointsの内容:", dataPoints);
+            return [];
         }
 
-        // =========================
-        // ✅ ソート
-        // =========================
+        // --- ソート後の最終チェックログ ---
         dataPoints.sort((a, b) => {
             if (a.dayIndex !== b.dayIndex) return a.dayIndex - b.dayIndex;
             return a.hourStart - b.hourStart;
         });
+        
+        console.log("First Point:", dataPoints[0]);
+        console.log("Last Point:", dataPoints[dataPoints.length - 1]);
 
-        // =========================
-        // ✅ 現在値
-        // =========================
-        const now = new Date();
-        const h = now.getUTCHours();
-        const d = now.getUTCDate();
-
-        let currentVal = null;
-
-        const target = dataPoints.find(p => {
-            const day = parseInt(p.dateStr.match(/\d+/)[0]);
-            return day === d && h >= p.hourStart && h < p.hourStart + 3;
-        });
-
-        if (target) currentVal = target.value;
-        else currentVal = dataPoints[dataPoints.length - 1].value;
-
-        // =========================
-        // ✅ 表示(brightになってしまう問題のため削除)
-        // =========================
-//        const el = document.getElementById("kp");
-//        if (el && currentVal !== null) {
-//            el.textContent = currentVal.toFixed(1);
-//        }
-
-        // =========================
-        // ✅ グラフ（絶対崩れない）
-        // =========================
+        // ...（以下、描画処理へ）
         const values = dataPoints.map(p => p.value);
-
-        let last = "";
         const labels = dataPoints.map((p, i) => {
-            if (i === 0 || p.dateStr !== last) {
-                last = p.dateStr;
-                return p.dateStr + " " + p.timeStr;
-            }
-            return "";
+            // ラベル生成ロジック
+            return (i === 0 || p.dateStr !== dataPoints[i-1]?.dateStr) ? p.dateStr + " " + p.timeStr : "";
         });
 
         drawKpChart(labels, values);
-
-        // =========================
-        // ✅ テキスト
-        // =========================
-        const elF = document.getElementById("kpForecast");
-        if (elF) {
-            const m = text.match(/NOAA Kp index breakdown[\s\S]*?(?=\n[A-Z]|$)/i);
-            elF.innerText = m ? m[0] : "";
-        }
-
-        // console.log("✅ 安定描画成功");
+        console.log("--- Kp Forecast Debug 終了 (正常) ---");
 
     } catch (e) {
         console.error("Forecast Error:", e);
-        return []; // エラー時も空配列を返す
+        return [];
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 function drawKpChart(labels, values) {

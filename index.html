@@ -434,6 +434,36 @@ input:checked + .slider:before { transform: translateX(20px); }
 }
 
 
+/* マップスクロールボタン (Added at v. t4.9.0 Apl 8)*/
+.map-scroll-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10005; /* 地図より上に表示 */
+    background: rgba(11, 19, 43, 0.7);
+    color: #5bc0be;
+    border: 1px solid #3a506b;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.map-scroll-btn:hover {
+    background: rgba(91, 192, 190, 0.9);
+    color: #0b132b;
+}
+
+.map-scroll-btn:active {
+    scale: 0.9;
+}
+
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -470,7 +500,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.8.1</span>
+  <span class="version">v. t4.9.0</span>
 </h1>
             
             
@@ -705,6 +735,16 @@ input:checked + .slider:before { transform: translateX(20px); }
 
 <div id="map-screen" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; z-index: 10000;">
     <button id="back-btn" onclick="hideMapScreen()">← Back</button>
+    
+    
+    
+    
+    <button id="map-scroll-left" class="map-scroll-btn" onclick="scrollMap(-60)" style="left: 10px;">＜</button>
+    <button id="map-scroll-right" class="map-scroll-btn" onclick="scrollMap(60)" style="right: 10px;">＞</button>
+    
+    
+    
+    
     
     <div id="map" style="height: 100%; width: 100%;"></div>
 
@@ -2133,8 +2173,6 @@ function initMap() {
 
 
 
-
-
 // グローバル変数と初期設定
 let isSelectionMode = false; // 場所選択モードかどうかのフラグ
 let tempLocation = null;
@@ -2595,6 +2633,23 @@ function closeKpInfo() {
     document.getElementById("kp-modal").style.display = "none";
 }
 
+// 地図を左右にスクロールさせる関数(Added at v. t4.9.0 Apl 8th)
+function scrollMap(degrees) {
+    if (!map) return;
+
+    // 現在の中心座標を取得
+    const currentCenter = map.getCenter();
+    
+    // 新しい経度を計算
+    let newLon = currentCenter.lng + degrees;
+
+    // Leafletの座標系をスムーズに移動させる
+    // worldCopyJump: true が有効なので、連続してスクロール可能です
+    map.panTo([currentCenter.lat, newLon], {
+        animate: true,
+        duration: 0.5 // 0.5秒かけてスッと動く
+    });
+}
 </script>
 </body>
 </html>

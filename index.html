@@ -529,7 +529,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.10.3-testing3</span>
+  <span class="version">v. t4.10.4</span>
 </h1>
             
             
@@ -1585,40 +1585,24 @@ async function checkOval() {
 let myLineChart = null; // グラフを保持する変数
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 async function fetchKp3DayForecast() {
     try {
         const res = await fetch(CORS + encodeURIComponent(FORECAST_URL));
         let text = await res.text();
-        console.log("--- Kp Forecast Debug 開始 ---");
+        // console.log("--- Kp Forecast Debug 開始 ---");
         // console.log("Raw Text Sample:", text.substring(0, 200)); // 最初の200文字を確認
 
         try {
             text = JSON.parse(text);
-            console.log("Parsed as JSON");
+            // console.log("Parsed as JSON");
         } catch {
             text = text.replace(/^"|"$/g, '');
             text = text.replace(/\\n/g, '\n');
-            console.log("Parsed as Text (Manual normalization)");
+            // console.log("Parsed as Text (Manual normalization)");
         }
 
         const lines = text.split('\n').map(l => l.trim());
-        console.log(`Total lines: ${lines.length}`);
+        // console.log(`Total lines: ${lines.length}`);
 
         // --- 日付取得ログ ---
         let dates = [];
@@ -1627,7 +1611,7 @@ async function fetchKp3DayForecast() {
             const match = line.match(/([A-Z][a-z]{2}\s+\d{2})/g);
             if (match && match.length >= 3) {
                 dates = match;
-                console.log("Found Dates:", dates);
+                // console.log("Found Dates:", dates);
                 break;
             }
         }
@@ -1682,7 +1666,7 @@ async function fetchKp3DayForecast() {
             }
         }
 
-        console.log(`Extracted DataPoints: ${dataPoints.length} (Expected: 24)`);
+        // console.log(`Extracted DataPoints: ${dataPoints.length} (Expected: 24)`);
 
         if (dataPoints.length < 24) {
             console.error("❌ データ不足のため描画スキップ。dataPointsの内容:", dataPoints);
@@ -1695,8 +1679,8 @@ async function fetchKp3DayForecast() {
             return a.hourStart - b.hourStart;
         });
         
-        console.log("First Point:", dataPoints[0]);
-        console.log("Last Point:", dataPoints[dataPoints.length - 1]);
+        // console.log("First Point:", dataPoints[0]);
+        // console.log("Last Point:", dataPoints[dataPoints.length - 1]);
 
         // =========================
         // ✅ 現在値
@@ -1741,7 +1725,7 @@ async function fetchKp3DayForecast() {
             console.log("-> ✅ テキストテーブル更新完了");
         }
         
-        console.log("--- Kp Forecast Debug 終了 (正常) ---");
+        // console.log("--- Kp Forecast Debug 終了 (正常) ---");
 
     } catch (e) {
         console.error("Forecast Error:", e);
@@ -2733,7 +2717,6 @@ function updateGScaleIndicator(kpValue) {
     if (!indicator) return;
 
     let gLevel = 0;
-let gLevel = 0;
     // 境界線を 0.5 ずつ下げることで、切り上げ判定に対応させます
     if (kpValue >= 8.5) gLevel = 5;      // Kp 8.67, 9.00 -> G5
     else if (kpValue >= 7.5) gLevel = 4; // Kp 7.67, 8.00, 8.33 -> G4

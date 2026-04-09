@@ -529,7 +529,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.9.19</span>
+  <span class="version">v. t4.9.20</span>
 </h1>
             
             
@@ -1385,13 +1385,12 @@ async function updateAll() {
         console.log(`モード: ${isDaytime ? "昼間(21:00予報)" : "夜間(リアルタイム)"}`);
 
         const kpValue = await getKp();
-        // console.log("-> ✅Kp Index取得完了");
         
         await fetchKp3DayForecast();
         console.log("-> ✅Kp3DayForecast取得完了");
         
         await checkOval();
-        console.log(`-> ✅Aurora Oval取得完了: ${lastAuroraProb}%`);
+        console.log(`-> ✅Aurora Oval取得完了 Score: ${lastAuroraProb}`);
         
         await getCloud(isDaytime); // 昼夜フラグを渡す
         
@@ -1520,7 +1519,7 @@ async function getKp() {
             if (!isNaN(tempVal)) {
                 val = tempVal;
                 found = true;
-                console.log(`-> ✅Kp Index取得完了: ${val}`);
+                console.log(`-> ✅Kp Index取得完了 Score: ${val}`);
                 break; 
             }
         }
@@ -1842,7 +1841,7 @@ async function getCloud(isDaytime = false) {
             data.current.cloud_cover_mid || 0,
             data.current.cloud_cover_high || 0
         );
-        console.log(`   -> Current Cloud Cover取得完了: ${currentCloudMax}%`);
+        console.log(`   -> Current Cloud Cover Score: ${currentCloudMax}`);
 
         // 2. 「今日の夜21時」の予報を正確に取得
         let tonightCloud = currentCloudMax; 
@@ -1859,7 +1858,7 @@ async function getCloud(isDaytime = false) {
                 tonightCloud = data.hourly.cloud_cover[21] || currentCloudMax;
                 console.log(`   -> 21:00 forecast was NOT found, use around night index`);
             }
-            console.log(`   -> Tonight Cloud Cover取得完了: ${tonightCloud}%`);
+            console.log(`   -> Tonight Cloud Cover Score: ${tonightCloud}`);
         }
 
         // 判定ロジック：昼間なら21時の予報、夜なら今の実況を採用
@@ -1883,7 +1882,7 @@ async function getCloud(isDaytime = false) {
             
             // デバッグログ：どちらを採用したか確認
             console.log(`   -> Adopted cloud value was ${isDaytime ? 'Night Forecast' : 'Current'}`);
-            console.log(`-> ✅Cloud Cover取得完了: ${val}%`);
+            console.log(`-> ✅Cloud Cover取得完了 Score: ${val}`);
         }
     } catch (e) {
         console.error("Cloud Fetch Error:", e);

@@ -529,7 +529,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.10.3-testing1</span>
+  <span class="version">v. t4.10.3-testing2</span>
 </h1>
             
             
@@ -1650,29 +1650,27 @@ async function fetchKp3DayForecast() {
                 console.warn(`Unexpected hour format: ${hour}`);
                 continue;
             }
+            
+            
+            
+            
+            
+            
+            
+            
 
-            const nums = match[2].trim().split(/\s+/);
-            // console.log(`Processing line: ${hour}UT | Values:`, nums);
+            // --- ✅ ここを修正：スペース分割ではなく、数値(例: 4.00)だけを抜き出す ---
+            const rawContent = match[2].trim();
+            const nums = rawContent.match(/\d+\.\d+|\d+/g); // "4.00 (G1)" から ["4.00"] だけを取る
 
-            if (nums.length < 3) {
-                console.error(`Line too short: ${line}`);
-                continue;
-            }
+            if (!nums || nums.length < 3) continue; 
 
-                for (let i = 0; i < 3; i++) {
-                    const rawValue = nums[i]; // パース前の生データ
-                    const cleanVal = rawValue ? rawValue.replace(/[^0-9.]/g, '') : "";
-                    const val = parseFloat(cleanVal);
-                
-                    // ★ 特定の時間帯（03-06）だけ詳細にログを出す
-                    if (hour === "03-06") {
-                        console.log(`Debug 03-06: DayIndex=${i}, Raw='${rawValue}', Parsed=${val}`);
-                    }
+            for (let i = 0; i < 3; i++) {
+                const val = parseFloat(nums[i]);
 
                 dataPoints.push({
                     dateStr: dates[i],
                     timeStr: hour,
-                    // NaN（解析不能）になった場合も null として扱い、spanGapsで繋ぐ
                     value: (!isNaN(val) && val >= 0 && val <= 9) ? val : null,
                     dayIndex: i,
                     hourStart: parseInt(hour.split('-')[0])

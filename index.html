@@ -529,7 +529,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.11.4</span>
+  <span class="version">v. t4.11.5</span>
 </h1>
             
             
@@ -1976,7 +1976,7 @@ function calculateTotal(isDaytime, kpFromApi) {
 
 
     // kpValue が undefined や Loading 中を示す値なら処理しない
-    if (kpValue === undefined || kpValue === null) {
+    if (kpFromApi === undefined || kpFromApi === null) {
         console.log("判定スキップ: Kp値が未確定です");
         return;
     }

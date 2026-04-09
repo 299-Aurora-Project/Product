@@ -529,7 +529,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.9.4</span>
+  <span class="version">v. t4.9.5</span>
 </h1>
             
             
@@ -1340,11 +1340,8 @@ async function updateAll() {
     ['kp', 'oval', 'cloud', 'result'].forEach(id => setItemLoading(id, true));
 
     try {
-       // --- 1. 現地時刻の計算 (経度 myLon に基づく) ---
-        const now = new Date();
-        const utcHr = now.getUTCHours();
-        // 経度15度につき1時間の時差として計算 (24時間を超えたり負になったりしないよう調整)
-        const localHr = (utcHr + Math.round(myLon / 15) + 24) % 24; 
+       // --- 1. 時刻判定 ---
+        const isDaytime = getIsDaytime();
         
         // 現地時間に基づいて昼夜を判定
         const isDaytime = (localHr >= 3 && localHr < 21);
@@ -2479,32 +2476,17 @@ function toggleData() {
 
 // 更新スケジュールを管理する関数
 function scheduleNextUpdate() {
-    const now = new Date();
-    const hour = now.getHours();
-
-    // 昼間 (3:00 - 21:00) は 60分、夜間は 15分
-    const intervalMinutes = (hour >= 3 && hour < 21) ? 60 : 15;
+    const isDaytime = getIsDaytime();
+    const intervalMinutes = isDaytime ? 60 : 15;
     const intervalMs = intervalMinutes * 60 * 1000;
 
-    console.log(`[Timer] 次回の自動更新は ${intervalMinutes} 分後です。`);
+    console.log(`[Timer] 次回の自動更新スケジュール: ${intervalMinutes}分後`);
 
-    // 重複動作を防ぐために既存のタイマーをクリア
-    if (window.autoUpdateTimeout) {
-        clearTimeout(window.autoUpdateTimeout);
-    }
+    if (window.autoUpdateTimeout) clearTimeout(window.autoUpdateTimeout);
 
-    // 指定時間後に実行
-    window.autoUpdateTimeout = setTimeout(async () => {
-        console.log("Auto-update execution started.");
-        
-        try {
-            await updateAll(); // ここで既存の updateAll を呼び出す
-        } catch (e) {
-            console.error("Auto-update error:", e);
-        }
-
-        // 実行が終わったら、また次のスケジュールを立てる（再帰呼び出し）
-        scheduleNextUpdate();
+    window.autoUpdateTimeout = setTimeout(() => {
+        console.log("[Timer] 定期更新を実行します");
+        updateAll(); // updateAllの最後でまたscheduleNextUpdateが呼ばれるのでOK
     }, intervalMs);
 }
 
@@ -2574,6 +2556,7 @@ function closeImageModal() {
     document.getElementById('imageModal').style.display = 'none';
 }
 
+// 画面を閉じて再度開いた時の即時更新用
 document.addEventListener("visibilitychange", function() {
     if (document.visibilityState === 'visible') {
         const now = new Date();
@@ -2661,7 +2644,7 @@ function closeKpInfo() {
     document.getElementById("kp-modal").style.display = "none";
 }
 
-// 地図を左右にスクロールさせる関数(Added at v. t4.9.0 Apl 8th)
+// ボタンで地図を左右にスクロールさせる関数(Added at v. t4.9.0 Apl 8th)
 function scrollMap(degrees, btnId) {
     if (!map) return;
 
@@ -2674,8 +2657,6 @@ function scrollMap(degrees, btnId) {
             btn.classList.remove('active-flash');
         }, 150);
     }
-
-
 
     // 現在の中心座標を取得
     const currentCenter = map.getCenter();
@@ -2690,6 +2671,22 @@ function scrollMap(degrees, btnId) {
         duration: 0.5 // 0.5秒かけてスッと動く
     });
 }
+
+
+// 昼夜を判定する関数(Added at v. t4.9.5 Apl 8）
+function getIsDaytime() {
+    const now = new Date();
+    // 座標がない場合はシステム時間、ある場合は経度から計算
+    if (myLon === null) return (now.getHours() >= 3 && now.getHours() < 21);
+    
+    const utcHr = now.getUTCHours();
+    const localHr = (utcHr + Math.round(myLon / 15) + 24) % 24;
+    return (localHr >= 3 && localHr < 21);
+}
+
+
+
+
 </script>
 </body>
 </html>

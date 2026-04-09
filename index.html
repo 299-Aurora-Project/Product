@@ -529,7 +529,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.9.7</span>
+  <span class="version">v. t4.9.8</span>
 </h1>
             
             
@@ -1111,6 +1111,13 @@ async function setLocation(lat, lon, name) {
     
     myLat = newLat; 
     myLon = newLon;
+    
+    const localHr = getLocalHour();
+    const isDay = getIsDaytime();
+    const timeString = `${String(localHr).padStart(2, '0')}:${String(new Date().getUTCMinutes()).padStart(2, '0')}`;
+    
+    console.log(`-> ✅ Location is set: ${name}`);
+    console.log(`   ${timeString} (${isDay ? "Daytime mode" : "Nighttime mode"})`);
     
     // --- 【重要】地図クリック時に一時保存した環境データをグローバルに反映 ---
     if (typeof tempLocation !== 'undefined' && tempLocation) {
@@ -2480,7 +2487,7 @@ function scheduleNextUpdate() {
     const intervalMinutes = isDaytime ? 60 : 15;
     const intervalMs = intervalMinutes * 60 * 1000;
 
-    console.log(`[Timer] 次回の自動更新スケジュール: ${intervalMinutes}分後`);
+    console.log(`次回の自動更新スケジュール: ${intervalMinutes}分後`);
 
     if (window.autoUpdateTimeout) clearTimeout(window.autoUpdateTimeout);
 
@@ -2583,7 +2590,7 @@ document.addEventListener("visibilitychange", function() {
             const remMin = Math.floor(remainingMs / 1000 / 60); // 分
             const remSec = Math.round((remainingMs / 1000) % 60); // 秒
             
-            console.log(`待機期間内のためスキップ。次回の自動更新まであと約 ${remMin}分 ${remSec}秒`);
+            console.log(`画面を再表示しましたが待機期間内のため自動更新をスキップ。次回の自動更新まであと約 ${remMin}分 ${remSec}秒`);
         }
     }
 });
@@ -2682,13 +2689,18 @@ function scrollMap(degrees, btnId) {
 
 
 // 昼夜を判定する関数(Added at v. t4.9.5 Apl 8）
-function getIsDaytime() {
+// 新設：現在の現地時間を数値（0-23）で返す
+function getLocalHour() {
     const now = new Date();
-    // 座標がない場合はシステム時間、ある場合は経度から計算
-    if (myLon === null) return (now.getHours() >= 3 && now.getHours() < 21);
+    if (myLon === null) return now.getHours();
     
     const utcHr = now.getUTCHours();
-    const localHr = (utcHr + Math.round(myLon / 15) + 24) % 24;
+    return (utcHr + Math.round(myLon / 15) + 24) % 24;
+}
+
+// 既存の関数をこれを使って書き換え
+function getIsDaytime() {
+    const localHr = getLocalHour();
     return (localHr >= 3 && localHr < 21);
 }
 

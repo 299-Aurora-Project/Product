@@ -455,23 +455,13 @@ input:checked + .slider:before { transform: translateX(20px); }
     transition: all 0.2s;
 }
 
-/* --- ホバーとアクティブを共通化 (Added at v. t4.9.1 Apl 8) --- */
-.map-scroll-btn:hover,
-.map-scroll-btn:active {
-    background: rgba(91, 192, 190, 0.9); /* 明るいターコイズブルー */
-    color: #0b132b; /* 文字色をダークに */
-    border-color: #5bc0be; /* 枠線も明るく */
-    transform: translateY(-50%) scale(0.98); /* わずかに縮小して「押した感」を出す */
-}
-
-
-/* 1. 基本の状態（指を離している時）(Added at v. t4.9.2 Apl 8) */
+/* 基本スタイル(Added at v. t4.9.3 Apl 8） */
 .map-scroll-btn {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
     z-index: 10005;
-    background: rgba(11, 19, 43, 0.7); /* 元の暗い色 */
+    background: rgba(11, 19, 43, 0.7);
     color: #5bc0be;
     border: 1px solid #3a506b;
     border-radius: 50%;
@@ -483,24 +473,17 @@ input:checked + .slider:before { transform: translateX(20px); }
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background 0.2s, color 0.2s, transform 0.1s;
-    /* タップ時の青い枠（ハイライト）を消す */
+    transition: all 0.15s ease; /* 戻る時のスピード */
     -webkit-tap-highlight-color: transparent;
-}
-/* 2. PC（マウス操作）の場合のみ、ホバーで明るくする (Added at v. t4.9.2 Apl 8) */
-@media (hover: hover) {
-    .map-scroll-btn:hover {
-        background: rgba(91, 192, 190, 0.9);
-        color: #0b132b;
-        border-color: #5bc0be;
-    }
+    outline: none;
 }
 
-/* 3. スマホ・PC共通：押している瞬間（Active）だけ明るくする (Added at v. t4.9.2 Apl 8) */
-.map-scroll-btn:active {
+/* JavaScriptで一時的に付与する「光る」クラス (Added at v. t4.9.3 Apl 8）*/
+.map-scroll-btn.active-flash {
     background: rgba(91, 192, 190, 0.9) !important;
     color: #0b132b !important;
-    transform: translateY(-50%) scale(0.9); /* ギュッと押した感じ */
+    transform: translateY(-50%) scale(0.9); /* 押し込まれた感 */
+    transition: none; /* 光る時は一瞬で */
 }
 </style>
 
@@ -538,7 +521,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.9.2</span>
+  <span class="version">v. t4.9.3</span>
 </h1>
             
             
@@ -777,9 +760,8 @@ input:checked + .slider:before { transform: translateX(20px); }
     
     
     
-    <button id="map-scroll-left" class="map-scroll-btn" onclick="scrollMap(-60)" style="left: 10px;">＜</button>
-    <button id="map-scroll-right" class="map-scroll-btn" onclick="scrollMap(60)" style="right: 10px;">＞</button>
-    
+    <button id="map-scroll-left" class="map-scroll-btn" onclick="scrollMap(-60, 'map-scroll-left')">＜</button>
+    <button id="map-scroll-right" class="map-scroll-btn" onclick="scrollMap(60, 'map-scroll-right')">＞</button>
     
     
     
@@ -1341,7 +1323,7 @@ async function updateAll() {
 
     if (myLat === null || myLon === null) {
         if (statusIcon) statusIcon.src = "location.png";
-        console.warn("座標がありません");
+        console.warn("☒座標がありません");
         return;
     }
 
@@ -1369,22 +1351,22 @@ async function updateAll() {
         console.log(`モード: ${isDaytime ? "昼間(21:00予報)" : "夜間(リアルタイム)"}`);
 
         const kpValue = await getKp();
-        // console.log("-> Kp Index取得完了");
+        // console.log("-> ✅Kp Index取得完了");
         
         await fetchKp3DayForecast();
-        console.log("-> Kp3DayForecast取得完了");
+        console.log("-> ✅Kp3DayForecast取得完了");
         
         await checkOval();
-        console.log("-> Aurora Oval取得完了");
+        console.log("-> ✅Aurora Oval取得完了");
         
         await getCloud(isDaytime); // 昼夜フラグを渡す
-        console.log("-> Cloud Cover取得完了");
+        console.log("-> ✅Cloud Cover取得完了");
         
         try {
             await shortForecast();
-        } catch (e) { console.error("shortForecastエラー:", e); }
+        } catch (e) { console.error("☒shortForecastエラー:", e); }
         
-        console.log("-> shortForecast取得完了");
+        console.log("-> ✅shortForecast取得完了");
         
         // --- 3. 最終判定と表示 ---
         calculateTotal(isDaytime, kpValue); // フラグと値を渡す
@@ -1402,7 +1384,7 @@ async function updateAll() {
         // 時刻表示の更新
         updateTimestamp('time-update-all');
         lastUpdateTimestamp = new Date().getTime();
-        console.log("-> タイムスタンプ更新完了");
+        console.log("-> ✅タイムスタンプ更新完了");
         console.log("--- UpdateAll 完了 ---");
         
         // 次の自動アップデートスケジュールを開始
@@ -1418,7 +1400,7 @@ async function getKp() {
         const data = await res.json(); 
 
         if (!data || !Array.isArray(data) || data.length === 0) {
-            console.warn("Kp data is empty");
+            console.warn("☒Kp data is empty");
             return 0; 
         }
 
@@ -1442,7 +1424,7 @@ async function getKp() {
             if (!isNaN(tempVal)) {
                 val = tempVal;
                 found = true;
-                console.log(`✅ -> Kp Index取得完了: ${val}`);
+                console.log(`-> ✅Kp Index取得完了: ${val}`);
                 break; 
             }
         }
@@ -2674,6 +2656,18 @@ function closeKpInfo() {
 // 地図を左右にスクロールさせる関数(Added at v. t4.9.0 Apl 8th)
 function scrollMap(degrees) {
     if (!map) return;
+
+    // 1. 押されたボタンを光らせる(Added at v. t4.9.3 Apl 8）
+    const btn = document.getElementById(btnId);
+    if (btn) {
+        btn.classList.add('active-flash');
+        // 150ミリ秒後にクラスを外して元の色に戻す
+        setTimeout(() => {
+            btn.classList.remove('active-flash');
+        }, 150);
+    }
+
+
 
     // 現在の中心座標を取得
     const currentCenter = map.getCenter();

@@ -529,7 +529,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.9.9</span>
+  <span class="version">v. t4.9.10</span>
 </h1>
             
             
@@ -1115,8 +1115,8 @@ async function setLocation(lat, lon, name) {
     const normalizedLon = normalizeLongitude(parseFloat(lon));
     const normalizedLat = parseFloat(lat); // 緯度は通常±90に収まるが念のため
     
-    myLat = newLat; 
-    myLon = newLon;
+    myLat = normalizedLat; 
+    myLon = normalizedLon;
     
     const localHr = getLocalHour();
     const isDay = getIsDaytime();
@@ -1142,7 +1142,7 @@ async function setLocation(lat, lon, name) {
     // 4. 地図のピンを新しい場所に移動
     if (map) {
         // 引数として新しい座標を直接渡す
-        updateMapMarker(newLat, newLon);
+        updateMapMarker(myLat, myLon);
         map.setView([lat, lon], map.getZoom()); // 検索した場所に地図を飛ばす
     }
     

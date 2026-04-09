@@ -529,7 +529,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.10.2</span>
+  <span class="version">v. t4.10.3</span>
 </h1>
             
             
@@ -1729,7 +1729,18 @@ async function fetchKp3DayForecast() {
             return "";
         });
 
-        drawKpChart(labels, values);
+        drawKpChart(labels, values); // 1. グラフを描く（絵の担当）
+        
+        // =========================
+        // ✅ テキスト（NOAAの生データを表示）
+        // =========================
+        const elF = document.getElementById("kpForecast"); // 2. テーブル（文字）を更新する（掲示板の担当）
+        if (elF) {
+            const m = text.match(/NOAA Kp index breakdown[\s\S]*?(?=\n[A-Z]|$)/i);
+            elF.innerText = m ? m[0] : "No forecast text available";
+            console.log("-> ✅ テキストテーブル更新完了");
+        }
+        
         console.log("--- Kp Forecast Debug 終了 (正常) ---");
 
     } catch (e) {

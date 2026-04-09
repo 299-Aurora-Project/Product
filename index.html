@@ -529,7 +529,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.9.17</span>
+  <span class="version">v. t4.9.18</span>
 </h1>
             
             
@@ -1432,6 +1432,7 @@ async function updateAll() {
         
         // --- 視程(Visibility)の取得 (Added at v. t4.9.15 Apl 8）
         if (potentialScore >= 35) {
+           console.log(`-> 基準値(35)以上のため視程リクエスト Score: (${Math.round(potentialScore)})`);
            try {
                const nLon = normalizeLongitude(myLon);
                const isDaytime = getIsDaytime();

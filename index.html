@@ -529,7 +529,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.9.15</span>
+  <span class="version">v. t4.9.16</span>
 </h1>
             
             
@@ -1405,17 +1405,34 @@ async function updateAll() {
         // --- 視程(Visibility)の取得 (Added at v. t4.9.15 Apl 8）
         try {
             const nLon = normalizeLongitude(myLon);
-            const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${myLat}&longitude=${nLon}&current=visibility&timezone=auto`);
+            const isDaytime = getIsDaytime();
+            
+            // 昼間の場合は hourly（21時）を取得、夜間の場合は current（現在値）を取得
+            const params = isDaytime 
+                ? `hourly=visibility&forecast_days=1` 
+                : `current=visibility`;
+                
+            const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${myLat}&longitude=${nLon}&${params}&timezone=auto`);
+            
             if (weatherRes.ok) {
                 const weatherData = await weatherRes.json();
-                if (weatherData.current && weatherData.current.visibility !== undefined) {
-                    window.myVisibility = weatherData.current.visibility;
-                    console.log(`-> ✅Visibility取得完了: ${window.myVisibility}m`);
+                
+                if (isDaytime) {
+                    // 昼間モード：hourlyデータから21時(インデックス21)を抽出
+                    if (weatherData.hourly && weatherData.hourly.visibility) {
+                        window.myVisibility = weatherData.hourly.visibility[21];
+                        console.log(`-> ✅Visibility取得完了 (Tonight 21:00): ${window.myVisibility}m`);
+                    }
+                } else {
+                    // 夜間モード：現在の値を取得
+                    if (weatherData.current && weatherData.current.visibility !== undefined) {
+                        window.myVisibility = weatherData.current.visibility;
+                        console.log(`-> ✅Visibility取得完了 (Current): ${window.myVisibility}m`);
+                    }
                 }
             }
         } catch (vError) {
             console.warn("☒Visibility取得失敗:", vError);
-            // 失敗しても既存の値（または10000）が calculateTotal で使われるので止まりません
         }
 
         try {

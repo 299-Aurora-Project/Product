@@ -1881,7 +1881,7 @@ async function getCloud(isDaytime = false) {
             el.className = `badge ${val <= 20 ? 'high' : (val <= 60 ? 'mid' : 'low')}`;
             
             // デバッグログ：どちらを採用したか確認
-            console.log(`    -> Adopted cloud value was "${isDaytime ? 'Night Forecast' : 'Current'}"`);
+            console.log(`   -> Adopted cloud value was "${isDaytime ? 'Night Forecast' : 'Current'}"`);
             console.log(`-> ✅Cloud Cover取得完了 Score: ${val}`);
         }
     } catch (e) {

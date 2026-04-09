@@ -455,9 +455,13 @@ input:checked + .slider:before { transform: translateX(20px); }
     transition: all 0.2s;
 }
 
-.map-scroll-btn:hover {
-    background: rgba(91, 192, 190, 0.9);
-    color: #0b132b;
+/* --- ホバーとアクティブを共通化 (Added at v. t4.9.1 Apl 8) --- */
+.map-scroll-btn:hover,
+.map-scroll-btn:active {
+    background: rgba(91, 192, 190, 0.9); /* 明るいターコイズブルー */
+    color: #0b132b; /* 文字色をダークに */
+    border-color: #5bc0be; /* 枠線も明るく */
+    transform: translateY(-50%) scale(0.98); /* わずかに縮小して「押した感」を出す */
 }
 
 .map-scroll-btn:active {
@@ -500,7 +504,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.9.0</span>
+  <span class="version">v. t4.9.1</span>
 </h1>
             
             

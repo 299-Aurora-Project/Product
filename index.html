@@ -529,7 +529,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.10.1</span>
+  <span class="version">v. t4.10.2</span>
 </h1>
             
             
@@ -1721,19 +1721,12 @@ async function fetchKp3DayForecast() {
         // =========================
         const values = dataPoints.map(p => p.value);
 
-        let last = "";
+        // ラベル生成：日付の変わり目だけ文字を入れ、他は空文字にする
         const labels = dataPoints.map((p, i) => {
-            if (i === 0 || p.dateStr !== last) {
-                last = p.dateStr;
+            if (i === 0 || p.dateStr !== dataPoints[i - 1]?.dateStr) {
                 return p.dateStr + " " + p.timeStr;
             }
             return "";
-            
-            
-        const values = dataPoints.map(p => p.value);
-        const labels = dataPoints.map((p, i) => {
-            // ラベル生成ロジック
-            return (i === 0 || p.dateStr !== dataPoints[i-1]?.dateStr) ? p.dateStr + " " + p.timeStr : "";
         });
 
         drawKpChart(labels, values);

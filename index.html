@@ -1420,7 +1420,7 @@ async function updateAll() {
         
         // --- 視程(Visibility)の取得 (Added at v. t4.9.15 Apl 8）
         if (potentialScore >= 35) {
-           console.log(`-> 基準値(35)以上のため視程リクエスト Score: ${Math.round(potentialScore}`);
+           console.log(`-> 基準値(35)以上のため視程リクエスト Score: (${Math.round(potentialScore)})`);
            try {
                const nLon = normalizeLongitude(myLon);
                const isDaytime = getIsDaytime();
@@ -1455,7 +1455,7 @@ async function updateAll() {
         } else {
             // チャンスがない場合はリクエストをスキップ
             window.myVisibility = 10000; 
-            console.log(`-> 基準値(35)未満のため視程リクエストをスキップ Score: ${Math.round(potentialScore}`);
+            console.log(`-> 基準値(35)未満のため視程リクエストをスキップ Score: (${Math.round(potentialScore)})`);
         }
 
         try {

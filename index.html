@@ -464,10 +464,44 @@ input:checked + .slider:before { transform: translateX(20px); }
     transform: translateY(-50%) scale(0.98); /* わずかに縮小して「押した感」を出す */
 }
 
-.map-scroll-btn:active {
-    scale: 0.9;
+
+/* 1. 基本の状態（指を離している時）(Added at v. t4.9.2 Apl 8) */
+.map-scroll-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10005;
+    background: rgba(11, 19, 43, 0.7); /* 元の暗い色 */
+    color: #5bc0be;
+    border: 1px solid #3a506b;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, color 0.2s, transform 0.1s;
+    /* タップ時の青い枠（ハイライト）を消す */
+    -webkit-tap-highlight-color: transparent;
+}
+/* 2. PC（マウス操作）の場合のみ、ホバーで明るくする (Added at v. t4.9.2 Apl 8) */
+@media (hover: hover) {
+    .map-scroll-btn:hover {
+        background: rgba(91, 192, 190, 0.9);
+        color: #0b132b;
+        border-color: #5bc0be;
+    }
 }
 
+/* 3. スマホ・PC共通：押している瞬間（Active）だけ明るくする (Added at v. t4.9.2 Apl 8) */
+.map-scroll-btn:active {
+    background: rgba(91, 192, 190, 0.9) !important;
+    color: #0b132b !important;
+    transform: translateY(-50%) scale(0.9); /* ギュッと押した感じ */
+}
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -504,7 +538,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.9.1</span>
+  <span class="version">v. t4.9.2</span>
 </h1>
             
             

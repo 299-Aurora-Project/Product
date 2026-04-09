@@ -529,7 +529,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.10.0-testing1</span>
+  <span class="version">v. t4.10.0-testing2</span>
 </h1>
             
             
@@ -1723,6 +1723,13 @@ async function fetchKp3DayForecast() {
 
 
 function drawKpChart(labels, values) {
+    // --- デバッグログ: null がないかチェック ---
+    values.forEach((v, i) => {
+        if (v === null) {
+            console.warn(`⚠️ Kp Index のデータに穴があります: Index ${i} (${labels[i] || 'unknown time'})`);
+        }
+    });
+
     const ctx = document.getElementById('kpLineChart').getContext('2d');
     if (myLineChart) myLineChart.destroy(); 
 
@@ -1738,7 +1745,9 @@ function drawKpChart(labels, values) {
                 borderWidth: 2,
                 fill: true,
                 tension: 0.4,
-                pointRadius: 2
+                pointRadius: 2,
+                // --- ★ 追加: データが欠けていても線を繋ぐ設定 ---
+                spanGaps: true 
             }]
         },
         options: {

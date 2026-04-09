@@ -1659,10 +1659,14 @@ async function fetchKp3DayForecast() {
             
             
 
-            // --- ✅ ここを修正：スペース分割ではなく、数値(例: 4.00)だけを抜き出す ---
+            // --- ✅ 修正：カッコ内の数字を無視して、Kp指数（数値）だけを抽出 ---
             const rawContent = match[2].trim();
-            const nums = rawContent.match(/\d+\.\d+|\d+/g); // "4.00 (G1)" から ["4.00"] だけを取る
-
+            
+            // 1. まずカッコとその中身 (G1など) を消去する
+            const cleanContent = rawContent.replace(/\(.*?\)/g, '');
+            
+            // 2. その後に残った数値だけを抜き出す
+            const nums = cleanContent.match(/\d+\.\d+|\d+/g);
             if (!nums || nums.length < 3) continue; 
 
             for (let i = 0; i < 3; i++) {
@@ -2729,11 +2733,13 @@ function updateGScaleIndicator(kpValue) {
     if (!indicator) return;
 
     let gLevel = 0;
-    if (kpValue >= 9) gLevel = 5;
-    else if (kpValue >= 8) gLevel = 4;
-    else if (kpValue >= 7) gLevel = 3;
-    else if (kpValue >= 6) gLevel = 2;
-    else if (kpValue >= 5) gLevel = 1;
+let gLevel = 0;
+    // 境界線を 0.5 ずつ下げることで、切り上げ判定に対応させます
+    if (kpValue >= 8.5) gLevel = 5;      // Kp 8.67, 9.00 -> G5
+    else if (kpValue >= 7.5) gLevel = 4; // Kp 7.67, 8.00, 8.33 -> G4
+    else if (kpValue >= 6.5) gLevel = 3; // Kp 6.67, 7.00, 7.33 -> G3
+    else if (kpValue >= 5.5) gLevel = 2; // Kp 5.67, 6.00, 6.33 -> G2
+    else if (kpValue >= 4.5) gLevel = 1; // Kp 4.67, 5.00, 5.33 -> G1 (Fixed at v. t4.10.1-test1 Apl 9）
 
     if (gLevel > 0) {
         // 丸数字に変換 (1->①, 2->②...)

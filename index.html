@@ -529,7 +529,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.9.5</span>
+  <span class="version">v. t4.9.6</span>
 </h1>
             
             
@@ -1362,7 +1362,6 @@ async function updateAll() {
         console.log("-> ✅Aurora Oval取得完了");
         
         await getCloud(isDaytime); // 昼夜フラグを渡す
-        console.log("-> ✅Cloud Cover取得完了");
         
         try {
             await shortForecast();
@@ -1748,6 +1747,7 @@ async function getCloud(isDaytime = false) {
             data.current.cloud_cover_mid || 0,
             data.current.cloud_cover_high || 0
         );
+        console.log("-> Current Cloud Cover取得完了: ${currentCloudMax}%");
 
         // 2. 「今日の夜21時」の予報を正確に取得
         let tonightCloud = currentCloudMax; 
@@ -1758,11 +1758,13 @@ async function getCloud(isDaytime = false) {
 
             if (index21 !== -1 && data.hourly.cloud_cover[index21] !== undefined) {
                 tonightCloud = data.hourly.cloud_cover[index21];
-                console.log(`Found 21:00 forecast: ${tonightCloud}% at index ${index21}`);
+                console.log(`21:00 forecast was found at index ${index21}`);
             } else {
                 // 万が一見つからない場合は、予報配列の最後の方（夜）を参照
                 tonightCloud = data.hourly.cloud_cover[21] || currentCloudMax;
+                console.log(`21:00 forecast was NOT found, use around night index`);
             }
+            console.log("-> Tonight Cloud Cover取得完了: ${tonightCloud}%");
         }
 
         // 判定ロジック：昼間なら21時の予報、夜なら今の実況を採用
@@ -1785,7 +1787,8 @@ async function getCloud(isDaytime = false) {
             el.className = `badge ${val <= 20 ? 'high' : (val <= 60 ? 'mid' : 'low')}`;
             
             // デバッグログ：どちらを採用したか確認
-            console.log(`Adopted value: ${val}% (${isDaytime ? 'Night Forecast' : 'Current'})`);
+            console.log(`Adopted cloud value was ${isDaytime ? 'Night Forecast' : 'Current'}`);
+            console.log("-> ✅Cloud Cover取得完了: ${val}%");
         }
     } catch (e) {
         console.error("Cloud Fetch Error:", e);

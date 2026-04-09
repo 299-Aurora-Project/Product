@@ -529,7 +529,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.11.3</span>
+  <span class="version">v. t4.11.4</span>
 </h1>
             
             
@@ -843,7 +843,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 // --- 1. 定数とグローバル変数 ---
 const PUBLIC_KEY = 'BAp0wnGuvaoZk_Q7Bn4H4DWAR2Zdi9juZECl10m290Ff9sAJqiaXepWYvGgbI7WOb9K3O0MOTG8TVi_hg_ovfEg';
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbyQ9MODVmDQqOJUMXdwuTc-i6GVnpIkUlNxTiisf-QCvaj8A1bWYrfdDlqUiKjTReoHJg/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzddIWrtgSuVSKegI9wIY7e29m8-Lg5JIVj2Q8HU-6gMiYSloUuZuHWTIdUPkkUkmWmdA/exec";
 const CORS = GAS_URL + "?url="; // GASプロキシはやめて、安定したAllOriginsに戻します
 
 // 候補B (予備):
@@ -1973,6 +1973,17 @@ let myRadarChart = null;
 
 // Overall Possibility判定ロジック
 function calculateTotal(isDaytime, kpFromApi) {
+
+
+    // kpValue が undefined や Loading 中を示す値なら処理しない
+    if (kpValue === undefined || kpValue === null) {
+        console.log("判定スキップ: Kp値が未確定です");
+        return;
+    }
+    
+    
+    
+    
     const kp = (kpFromApi !== undefined) ? kpFromApi : (parseFloat(document.getElementById("kp").textContent) || 0);
     const cloud = parseInt(document.getElementById("cloud").dataset.value) || 0;
     const icon = document.getElementById("status-icon");

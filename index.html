@@ -529,7 +529,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.9.12</span>
+  <span class="version">v. t4.9.13</span>
 </h1>
             
             
@@ -1063,6 +1063,8 @@ function showAutocomplete(results) {
             // res.customLabel を渡すことで、都道府県込みの名前が保存されます
             // await を使って、setLocation が終わるのを待ってから次に進みます
             await setLocation(res.latitude, res.longitude, res.customLabel);
+            
+            logLocationSet(res.customLabel); //ログ出力用関数
             
            // 3. 全てのリストを閉じる
             if (typeof closeAllLists === "function") {
@@ -2176,31 +2178,14 @@ function initMap() {
                 }
             }
 
-            // 3. 視程取得 (Open-Meteo)
-            let visibility = 10000; 
-            try {
-                const normalizedLon = normalizeLongitude(lon);
-                const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${normalizedLon}&current=visibility&timezone=auto`);
-                
-                if (weatherRes.ok) {
-                    const weatherData = await weatherRes.json();
-                    if (weatherData.current && weatherData.current.visibility !== undefined) {
-                        visibility = weatherData.current.visibility;
-                        console.log(`Visibility: ${visibility}m (from Open-Meteo)`);
-                    }
-                }
-            } catch (wError) {
-                console.warn("Visibility fetch failed.", wError);
-            }
-
-            // 4. 結果表示と一時保存
+            // 3. 視程取得 （ここではデフォルト値を入れておき、決定時に更新する）
             cityText.textContent = displayName;
             tempLocation = { 
                 lat, 
                 lon, 
                 name: displayName, 
                 bortle: estimatedBortle, 
-                visibility: visibility 
+                visibility: 10000 // デフォルト値
             };
 
         } catch (error) {
@@ -2214,8 +2199,37 @@ function initMap() {
     // 決定ボタンのクリックイベント
     document.getElementById('btn-confirm-location').onclick = async function() {
         if (!tempLocation) return;
+
+        // ボタンを無効化、またはローディング表示にすると親切です
+        const btn = this;
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = "Loading...";
+
+        try {
+            // ここで初めて視程を取得 (Open-Meteo)
+            const nLon = normalizeLongitude(tempLocation.lon);
+            const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${tempLocation.lat}&longitude=${nLon}&current=visibility&timezone=auto`);
+            
+            if (weatherRes.ok) {
+                const weatherData = await weatherRes.json();
+                if (weatherData.current && weatherData.current.visibility !== undefined) {
+                    tempLocation.visibility = weatherData.current.visibility;
+                    console.log(`Visibility fetched on confirm: ${tempLocation.visibility}m`);
+                }
+            }
+        } catch (wError) {
+            console.warn("Visibility fetch failed on confirm.", wError);
+            // 失敗してもデフォルト値(10000)で続行
+        }
+
+        // 最終的な設定を反映
         await setLocation(tempLocation.lat, tempLocation.lon, tempLocation.name);
-        logLocationSet(tempLocation.name); // ログ出力用関数
+        logLocationSet(tempLocation.name);
+        
+        // 状態を戻して画面を閉じる
+        btn.disabled = false;
+        btn.textContent = originalText;
         hideMapScreen();
     };
        

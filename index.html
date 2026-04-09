@@ -529,7 +529,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.9.16</span>
+  <span class="version">v. t4.9.17</span>
 </h1>
             
             
@@ -1402,37 +1402,71 @@ async function updateAll() {
         console.log("-> ✅shortForecast取得完了");
         
         
+        
+        
+        
+        
+        // --- 視程(Visibility)の取得判定 (リクエスト節約：仮スコア判定) ---
+        
+        // 1. 視程を10000m（減衰なし）と仮定して計算
+        const tempVis = 10000;
+        let ovalScore = Math.min(lastAuroraProb * 1.5, 45); 
+        let magneticScore = Math.min(kpValue * 5, 40); 
+        let cloudVal = parseInt(document.getElementById("cloud").dataset.value) || 0;
+        let skyScore = Math.max(0, 15 * (1 - cloudVal / 100));
+        
+        let visibilityMultiplier = 1.0;
+        if (lastAuroraProb < 20) {
+            visibilityMultiplier = Math.max(0, (lastAuroraProb - 2) / (20 - 2));
+        }
+        
+        // 仮スコアを算出
+        let potentialScore = (ovalScore + magneticScore + skyScore) * visibilityMultiplier;
+        // 2. 仮スコアが Possible (35点) 以上の場合のみ、実際の視程を取得
+        
+        
+        
+
+        
+        
+        
         // --- 視程(Visibility)の取得 (Added at v. t4.9.15 Apl 8）
-        try {
-            const nLon = normalizeLongitude(myLon);
-            const isDaytime = getIsDaytime();
-            
-            // 昼間の場合は hourly（21時）を取得、夜間の場合は current（現在値）を取得
-            const params = isDaytime 
-                ? `hourly=visibility&forecast_days=1` 
-                : `current=visibility`;
-                
-            const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${myLat}&longitude=${nLon}&${params}&timezone=auto`);
-            
-            if (weatherRes.ok) {
-                const weatherData = await weatherRes.json();
-                
-                if (isDaytime) {
-                    // 昼間モード：hourlyデータから21時(インデックス21)を抽出
-                    if (weatherData.hourly && weatherData.hourly.visibility) {
-                        window.myVisibility = weatherData.hourly.visibility[21];
-                        console.log(`-> ✅Visibility取得完了 (Tonight 21:00): ${window.myVisibility}m`);
-                    }
-                } else {
-                    // 夜間モード：現在の値を取得
-                    if (weatherData.current && weatherData.current.visibility !== undefined) {
-                        window.myVisibility = weatherData.current.visibility;
-                        console.log(`-> ✅Visibility取得完了 (Current): ${window.myVisibility}m`);
-                    }
-                }
-            }
-        } catch (vError) {
-            console.warn("☒Visibility取得失敗:", vError);
+        if (potentialScore >= 35) {
+           try {
+               const nLon = normalizeLongitude(myLon);
+               const isDaytime = getIsDaytime();
+               
+               // 昼間の場合は hourly（21時）を取得、夜間の場合は current（現在値）を取得
+               const params = isDaytime 
+                   ? `hourly=visibility&forecast_days=1` 
+                   : `current=visibility`;
+                   
+               const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${myLat}&longitude=${nLon}&${params}&timezone=auto`);
+               
+               if (weatherRes.ok) {
+                   const weatherData = await weatherRes.json();
+                   
+                   if (isDaytime) {
+                       // 昼間モード：hourlyデータから21時(インデックス21)を抽出
+                       if (weatherData.hourly && weatherData.hourly.visibility) {
+                           window.myVisibility = weatherData.hourly.visibility[21];
+                           console.log(`-> ✅Visibility取得完了 (Tonight 21:00): ${window.myVisibility}m`);
+                       }
+                   } else {
+                       // 夜間モード：現在の値を取得
+                       if (weatherData.current && weatherData.current.visibility !== undefined) {
+                           window.myVisibility = weatherData.current.visibility;
+                           console.log(`-> ✅Visibility取得完了 (Current): ${window.myVisibility}m`);
+                       }
+                   }
+               }
+           } catch (vError) {
+               console.warn("☒Visibility取得失敗:", vError);
+           }
+        } else {
+            // チャンスがない場合はリクエストをスキップ
+            window.myVisibility = 10000; 
+            console.log(`-> 基準値(35)未満のため視程リクエストをスキップ Score: (${Math.round(potentialScore)})`);
         }
 
         try {

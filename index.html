@@ -529,7 +529,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.9.13</span>
+  <span class="version">v. t4.9.14</span>
 </h1>
             
             
@@ -1134,8 +1134,8 @@ async function setLocation(lat, lon, name) {
     document.getElementById("loc").textContent = name;
     
     // 3. ブラウザに保存（次回起動用）
-    localStorage.setItem('aurora_myLat', lat);
-    localStorage.setItem('aurora_myLon', lon);
+    localStorage.setItem('aurora_myLat', normalizedLat); // lat ではなく normalizedLat に（念のため）
+    localStorage.setItem('aurora_myLon', normalizedLon); // ★ここ！ lon ではなく normalizedLon を保存する
     localStorage.setItem('aurora_myName', name);
     
     // 4. 地図のピンを新しい場所に移動
@@ -2201,10 +2201,10 @@ function initMap() {
         if (!tempLocation) return;
 
         // ボタンを無効化、またはローディング表示にすると親切です
-        const btn = this;
-        const originalText = btn.textContent;
-        btn.disabled = true;
-        btn.textContent = "Loading...";
+        // const btn = this;
+        // const originalText = btn.textContent;
+        // btn.disabled = true;
+        // btn.textContent = "Loading...";
 
         try {
             // ここで初めて視程を取得 (Open-Meteo)

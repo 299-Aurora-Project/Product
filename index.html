@@ -529,7 +529,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.11.5-dbg1</span>
+  <span class="version">v. t4.11.5-dbg2</span>
 </h1>
             
             
@@ -843,7 +843,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 // --- 1. 定数とグローバル変数 ---
 const PUBLIC_KEY = 'BAp0wnGuvaoZk_Q7Bn4H4DWAR2Zdi9juZECl10m290Ff9sAJqiaXepWYvGgbI7WOb9K3O0MOTG8TVi_hg_ovfEg';
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbweQd8Csy-OOH5WyovVE29LIW-Qdr8_2G66BAICH3E2qQr53z68j9BWwsA1cXAuRuMOFw/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzaLG-MG8ck_ChGwjkXRb5g8POkmQdwYIEbBGQ5phXDrCH8Bz1woB2Nyj7OMVLflheEeQ/exec";
 const CORS = GAS_URL + "?url="; // GASプロキシはやめて、安定したAllOriginsに戻します
 
 // 候補B (予備):
@@ -1641,14 +1641,6 @@ async function fetchKp3DayForecast() {
                 continue;
             }
             
-            
-            
-            
-            
-            
-            
-            
-
             // --- ✅ 修正：カッコ内の数字を無視して、Kp指数（数値）だけを抽出 ---
             const rawContent = match[2].trim();
             
@@ -1738,24 +1730,6 @@ async function fetchKp3DayForecast() {
         return [];
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 function drawKpChart(labels, values) {

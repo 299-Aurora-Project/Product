@@ -529,7 +529,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.11.5-dbg2</span>
+  <span class="version">v. t4.11.5-dbg3</span>
 </h1>
             
             
@@ -2511,16 +2511,15 @@ function setItemLoading(id, isLoading) {
     if (!el) return;
 
     if (isLoading) {
-        // Loading開始時だけ文字を上書きする
         el.innerHTML = '⏳ <i>Loading...</i>';
-
-        // --- 背景色をグレーにリセットする処理を追加 ---
-        // 前回の色（mid, high, low）を消して、初期のstatusクラス（グレー）にする
+        // Loading開始：他の色を消して status（グレー文字用）を付ける
         el.classList.remove('mid', 'high', 'low');
         el.classList.add('status');
-    } 
-    // isLoadingがfalseの時は、各データ取得関数が
-    // 自分でクラスを付け直すので、ここではリセットだけでOKです
+    } else {
+        // Loading終了：statusクラス（グレー文字）を完全に除去する
+        // これにより、後の処理で付与される low, mid, high の色が優先されます
+        el.classList.remove('status');
+    }
 }
 
 function closeWelcome() { document.getElementById('welcome-overlay').style.display = 'none'; }

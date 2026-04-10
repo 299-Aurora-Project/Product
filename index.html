@@ -529,7 +529,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.11.7</span>
+  <span class="version">v. t4.11.8</span>
 </h1>
             
             
@@ -576,6 +576,7 @@ input:checked + .slider:before { transform: translateX(20px); }
             <div id="autocomplete-list" class="autocomplete-items"></div>
         </div>
 
+        
         <div id="search-error" class="error-msg" style="min-height: 0; margin-top: 5px;">City not found. Please check your input.</div>
     </div> 
 
@@ -759,6 +760,8 @@ input:checked + .slider:before { transform: translateX(20px); }
     </div>
 </div>
 
+
+
 <div id="map-screen" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; z-index: 10000;">
     <button id="back-btn" onclick="hideMapScreen()">← Back</button>
     
@@ -778,6 +781,7 @@ input:checked + .slider:before { transform: translateX(20px); }
             </div>
         </div>
      
+     
         <div id="oval-legend-container">
             <div class="legend-bar" style="height: 6px; width: 100%; border-radius: 3px; background: linear-gradient(to right, #00ff7f, #00ff00, #ccff00, #ffd700, #ff8c00, #ff0000, #ff00ff); margin-bottom: 4px;"></div>
             <div style="display: flex; justify-content: space-between; font-size: 0.6rem; color: #8b949e;">
@@ -787,6 +791,10 @@ input:checked + .slider:before { transform: translateX(20px); }
         </div>
     </div>
 </div>
+
+
+
+
 
     <div id="map" style="height: 100vh; width: 100%; position: fixed; top: 0; left: 0; z-index: -1;"></div>
 
@@ -1332,6 +1340,21 @@ async function handleNotifToggleEvent() {
     }
 }
 
+
+// Loadingのときの処理
+function setItemLoading(id, isLoading) {
+    const el = document.getElementById(id);
+    if (!el) return;
+
+    if (isLoading) {
+        el.innerHTML = '⏳ <i>Loading...</i>';
+        el.classList.add('status');
+        el.classList.remove('low', 'mid', 'high');
+    } else {
+        // Loading終了時に一旦status（グレー文字）を消す
+        el.classList.remove('status');
+    }
+}
 
 /////////////////////////////////////
 // メイン関数(データ取得・予報)    //
@@ -1935,15 +1958,11 @@ let myRadarChart = null;
 // Overall Possibility判定ロジック
 function calculateTotal(isDaytime, kpFromApi) {
 
-
     // kpValue が undefined や Loading 中を示す値なら処理しない
     if (kpFromApi === undefined || kpFromApi === null) {
         console.log("判定スキップ: Kp値が未確定です");
         return;
     }
-    
-    
-    
     
     const kp = (kpFromApi !== undefined) ? kpFromApi : (parseFloat(document.getElementById("kp").textContent) || 0);
     const cloud = parseInt(document.getElementById("cloud").dataset.value) || 0;
@@ -2047,7 +2066,18 @@ function calculateTotal(isDaytime, kpFromApi) {
     if (pctEl) {
         pctEl.textContent = (finalScore < 1 ? "< 1%" : (finalScore > 99 ? "> 99%" : finalScore + "%"));
     }
-
+    
+    // --- Kpの窓のスタイルを確定 ---
+    const kpEl = document.getElementById("kp");
+    if (kpEl) {
+        // 一旦リセット
+        kpEl.classList.remove("low", "mid", "high", "status");
+        // 適切なクラスを付与（これで白文字になる）
+        if (kp >= 5) kpEl.classList.add("high");
+        else if (kp >= 3) kpEl.classList.add("mid");
+        else kpEl.classList.add("low");
+    }
+    
     // --- アドバイス表示 (メッセージ不要のため削除) ---
     const adviceEl = document.getElementById("observation-advice");
     if (adviceEl) adviceEl.textContent = ""; 
@@ -2486,27 +2516,7 @@ function hideMapScreen() {
     }
 }
 
-// 例：Kpの判定部分
-function updateKpDisplay(kpValue) {
-    const el = document.getElementById('kp');
-    if (!el) return;
 
-    // Loadingを解除
-    setItemLoading('kp', false); 
-
-    // 数値をセット
-    el.textContent = kpValue.toFixed(2);
-
-    // ✅ ここで改めて色を付ける！
-    if (kpValue >= 5) {
-        el.classList.add('high');
-    } else if (kpValue >= 3) {
-        el.classList.add('mid');
-    } else {
-        // Kpが低いときは low クラスを付与
-        el.classList.add('low'); 
-    }
-}
 
 function closeWelcome() { document.getElementById('welcome-overlay').style.display = 'none'; }
 

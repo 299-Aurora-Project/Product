@@ -529,7 +529,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.11.6</span>
+  <span class="version">v. t4.11.7</span>
 </h1>
             
             
@@ -576,7 +576,6 @@ input:checked + .slider:before { transform: translateX(20px); }
             <div id="autocomplete-list" class="autocomplete-items"></div>
         </div>
 
-        
         <div id="search-error" class="error-msg" style="min-height: 0; margin-top: 5px;">City not found. Please check your input.</div>
     </div> 
 
@@ -760,19 +759,11 @@ input:checked + .slider:before { transform: translateX(20px); }
     </div>
 </div>
 
-
-
 <div id="map-screen" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; z-index: 10000;">
     <button id="back-btn" onclick="hideMapScreen()">← Back</button>
     
-    
-    
-    
     <button id="map-scroll-left" class="map-scroll-btn" onclick="scrollMap(-60, 'map-scroll-left')">◀</button>
     <button id="map-scroll-right" class="map-scroll-btn" onclick="scrollMap(60, 'map-scroll-right')">▶</button>
-    
-    
-    
     
     <div id="map" style="height: 100%; width: 100%;"></div>
 
@@ -787,7 +778,6 @@ input:checked + .slider:before { transform: translateX(20px); }
             </div>
         </div>
      
-     
         <div id="oval-legend-container">
             <div class="legend-bar" style="height: 6px; width: 100%; border-radius: 3px; background: linear-gradient(to right, #00ff7f, #00ff00, #ccff00, #ffd700, #ff8c00, #ff0000, #ff00ff); margin-bottom: 4px;"></div>
             <div style="display: flex; justify-content: space-between; font-size: 0.6rem; color: #8b949e;">
@@ -797,10 +787,6 @@ input:checked + .slider:before { transform: translateX(20px); }
         </div>
     </div>
 </div>
-
-
-
-
 
     <div id="map" style="height: 100vh; width: 100%; position: fixed; top: 0; left: 0; z-index: -1;"></div>
 
@@ -814,9 +800,6 @@ input:checked + .slider:before { transform: translateX(20px); }
     </div>
 </div>
 
-
-
-
 <div id="detail-modal-overlay" class="modal-overlay" onclick="closeDetailModal()">
     <div class="modal-content">
         <h2 id="detail-title" style="color: #5bc0be; margin-top: 0; font-size: 1.3rem;"></h2>
@@ -825,8 +808,6 @@ input:checked + .slider:before { transform: translateX(20px); }
         <div class="tap-to-close">Tap to close</div>
     </div>
 </div>
-
-
 
 <div id="kp-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center;" onclick="closeKpInfo()">
     <div style="background: #1a1a1a; padding: 20px; border-radius: 12px; width: 80%; max-width: 300px; border: 1px solid #30363d; position: relative;" onclick="event.stopPropagation()">
@@ -843,7 +824,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 // --- 1. 定数とグローバル変数 ---
 const PUBLIC_KEY = 'BAp0wnGuvaoZk_Q7Bn4H4DWAR2Zdi9juZECl10m290Ff9sAJqiaXepWYvGgbI7WOb9K3O0MOTG8TVi_hg_ovfEg';
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzOItcu3n6uX6nLlMAqoqplDrA_yjOA9LseX7a-qrAxRDLjzYbcA0V8CwZlvsNYgiBvAg/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyXzuEG8BuCN-kPl9MJgq3ZV8SBEmidZYzygUxYg-Ye_mWoR_VMJ5-m1e_DeghC0Graig/exec";
 const CORS = GAS_URL + "?url="; // GASプロキシはやめて、安定したAllOriginsに戻します
 
 // 候補B (予備):
@@ -2505,20 +2486,25 @@ function hideMapScreen() {
     }
 }
 
-// Loadingのときの処理
-function setItemLoading(id, isLoading) {
-    const el = document.getElementById(id);
+// 例：Kpの判定部分
+function updateKpDisplay(kpValue) {
+    const el = document.getElementById('kp');
     if (!el) return;
 
-    if (isLoading) {
-        el.innerHTML = '⏳ <i>Loading...</i>';
-        // Loading用スタイルを適用
-        el.classList.add('status');
-        el.classList.remove('low', 'mid', 'high');
+    // Loadingを解除
+    setItemLoading('kp', false); 
+
+    // 数値をセット
+    el.textContent = kpValue.toFixed(2);
+
+    // ✅ ここで改めて色を付ける！
+    if (kpValue >= 5) {
+        el.classList.add('high');
+    } else if (kpValue >= 3) {
+        el.classList.add('mid');
     } else {
-        // ✅ ここでLoading用スタイルを完全に除去
-        // これにより、背景色と同化していた status クラスが消えます
-        el.classList.remove('status');
+        // Kpが低いときは low クラスを付与
+        el.classList.add('low'); 
     }
 }
 

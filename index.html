@@ -413,16 +413,16 @@ input:checked + .slider:before { transform: translateX(20px); }
 
 
 /* Low（赤）, Mid（黄）, High（緑）の時は、badge自体の白文字が適用される */
-/* データがあるLow：グレー背景 + 白文字 */
-.badge.low {
-    background-color: #3a506b; 
-    color: #ffffff !important;
+/* データがないStatus（Loading中）：少し暗めのグレーにして、枠線を付ける */
+.badge.status {
+    background-color: #1a2a3a !important; /* 背景より一段暗い色 */
+    color: #8b949e !important;
 }
 
-/* データがないStatus：グレー背景 + グレー文字 */
-.badge.status {
-    background-color: #3a506b;
-    color: #8b949e !important;
+/* データがあるLow：元の鮮やかなグレー背景 + 白文字 */
+.badge.low {
+    background-color: #3a506b !important; 
+    color: #ffffff !important;
 }
 
 .badge.mid  { background-color: #ca8a04; }
@@ -529,7 +529,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <h1>
   Easy Aurora Forecast
   <span class="beta-suffix"></span>
-  <span class="version">v. t4.11.5</span>
+  <span class="version">v. t4.11.6</span>
 </h1>
             
             
@@ -843,7 +843,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 // --- 1. 定数とグローバル変数 ---
 const PUBLIC_KEY = 'BAp0wnGuvaoZk_Q7Bn4H4DWAR2Zdi9juZECl10m290Ff9sAJqiaXepWYvGgbI7WOb9K3O0MOTG8TVi_hg_ovfEg';
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzUrOyONXNfd8WJ_7aQ-S5TleQv839fSO4sWWgcGHnV6H8PsQ_z2ZuirHMskyC1AR_TOw/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzOItcu3n6uX6nLlMAqoqplDrA_yjOA9LseX7a-qrAxRDLjzYbcA0V8CwZlvsNYgiBvAg/exec";
 const CORS = GAS_URL + "?url="; // GASプロキシはやめて、安定したAllOriginsに戻します
 
 // 候補B (予備):
@@ -2512,12 +2512,12 @@ function setItemLoading(id, isLoading) {
 
     if (isLoading) {
         el.innerHTML = '⏳ <i>Loading...</i>';
-        // Loading開始：他の色を消して status（グレー文字用）を付ける
-        el.classList.remove('mid', 'high', 'low');
+        // Loading用スタイルを適用
         el.classList.add('status');
+        el.classList.remove('low', 'mid', 'high');
     } else {
-        // Loading終了：statusクラス（グレー文字）を完全に除去する
-        // これにより、後の処理で付与される low, mid, high の色が優先されます
+        // ✅ ここでLoading用スタイルを完全に除去
+        // これにより、背景色と同化していた status クラスが消えます
         el.classList.remove('status');
     }
 }

@@ -681,9 +681,9 @@ input:checked + .slider:before { transform: translateX(20px); }
             <strong>Optimized Logic (v t1.0.13+):</strong>
             <table class="detail-table">
                 <tr><th>Item</th><th>Max</th><th>Details</th></tr>
-                <tr><td>Oval/Horizon</td><td>45</td><td>Base prob + Viewline bonus</td></tr>
-                <tr><td>Magnetic</td><td>40</td><td>Kp Index sensitivity adjusted</td></tr>
-                <tr><td>Sky</td><td>15</td><td>Clear sky impact</td></tr>
+                <tr><td>Aurora Oval</td><td>45</td><td>Base prob + Viewline bonus</td></tr>
+                <tr><td>Kp Index</td><td>40</td><td>Earth's overall magnetic activity</td></tr>
+                <tr><td>Cloud Cover</td><td>15</td><td>Cloud cover filter (visual barrier)</td></tr>
             </table>
             <p style="margin-top:10px; color: #ffab70; font-size: 0.8rem;">
                 * <strong>Cloud Impact:</strong> If cloud cover exceeds 70%, the score is significantly reduced. If it exceeds 85%, the result is forced to "Low".<br><br>
@@ -2052,7 +2052,7 @@ function updateRadarChart(kpValue) {
     const kp = (kpValue !== undefined) ? kpValue : (parseFloat(document.getElementById("kp").textContent) || 0);
     const cloud = parseInt(document.getElementById("cloud").dataset.value) || 0;
 
-    // --- 総合確率から「場所の条件」だけを逆算して取り出す ---
+    // 総合確率から「場所の条件」だけを逆算して取り出す
     let rawProb = lastAuroraProb || 0;
     
     // 雲の影響を打ち消す
@@ -2068,8 +2068,8 @@ function updateRadarChart(kpValue) {
 
     const dataValues = [
         Math.min(pureOvalPositionScore * 1.5, 100), 
-        Math.min(kp * 12.5, 100), // Magnetic
-        Math.max(100 - cloud, 0)   // Sky
+        Math.min(kp * 12.5, 100), // Kp
+        Math.max(100 - cloud, 0)   // Cloud
     ];
 
     // 中央の％表示を更新
@@ -2086,11 +2086,11 @@ function updateRadarChart(kpValue) {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     
-    // 常に新規作成（ctxの再宣言 const は削除しました）
+    // 常に新規作成
     myRadarChart = new Chart(currentCtx, {
         type: 'radar',
         data: {
-            labels: ['Oval / Horizon', 'Magnetic (Kp)', 'Sky (Clear)'],
+            labels: ['Aurora Oval', 'Kp Index', 'Cloud Cover'],
             datasets: [{
                 data: dataValues,
                 backgroundColor: 'rgba(91, 192, 190, 0.3)',

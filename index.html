@@ -557,7 +557,43 @@ pre,
     background-color: #333 !important;
 }
 
+/* 1. ラベル（📍Location などのタイトル）をグレーに */
+.label-main {
+    color: #94a3b8 !important; /* 水色から落ち着いたスチールグレーへ */
+}
 
+/* 2. バッジの基本カラーとボーダーをグレーに */
+.version, 
+.beta-suffix,
+.thin-arrow,
+.tap-to-close,
+.map-instruction,
+.map-scroll-btn {
+    color: #94a3b8 !important;
+}
+
+/* 3. 特徴的な水色の枠線をグレーに */
+.welcome-box,
+.modal-content,
+.notification-card {
+    border-color: #475569 !important; /* 少し濃い目のグレー */
+}
+
+/* 4. スイッチがONの時の色もグレー系に（任意） */
+input:checked + .slider {
+    background-color: #64748b !important;
+}
+
+/* 5. リンクやホバー時のアクセントカラー */
+.label-main:hover,
+.toggle-btn {
+    color: #cbd5e1 !important;
+}
+
+/* 6. 特殊な文字色（Advice textなど） */
+.advice-text {
+    color: #94a3b8 !important;
+}
 
 
 

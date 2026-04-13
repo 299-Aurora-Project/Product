@@ -2559,7 +2559,7 @@ function scheduleNextUpdate() {
     const intervalMinutes = isDaytime ? 60 : 15;
     const intervalMs = intervalMinutes * 60 * 1000;
 
-    console.log(`Next periodic update schedule: ${intervalMinutes} minutes later.`);
+    console.log(`Next periodic update schedule: ${intervalMinutes} minute(s) later.`);
 
     if (window.autoUpdateTimeout) clearTimeout(window.autoUpdateTimeout);
 
@@ -2662,7 +2662,7 @@ document.addEventListener("visibilitychange", function() {
             const remMin = Math.floor(remainingMs / 1000 / 60); // 分
             const remSec = Math.round((remainingMs / 1000) % 60); // 秒
             
-            console.log(`The screen was redisplayed, but the update was skipped because it was within the waiting period. The next periodic update is going to be approximately ${remMin}mins ${remSec}seconds later.`);
+            console.log(`The screen was redisplayed, but the update was skipped because it was within the waiting period. The next periodic update is going to be approximately ${remMin} min(s) ${remSec} second(s) later.`);
         }
     }
 });

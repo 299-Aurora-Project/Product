@@ -1395,15 +1395,37 @@ async function updateAll() {
         // ★★★ ここからテスト用固定値を注入 ★★★//////////////////////////
         console.log("--- TEST MODE: Forcing ideal values ---");
 
-        kpValue = 5.0;            // 「const」を削除して上書き
+        kpValue = 5.0;            // 数値を上書き
         lastAuroraProb = 30;      // グローバル変数を上書き
         window.myVisibility = 10000; 
         
-        // 雲のデータも上書き
+        // 1. Kp Index の窓を更新
+        const kpEl = document.getElementById("kp");
+        if (kpEl) {
+            kpEl.textContent = kpValue.toFixed(1);
+            kpEl.classList.remove('loading'); // ローディング解除
+        }
+
+        // 2. Aurora Oval の窓を更新
+        const ovalEl = document.getElementById("oval");
+        if (ovalEl) {
+            ovalEl.textContent = "Near Oval"; // テスト値30%ならこれ
+            ovalEl.className = `badge high`; // スタイルを強制適用
+            ovalEl.classList.remove('loading');
+        }
+
+        // 3. 雲のデータ窓を更新
         const cloudEl = document.getElementById("cloud");
         if (cloudEl) {
             cloudEl.dataset.value = "10"; 
             cloudEl.textContent = "10%";
+            cloudEl.className = `badge high`; // 10%ならHigh(良好)
+            cloudEl.classList.remove('loading');
+        }
+        
+        // 4. G-Scaleインジケーター等も連動させる
+        if (typeof updateGScaleIndicator === 'function') {
+            updateGScaleIndicator(kpValue);
         }
         ////////////////////////// ★★★ ここまで ★★★//////////////////////////
         

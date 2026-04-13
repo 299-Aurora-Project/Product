@@ -814,7 +814,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 // --- 1. 定数とグローバル変数 ---
 const PUBLIC_KEY = 'BAp0wnGuvaoZk_Q7Bn4H4DWAR2Zdi9juZECl10m290Ff9sAJqiaXepWYvGgbI7WOb9K3O0MOTG8TVi_hg_ovfEg';
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbx_z_zKAyZaxpsWtCIkm30uaEUys6dIYYOW3IIjJlJ_je0TRJaNGpIGfWl-gORl_atDsQ/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwt4nfl2PQBLQecOClqoYVFkRrLAEhm-S_AkkF2QsAEfZ15bcdkCHOmKrvHQ1JFgv3oNw/exec";
 const CORS = GAS_URL + "?url="; // GASプロキシはやめて、安定したAllOriginsに戻します
 
 const KP_URL = "https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json";
@@ -1327,7 +1327,7 @@ function setItemLoading(id, isLoading) {
 // メイン関数(データ取得・予報)    //
 /////////////////////////////////////
 async function updateAll() {
-    console.log("--- UpdateAll 開始 ---");
+    console.log("--- UpdateAll started. ---");
     
     // --- ✅ ここを追加：古いデータを完全に捨てる(too bright対策(Added at v. t4.11.5-dbg1 Apl 9）) ---
     lastAuroraProb = 0; 
@@ -1340,7 +1340,7 @@ async function updateAll() {
 
     if (myLat === null || myLon === null) {
         if (statusIcon) statusIcon.src = "location.png";
-        console.warn("☒座標がありません");
+        console.warn("☒No location data.");
         return;
     }
 
@@ -1359,23 +1359,23 @@ async function updateAll() {
 
         // --- 2. データ取得 ---
         // 通信エラーを避けるため、一つずつ確実に await します
-        console.log(`モード: ${isDaytime ? "昼間(21:00予報)" : "夜間(リアルタイム)"}`);
+        console.log(`Mode: ${isDaytime ? "Daytime(21:00 forcast)" : "Night(Realtime)"}`);
 
         const kpValue = await getKp();
         
         await fetchKp3DayForecast();
-        console.log("-> ✅Kp3DayForecast取得完了");
+        console.log("-> ✅Kp3DayForecast data retrieved successfully.");
         
         await checkOval();
-        console.log(`-> ✅Aurora Oval取得完了 Score: ${lastAuroraProb}`);
+        console.log(`-> ✅Aurora Oval data retrieved successfully. Score: ${lastAuroraProb}`);
         
         await getCloud(isDaytime); // 昼夜フラグを渡す
         
         try {
             await shortForecast();
-        } catch (e) { console.error("☒shortForecastエラー:", e); }
+        } catch (e) { console.error("☒shortForecast error:", e); }
         
-        console.log("-> ✅shortForecast取得完了");
+        console.log("-> ✅shortForecast data retrieved successfully.");
         
         
         // --- 視程(Visibility)の取得判定 (リクエスト節約：仮スコア判定) ---
@@ -1397,7 +1397,7 @@ async function updateAll() {
         
         // --- 視程(Visibility)の取得 (Added at v. t4.9.15 Apl 8）
         if (potentialScore >= 35) {
-           console.log(`-> 基準値(35)以上のため視程リクエスト Score: ${Math.round(potentialScore)}`);
+           console.log(`-> Visibility data is requestd due to exceeding the standard value (35). Score: ${Math.round(potentialScore)}`);
            try {
                const nLon = normalizeLongitude(myLon);
                const isDaytime = getIsDaytime();
@@ -1416,13 +1416,13 @@ async function updateAll() {
                        // 昼間モード：hourlyデータから21時(インデックス21)を抽出
                        if (weatherData.hourly && weatherData.hourly.visibility) {
                            window.myVisibility = weatherData.hourly.visibility[21];
-                           console.log(`-> ✅Visibility取得完了 (Tonight 21:00): ${window.myVisibility}m`);
+                           console.log(`-> ✅Visibility data retrieved successfully. (Tonight 21:00): ${window.myVisibility}m`);
                        }
                    } else {
                        // 夜間モード：現在の値を取得
                        if (weatherData.current && weatherData.current.visibility !== undefined) {
                            window.myVisibility = weatherData.current.visibility;
-                           console.log(`-> ✅Visibility取得完了 (Current): ${window.myVisibility}m`);
+                           console.log(`-> ✅Visibility data retrieved successfully. (Current): ${window.myVisibility}m`);
                        }
                    }
                }
@@ -1432,7 +1432,7 @@ async function updateAll() {
         } else {
             // チャンスがない場合はリクエストをスキップ
             window.myVisibility = 10000; 
-            console.log(`-> 基準値(35)未満のため視程リクエストをスキップ Score: ${Math.round(potentialScore)}`);
+            console.log(`-> The visibility request is skipped because it is below the standard value (35). Score: ${Math.round(potentialScore)}`);
         }
 
         try {
@@ -1448,7 +1448,7 @@ async function updateAll() {
         }
 
     } catch (e) {
-        console.error("【重大なエラー】:", e);
+        console.error("【Critical error】:", e);
     } finally {
         if (btn) btn.classList.remove('loading-btn');
         ['kp', 'oval', 'cloud', 'result'].forEach(id => setItemLoading(id, false));
@@ -1456,8 +1456,8 @@ async function updateAll() {
         // 時刻表示の更新
         updateTimestamp('time-update-all');
         lastUpdateTimestamp = new Date().getTime();
-        console.log("-> ✅タイムスタンプ更新完了");
-        console.log("--- UpdateAll 完了 ---");
+        console.log("-> ✅Timestamp update complete.");
+        console.log("--- UpdateAll complete ---");
         
         // 次の自動アップデートスケジュールを開始
         scheduleNextUpdate();
@@ -1496,7 +1496,7 @@ async function getKp() {
             if (!isNaN(tempVal)) {
                 val = tempVal;
                 found = true;
-                console.log(`-> ✅Kp Index取得完了 Score: ${val}`);
+                console.log(`-> ✅Kp Index data retrieved successfully. Score: ${val}`);
                 break; 
             }
         }
@@ -1594,7 +1594,7 @@ async function fetchKp3DayForecast() {
         }
 
         if (dates.length < 3) {
-            console.error("❌ 日付取得失敗: 適切な日付行が見つかりません。");
+            console.error("❌ Date retrieval failed: No suitable date row was found.");
             return [];
         }
 
@@ -1638,7 +1638,7 @@ async function fetchKp3DayForecast() {
         // console.log(`Extracted DataPoints: ${dataPoints.length} (Expected: 24)`);
 
         if (dataPoints.length < 24) {
-            console.error("❌ データ不足のため描画スキップ。dataPointsの内容:", dataPoints);
+            console.error("❌ Drawing skipped due to insufficient data. Contents of dataPoints:", dataPoints);
             return [];
         }
 
@@ -1685,7 +1685,7 @@ async function fetchKp3DayForecast() {
         if (elF) {
             const m = text.match(/NOAA Kp index breakdown[\s\S]*?(?=\n[A-Z]|$)/i);
             elF.innerText = m ? m[0] : "No forecast text available";
-            console.log("-> ✅ テキストテーブル更新完了");
+            console.log("-> ✅ Text table update complete.");
         }
         
         // console.log("--- Kp Forecast Debug 終了 (正常) ---");
@@ -1701,7 +1701,7 @@ function drawKpChart(labels, values) {
     // --- デバッグログ: null がないかチェック ---
     values.forEach((v, i) => {
         if (v === null) {
-            console.warn(`⚠️ Kp Index のデータに穴があります: Index ${i} (${labels[i] || 'unknown time'})`);
+            console.warn(`⚠️ There are lacks in the Kp Index data.: Index ${i} (${labels[i] || 'unknown time'})`);
         }
     });
 
@@ -1859,7 +1859,7 @@ async function getCloud(isDaytime = false) {
             
             // デバッグログ：どちらを採用したか確認
             console.log(`   -> Adopted cloud value was "${isDaytime ? 'Night Forecast' : 'Current'}"`);
-            console.log(`-> ✅Cloud Cover取得完了 Score: ${val}`);
+            console.log(`-> ✅Cloud Cover data retrieved successfully. Score: ${val}`);
         }
     } catch (e) {
         console.error("Cloud Fetch Error:", e);
@@ -1923,7 +1923,7 @@ function calculateTotal(isDaytime, kpFromApi) {
 
     // kpValue が undefined や Loading 中を示す値なら処理しない
     if (kpFromApi === undefined || kpFromApi === null) {
-        console.log("判定スキップ: Kp値が未確定です");
+        console.log("Judgment skipped: Kp value is not yet determined.");
         return;
     }
     
@@ -2017,7 +2017,7 @@ function calculateTotal(isDaytime, kpFromApi) {
             } else {
                 icon.src = "low.png";
             }
-            console.log("-> ✅ステータスアイコン更新完了");
+            console.log("-> ✅Status icon update complete.");
         }
     }
 
@@ -2559,12 +2559,12 @@ function scheduleNextUpdate() {
     const intervalMinutes = isDaytime ? 60 : 15;
     const intervalMs = intervalMinutes * 60 * 1000;
 
-    console.log(`次回の自動更新スケジュール: ${intervalMinutes}分後`);
+    console.log(`Next periodic update schedule: ${intervalMinutes} minutes later.`);
 
     if (window.autoUpdateTimeout) clearTimeout(window.autoUpdateTimeout);
 
     window.autoUpdateTimeout = setTimeout(() => {
-        console.log("[Timer] 定期更新を実行します");
+        console.log("Periodic update started.");
         updateAll(); // updateAllの最後でまたscheduleNextUpdateが呼ばれるのでOK
     }, intervalMs);
 }
@@ -2649,7 +2649,7 @@ document.addEventListener("visibilitychange", function() {
         const elapsedMs = now - lastUpdateTimestamp;
 
         if (elapsedMs >= waitMs) {
-            console.log(`前回の更新から${waitMinutes}分以上経過したため自動更新を開始`);
+            console.log(`Periodic update started.: more than ${waitMinutes} minutes have elapsed since the last update.`);
             
             // 背後で待機中のタイマーがあればリセット
             if (window.autoUpdateTimeout) {
@@ -2662,7 +2662,7 @@ document.addEventListener("visibilitychange", function() {
             const remMin = Math.floor(remainingMs / 1000 / 60); // 分
             const remSec = Math.round((remainingMs / 1000) % 60); // 秒
             
-            console.log(`画面を再表示しましたが待機期間内のため自動更新をスキップ。次回の自動更新まであと約 ${remMin}分 ${remSec}秒`);
+            console.log(`The screen was redisplayed, but the update was skipped because it was within the waiting period. The next periodic update is going to be approximately ${remMin}mins ${remSec}seconds later.`);
         }
     }
 });
@@ -2695,7 +2695,7 @@ function updateGScaleIndicator(kpValue) {
 // バッジの説明を表示する関数
 function showKpInfo(event) {
     
-    console.log("バッジがタッチされました。");
+    console.log("The badge is tapped.");
     
     if (event) event.stopPropagation(); // 親要素（openDetailなど）への連鎖を止める
     
